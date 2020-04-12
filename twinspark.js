@@ -10,7 +10,7 @@
 
   /// Utils
 
-  var err = console.log.bind(console, 'Twinspark error:');
+  var err = console.log.bind(console, 'TwinSpark error:');
   function log() {
     if (DEBUG) {
       console.log.apply(console, arguments);
@@ -25,10 +25,28 @@
     }
   }
 
+  function collect(el, attribute, merge) {
+    var result, value;
+
+    while(el) {
+      value = el.getAttribute(attribute);
+      if (value) {
+        result = merge(result, value);
+      }
+      el = el.parentElement;
+    }
+
+    return result;
+  }
+
 
   /// Core
 
   function attach(el, directive) {
+    if (el.matches(directive.selector)) {
+      directive.handler(el);
+    }
+
     var els = el.querySelectorAll(directive.selector);
     if (els.length) {
       [].forEach.call(els, directive.handler);
@@ -65,8 +83,14 @@
 
   /// Ajax
 
+  function sleep(ms) {
+    return new Promise(function(resolve) { setTimeout(resolve, ms) });
+  }
+
   function xhr(url, opts) {
-    return fetch(url, opts)
+    return sleep(10).then(function() {
+      return fetch(url, opts);
+    })
       .then(function(res) {
         return res.text().then(function(text) {
           res.content = text;
@@ -78,12 +102,31 @@
 
   /// Fragments
 
+  function findTarget(el, targetSel) {
+    if (!targetSel) {
+      return el;
+    }
+
+    if (targetSel.startsWith('closest ')) {
+      return el.closest(targetSel.slice(8));
+    } else {
+      return document.querySelector(targetSel);
+    }
+  }
+
   function swap(el, targetSel, content) {
-    el = targetSel ? document.querySelector(targetSel) : el;
     var html = new DOMParser().parseFromString(content, 'text/html');
-    var toSwap = targetSel ?
-        html.querySelector(targetSel) :
-        html.getElementsByTagName(el.tagName)[0];
+    var toSwap;
+    if (targetSel) {
+      toSwap = html.querySelector(targetSel.startsWith('closest ') ?
+                                  targetSel.slice(8) :
+                                  targetSel);
+    } else {
+      // this should be used in case of prepend/append only, to simplify logic
+      //toSwap = html.body.children;
+      // NOTE: maybe just html.body.children[0] ?
+      toSwap = html.getElementsByTagName(el.tagName)[0];
+    }
     el.replaceWith(toSwap);
 
     el = toSwap;
@@ -91,42 +134,91 @@
     autofocus(el);
   }
 
-  register('[ts-href]', function(el) {
-    var url = el.getAttribute('ts-href');
+  function doRequest(el) {
+    var url = el.getAttribute('ts-href') || el.getAttribute('href');
     var targetSel = el.getAttribute('ts-target');
+    var target = findTarget(el, targetSel);
+    var method = el.getAttribute('ts-method') ||
+        target.tagName == 'FORM' ? 'POST' : 'GET';
 
+    var data = collect(el, 'ts-data',
+                       function(r, v) { Object.assign(r, JSON.parse(v)); });
+
+    el.classList.add('ts-active');
+    xhr(url, {method:  method,
+              headers: {'Accept-Encoding': 'text/html+partial'}})
+      .then(function(res) {
+        el.classList.remove('ts-active');
+        if (res.ok) {
+          swap(target, targetSel, res.content);
+        } else {
+          err(res.content);
+        }
+      })
+      .catch(function(r) {
+        el.classList.remove('ts-active');
+        err('Network interrupt or something');
+        err(arguments);
+      });
+  }
+
+  var requestSel = '[ts-req], [ts-href]';
+  register(requestSel, function(el) {
     el.addEventListener('click', function(e) {
       if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey || e.button != 0)
         return;
 
       e.preventDefault();
-      xhr(url, {method: 'GET',
-                headers: {'Accept-Encoding': 'text/html+partial'}})
-        .then(function(res) {
-          if (res.ok) {
-            swap(el, targetSel, res.content);
-          } else {
-            err(res.content);
-          }
-        })
-        .catch(function(r) {
-          err('Network interrupt or something');
-          err(arguments);
-        });
+      doRequest(el);
     });
   });
 
+
+  /// Actions
+
+  var actionSel = '[ts-action]';
+  register(actionSel, function(el) {
+    var spec = el.getAttribute('ts-action');
+  });
+
+
+  /// Triggers
+
+  function doTrigger(el) {
+    if (el.matches(requestSel)) {
+      doRequest(el);
+    }
+    if (el.matches(actionSel)) {
+      doAction(el);
+    }
+  }
+
+  register('[ts-trigger]', function(el) {
+    // intercooler modifiers? like changed, once, delay?
+    // TODO: implement 'seen'
+    var trigger = el.getAttribute('ts-trigger');
+    trigger.split(',').forEach(function(x) {
+      el.addEventListener(x.trim(), function(e) {
+        doTrigger(el);
+      });
+    });
+  });
+
+
   /// Public interface
 
-  twinspark.onload = onload;
-  twinspark.register = register;
-  twinspark.log_toggle = function() {
-    localStorage._ts_debug = DEBUG ? '' : 'true';
-    DEBUG = !DEBUG;
+  twinspark = {
+    onload: onload,
+    register: register,
+    collect: collect,
+    log_toggle: function() {
+      localStorage._ts_debug = DEBUG ? '' : 'true';
+      DEBUG = !DEBUG;
+    },
+    _internal: {DIRECTIVES: DIRECTIVES,
+                getReady: function() { return READY; },
+                init: init}
   };
-  twinspark._internal = {DIRECTIVES: DIRECTIVES,
-                         getReady: function() { return READY; },
-                         init: init};
 
   window[tsname] = twinspark;
 })(window,document,'twinspark');
