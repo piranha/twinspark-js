@@ -18,6 +18,10 @@
         .replace(/'/g, "&#039;");
     }
 
+    function trim(s) {
+      return s.replace(/^\n+|\s+$/g, '')
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
       [].forEach.call(document.querySelectorAll('.card'), function(el) {
         var example = el.querySelector('.card-body');
@@ -27,16 +31,22 @@
           twinspark._internal.init();
         });
         el.querySelector('.source').addEventListener('click', function(e) {
-          example.innerHTML = '<pre><code>' + escape(example.initial.trim()) + '</code></pre>';
+          example.innerHTML = '<pre><code>' +
+                              escape(trim(example.initial)) +
+                              '</code></pre>';
         });
       });
     });
   </script>
-  <style>.card-body {overflow: scroll; }</style>
+  <style>
+    body {padding-bottom: 3em;} /* until we get footer? */
+    .card-body {overflow: scroll; }
+    .btn-sm {margin-bottom: .2rem; }
+  </style>
 </head>
 <body class="container">
 <div class="columns">
-<div class="column col-8 col-xl-10 col-lg-12 col-mx-auto">
+<div class="column col-6 col-xl-8 col-lg-10 col-md-12 col-mx-auto">
 
 <h1>TwinSpark</h1>
 <ul>
@@ -70,11 +80,9 @@
 
 <div class="card">
   <div class="card-header">
-    <div class="float-right">
-    <button class="btn btn-sm reset">Reset</button>
-    <button class="btn btn-sm source">View Source</button>
-    </div>
-    <h5>Demo</h5>
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
   </div>
 
   <p class="card-body">
@@ -97,11 +105,9 @@
 
 <div class="card">
   <div class="card-header">
-    <div class="float-right">
-      <button class="btn btn-sm reset">Reset</button>
-      <button class="btn btn-sm source">View Source</button>
-    </div>
-    <h5>Demo</h5>
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
   </div>
 
   <p class="card-body">
@@ -125,11 +131,9 @@
 
 <div class="card">
   <div class="card-header">
-    <div class="float-right">
-      <button class="btn btn-sm reset">Reset</button>
-      <button class="btn btn-sm source">View Source</button>
-    </div>
-    <h5>Demo</h5>
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
   </div>
 
   <p class="card-body">
@@ -154,11 +158,9 @@
 
 <div class="card">
   <div class="card-header">
-    <div class="float-right">
-      <button class="btn btn-sm reset">Reset</button>
-      <button class="btn btn-sm source">View Source</button>
-    </div>
-    <h5>Demo</h5>
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
   </div>
 
   <div class="card-body">
