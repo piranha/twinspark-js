@@ -177,3 +177,56 @@
     fetchMock.get("/closest", prev());
   </script>
 </div>
+
+
+<h3>Indicating activity</h3>
+<p>It's really irritating when you click a link and nothing happens for some time. Luckily
+  TwinSpark makes it really easy: it adds class <code>ts-active</code> to an element, enhanced with <code>ts-req</code>.</p>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <a href="/indicator" class="indicator" ts-req>Just click me</a>
+  </p>
+
+  <style>
+    .indicator.ts-active {
+      min-height: .8rem;
+      pointer-events: none;
+      position: relative;
+    }
+    .indicator.ts-active::after {
+      animation: loading .5s infinite linear;
+      border: .1rem solid #5755d9;
+      border-radius: 50%;
+      border-right-color: transparent;
+      border-top-color: transparent;
+      content: "";
+      display: block;
+      height: .8rem;
+      left: 110%;
+      margin-left: -.4rem;
+      margin-top: -.4rem;
+      position: absolute;
+      top: 50%;
+      width: .8rem;
+      z-index: 1;
+    }
+  </style>
+
+  <script type="text/html">
+    <a href="/indicator" class="indicator" ts-req>Just click me</a>
+  </script>
+  <script>
+    (function(markup) {
+      fetchMock.get("/indicator", function() {
+        return new Promise(res => setTimeout(res, 1000, markup))
+      });
+    })(prev());
+  </script>
+</div>
