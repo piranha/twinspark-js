@@ -1,119 +1,174 @@
 <!doctype html>
 <html>
-  <head>
-    <title>TwinSpark.js docs</title>
-    <link rel="stylesheet" href="vendor/picnic.css">
-    <script src="vendor/fetch-mock.js"></script>
-    <script src="twinspark.js"></script>
-    <script>
-      function prev() { return document.currentScript.previousElementSibling.innerText; }
-      
-    </script>
-  </head>
-  <body style="max-width: 960px; margin: 0 auto;">
-    <h1>TwinSpark</h1>
-    <ul>
-      <li>Dual ignition engines from Alfa Romeo, used from 1914 in Grand Prix cars to 2009.</li>
-      <li>Declarative enhancement for HTML: simple, composable, lean.</li>
-    </ul>
+<head>
+  <title>TwinSpark.js docs</title>
+  <link rel="stylesheet" href="vendor/spectre.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="vendor/fetch-mock.js"></script>
+  <script src="twinspark.js"></script>
+  <script>
+    function prev() { return document.currentScript.previousElementSibling.innerText; }
 
-    <p>TwinSpark was heavily influenced
-      by <a href="https://intercoolerjs.org/">Intercooler</a> and the main
-      reasons for existing are following:</p>
-    <ul>
-      <li>Intercooler limited (and I don't mean in a bad sense) extensibility
-        meant there is no way to implement analytics.</li>
-      <li>There is no (official) way to update few fragments at the same time.</li>
-      <li>As a related problem, there is no way to batch few requests into a
-        single one, and our architecture makes that pretty important.</li>
-      <li>jQuery. It is 2020 on the streets already, can we just drop that?</li>
-    </ul>
+    function escape(s) {
+      return s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
 
-    <hr>
+    document.addEventListener('DOMContentLoaded', function() {
+      [].forEach.call(document.querySelectorAll('.card'), function(el) {
+        var example = el.querySelector('.card-body');
+        example.initial = example.innerHTML;
+        el.querySelector('.reset').addEventListener('click', function(e) {
+          example.innerHTML = example.initial;
+          twinspark._internal.init();
+        });
+        el.querySelector('.source').addEventListener('click', function(e) {
+          example.innerHTML = '<pre><code>' + escape(example.initial.trim()) + '</code></pre>';
+        });
+      });
+    });
+  </script>
+</head>
+<body style="max-width: 960px; margin: 0 auto;">
 
-    <h2>Guide</h2>
+<h1>TwinSpark</h1>
+<ul>
+  <li>Dual ignition engines from Alfa Romeo, used from 1914 in Grand Prix cars to 2009.</li>
+  <li>Declarative enhancement for HTML: simple, composable, lean.</li>
+</ul>
 
-    <h3>Fragment updating</h3>
-    <p>The core feature of TwinSpark.js is it's ability to update fragments of
-      the page using AJAX requests to server without writing JavaScript.</p>
-    <p>To simplify inner logic you have one limitation - you can only return
-      single element from the server. If you return more, they will be
-      ignored. How to deal with that and why it is so - read on.</p>
+<p>TwinSpark was heavily influenced
+  by <a href="https://intercoolerjs.org/">Intercooler</a> and the main reasons
+  for existing are following:</p>
+<ul>
+  <li>Intercooler limited (and I don't mean in a bad sense) extensibility meant
+    there is no way to implement analytics.</li>
+  <li>There is no (official) way to update few fragments at the same time.</li>
+  <li>As a related problem, there is no way to batch few requests into a single
+    one, and our architecture makes that pretty important.</li>
+  <li>jQuery. It is 2020 on the streets already, can we just drop that?</li>
+</ul>
 
-    <article class="card">
-      <header><h3>Demo</h3></header>
-      <p>
-        <script type="text/html">
-          <a href="/req" ts-req>Updated!</a>
-        </script>
-        <script>
-          fetchMock.get("/req", prev());
-        </script>
-        <a href="/req" ts-req>Update me</a>
-      </p>
-    </article>
+<hr>
 
+<h2>Guide</h2>
 
-    <h3>Triggering requests</h3>
-    <p>Usually requests are triggered on natural interrupts: submit on forms and
-    clicks elsewhere, but sometimes you want more, like triggering on being seen
-    or hovered:</p>
-
-    <article class="card">
-      <header><h3>Demo</h3></header>
-      <p>
-        <script type="text/html">
-           <a href="/trigger" ts-req>Good girl! :)</a>
-        </script>
-        <script>
-          fetchMock.get("/trigger", prev());
-        </script>
-        <a href="/trigger" ts-req ts-trigger="mouseenter">Hover me!</a>
-      </p>
-    </article>
+<h3>Fragment updating</h3>
+<p>The core feature of TwinSpark.js is it's ability to update fragments of the
+  page using AJAX requests to server without writing JavaScript.</p>
+<p>To simplify inner logic you have one limitation - you can only return single
+  element from the server. If you return more, they will be ignored. How to deal
+  with that and why it is so - read on.</p>
 
 
-    <h3>Targeting other elements</h3>
-    <p>Often you don't want to replace clicked element, but some other part of
-      the page, like if you hit "Refresh" and need to update big part of the
-      page. This can be done with <code>ts-target</code> attribute, which takes a CSS
-      selector.</p>
+<div class="card">
+  <div class="card-header">
+    <div class="float-right">
+    <button class="btn btn-sm reset">Reset</button>
+    <button class="btn btn-sm source">View Source</button>
+    </div>
+    <h5>Demo</h5>
+  </div>
 
-    <article class="card">
-      <header><h3>Demo</h3></header>
-      <p>
-        <script type="text/html">
-          <span id="target">Good catch!</span>
-        </script>
-        <script>
-          fetchMock.get("/target", prev());
-        </script>
-        <span id="target">I'm waiting...</span>
-        <a href="/target" ts-req ts-target="#target">Do it!</a>
-      </p>
-    </article>
+  <p class="card-body">
+    <a href="/req" ts-req>Update me</a>
+  </p>
+
+  <script type="text/html">
+    <a href="/req" ts-req>Updated!</a>
+  </script>
+  <script>
+    fetchMock.get("/req", prev());
+  </script>
+</div>
 
 
-    <h3>Targeting parents</h3>
-    <p>Interestingly, this seems like the most common pattern - when a button
-      needs to update an element around itself. Add modifier
-      <code>closest</code> before selector and
-      <code>element.closest(selector)</code> method will be used to find a
-      parent. This will help a lot to minimize amount of ids.</p>
-    
-    <article class="card">
-      <header><h3>Demo</h3></header>
-      <p>
-        <script type="text/html">
-          <span>Did you know that introducing too many ids is a symptom of
-          coupling logic with markup?
-          </span>
-        </script>
-        <script>
-          fetchMock.get("/closest", prev());
-        </script>
-        <span>Wanna read text behind me?
-          <a href="/closest" ts-req ts-target="closest span">Do it!</a>
-        </span>
-      </p>
-    </article>
+<h3>Triggering requests</h3>
+<p>Usually requests are triggered on natural interrupts: submit on forms and
+  clicks elsewhere, but sometimes you want more, like triggering on being seen
+  or hovered:</p>
+
+<div class="card">
+  <div class="card-header">
+    <div class="float-right">
+      <button class="btn btn-sm reset">Reset</button>
+      <button class="btn btn-sm source">View Source</button>
+    </div>
+    <h5>Demo</h5>
+  </div>
+
+  <p class="card-body">
+    <a href="/trigger" ts-req ts-trigger="mouseenter">Hover me!</a>
+  </p>
+
+  <script type="text/html">
+    <a href="/trigger" ts-req>Good girl! :)</a>
+  </script>
+  <script>
+    fetchMock.get("/trigger", prev());
+  </script>
+</div>
+
+
+<h3>Targeting other elements</h3>
+<p>Often you don't want to replace clicked element, but some other part of the
+  page, like if you hit "Refresh" and need to update big part of the page. This
+  can be done with <code>ts-target</code> attribute, which takes a CSS
+  selector.</p>
+
+<div class="card">
+  <div class="card-header">
+    <div class="float-right">
+      <button class="btn btn-sm reset">Reset</button>
+      <button class="btn btn-sm source">View Source</button>
+    </div>
+    <h5>Demo</h5>
+  </div>
+
+  <p class="card-body">
+    <span id="target">I'm waiting...</span>
+    <a href="/target" ts-req ts-target="#target">Do it!</a>
+  </p>
+
+  <script type="text/html">
+    <span id="target">Good catch!</span>
+  </script>
+  <script>
+    fetchMock.get("/target", prev());
+  </script>
+</div>
+
+
+<h3>Targeting parents</h3>
+<p>Interestingly, this seems like the most common pattern - when a button needs
+  to update an element around itself. Add modifier <code>parent</code> before
+  selector and <code>element.closest(selector)</code> method will be used to
+  find a parent. This will help a lot to minimize amount of ids.</p>
+
+<div class="card">
+  <div class="card-header">
+    <div class="float-right">
+      <button class="btn btn-sm reset">Reset</button>
+      <button class="btn btn-sm source">View Source</button>
+    </div>
+    <h5>Demo</h5>
+  </div>
+
+  <div class="card-body">
+    <p>Wanna read text behind me?
+      <a href="/closest" ts-req ts-target="parent p">Do it!</a>
+    </p>
+  </div>
+
+  <script type="text/html">
+    <p>Did you know that introducing too many ids is a symptom of coupling
+      logic with markup?</p>
+  </script>
+  <script>
+    fetchMock.get("/closest", prev());
+  </script>
+</div>

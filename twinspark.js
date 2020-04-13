@@ -107,8 +107,8 @@
       return el;
     }
 
-    if (targetSel.startsWith('closest ')) {
-      return el.closest(targetSel.slice(8));
+    if (targetSel.startsWith('parent ')) {
+      return el.closest(targetSel.slice(7));
     } else {
       return document.querySelector(targetSel);
     }
@@ -118,8 +118,8 @@
     var html = new DOMParser().parseFromString(content, 'text/html');
     var toSwap;
     if (targetSel) {
-      toSwap = html.querySelector(targetSel.startsWith('closest ') ?
-                                  targetSel.slice(8) :
+      toSwap = html.querySelector(targetSel.startsWith('parent ') ?
+                                  targetSel.slice(7) :
                                   targetSel);
     } else {
       // this should be used in case of prepend/append only, to simplify logic
