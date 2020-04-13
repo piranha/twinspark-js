@@ -36,6 +36,16 @@
                               '</code></pre>';
         });
       });
+
+      [].forEach.call(document.querySelectorAll('h3'), function(el) {
+        if (el.id) {
+          var a = document.createElement('a');
+          a.href = '#' + el.id;
+          a.innerText = '#';
+          el.append(' ');
+          el.append(a);
+        }
+      });
     });
   </script>
   <style>
@@ -48,7 +58,7 @@
 <div class="columns">
 <div class="column col-6 col-xl-8 col-lg-10 col-md-12 col-mx-auto">
 
-<h1>TwinSpark</h1>
+<h1><a href="/">TwinSpark</a></h1>
 <ul>
   <li>Dual ignition engines from Alfa Romeo, used from 1914 in Grand Prix cars to 2009.</li>
   <li>Declarative enhancement for HTML: simple, composable, lean.</li>
@@ -70,7 +80,7 @@
 
 <h2>Guide</h2>
 
-<h3>Fragment updating</h3>
+<h3 id="fragment">Fragment updating</h3>
 <p>The core feature of TwinSpark.js is it's ability to update fragments of the
   page using AJAX requests to server without writing JavaScript.</p>
 <p>To simplify inner logic you have one limitation - you can only return single
@@ -98,7 +108,7 @@
 </div>
 
 
-<h3 class="mt-2">Triggering requests</h3>
+<h3 id="trigger" class="mt-2">Triggering requests</h3>
 <p>Usually requests are triggered on natural interrupts: submit on forms and
   clicks elsewhere, but sometimes you want more, like triggering on being seen
   or hovered:</p>
@@ -123,7 +133,7 @@
 </div>
 
 
-<h3 class="mt-2">Targeting other elements</h3>
+<h3 id="target" class="mt-2">Targeting other elements</h3>
 <p>Often you don't want to replace clicked element, but some other part of the
   page, like if you hit "Refresh" and need to update big part of the page. This
   can be done with <code>ts-target</code> attribute, which takes a CSS
@@ -150,7 +160,7 @@
 </div>
 
 
-<h3 class="mt-2">Targeting parents</h3>
+<h3 id="parent" class="mt-2">Targeting parents</h3>
 <p>Interestingly, this seems like the most common pattern - when a button needs
   to update an element around itself. Add modifier <code>parent</code> before
   selector and <code>element.closest(selector)</code> method will be used to
@@ -179,7 +189,7 @@
 </div>
 
 
-<h3 class="mt-2">Indicating activity</h3>
+<h3 id="indicator" class="mt-2">Indicating activity</h3>
 <p>It's really irritating when you click a link and nothing happens for some time. Luckily
   TwinSpark makes it really easy: it adds class <code>ts-active</code> to an element, enhanced with <code>ts-req</code>.</p>
 
@@ -232,7 +242,7 @@
 </div>
 
 
-<h3 class="mt-2">Actions</h3>
+<h3 id="actions" class="mt-2">Actions</h3>
 <p>Sometimes you don't need to go to server to do something. Closing popup or
   hiding an element can be done without network round trip.</p>
 
