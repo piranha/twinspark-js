@@ -230,3 +230,24 @@
     })(prev());
   </script>
 </div>
+
+
+<h3 class="mt-2">Actions</h3>
+<p>Sometimes you don't need to go to server to do something. Closing popup or
+  hiding an element can be done without network round trip.</p>
+
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p>
+      Hey! I'm here!
+      <button class="btn" ts-action="remove" ts-trigger="click" ts-target="parent p">Remove me!</button>
+    </p>
+  </div>
+</div>

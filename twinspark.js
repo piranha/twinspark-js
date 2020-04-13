@@ -176,6 +176,23 @@
 
   /// Actions
 
+  function doAction(el, e) {
+    // TODO: parse spec for arguments; multiple actions?
+    var spec = el.getAttribute('ts-action');
+    var target = findTarget(el, el.getAttribute('ts-target'));
+
+    if (spec in target) {
+      // remove etc
+      target[spec]();
+    } else if (spec in e) {
+      // stopPropagation etc
+      e[spec]();
+    } else if (spec in window) {
+      // extension point
+      window[spec]();
+    }
+  }
+
   var actionSel = '[ts-action]';
   register(actionSel, function(el) {
     var spec = el.getAttribute('ts-action');
@@ -184,12 +201,12 @@
 
   /// Triggers
 
-  function doTrigger(el) {
+  function doTrigger(el, e) {
     if (el.matches(requestSel)) {
-      doRequest(el);
+      doRequest(el, e);
     }
     if (el.matches(actionSel)) {
-      doAction(el);
+      doAction(el, e);
     }
   }
 
@@ -199,7 +216,7 @@
     var trigger = el.getAttribute('ts-trigger');
     trigger.split(',').forEach(function(x) {
       el.addEventListener(x.trim(), function(e) {
-        doTrigger(el);
+        doTrigger(el, e);
       });
     });
   });
