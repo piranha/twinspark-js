@@ -100,16 +100,19 @@
 
   /// Fragments
 
-  function findTarget(el, targetSel) {
-    if (!targetSel) {
-      return el;
+  function findTarget(el, _recurse) {
+    var sel = el.getAttribute('ts-target');
+    if (sel) {
+      if (sel == 'this')
+        return el;
+      if (sel.startsWith('parent '))
+        return el.closest(sel.slice(7));
+      if (sel.startsWith('child '))
+        return el.querySelector(sel.slice(6));
+      return document.querySelector(sel);
     }
 
-    if (targetSel.startsWith('parent ')) {
-      return el.closest(targetSel.slice(7));
-    } else {
-      return document.querySelector(targetSel);
-    }
+    return findTarget(el.parentElement, true) || (_recurse ? null : el);
   }
 
   function swap(el, targetSel, content) {
@@ -135,7 +138,7 @@
   function doRequest(el) {
     var url = el.getAttribute('ts-href') || el.getAttribute('href');
     var targetSel = el.getAttribute('ts-target');
-    var target = findTarget(el, targetSel);
+    var target = findTarget(el);
     var method = el.getAttribute('ts-method') ||
         target.tagName == 'FORM' ? 'POST' : 'GET';
 
@@ -176,26 +179,122 @@
 
   /// Actions
 
-  function doAction(el, e) {
-    // TODO: parse spec for arguments; multiple actions?
-    var spec = el.getAttribute('ts-action');
-    var target = findTarget(el, el.getAttribute('ts-target'));
-
-    if (spec in target) {
-      // remove etc
-      target[spec]();
-    } else if (spec in e) {
-      // stopPropagation etc
-      e[spec]();
-    } else if (spec in window) {
-      // extension point
-      window[spec]();
+  function parseValue(s) {
+    var c = s[0];
+    if (c == '{' || c == '[') {
+      return JSON.parse(s);
     }
+    if (c == '"' || c == "'") {
+      return s.slice(1, s.length - 1);
+    }
+    if (c >= '0' && c <= '9') {
+      return parseFloat(s);
+    }
+    return s;
+  }
+
+  var closing = {
+    '"': '"',
+    "'": "'",
+    "{": "}",
+    "[": "]"
+  };
+
+  function parseActionSpec(cmd) {
+    var result = [];
+    var command = [];
+    var current = '';
+
+    var string = null;
+    var json = null;
+
+    function consume() {
+      var token = current.trim();
+      if (token.length) {
+        command.push(parseValue(token));
+      }
+      current = '';
+    }
+
+    for (var i = 0; i < cmd.length; i++) {
+      var c = cmd[i];
+
+      if (json) {
+        current += c;
+        if (c == closing[json]) {
+          json = false;
+        }
+      } else if (string) {
+        current += c;
+        if (c == closing[string]) {
+          string = false;
+        }
+      } else {
+        if (c == "{") {
+          json = c;
+        } else if (c == "'") {
+          string = c;
+        } else if (c == " ") {
+          consume();
+          continue;
+        } else if (c == ",") {
+          consume();
+          result.push(command);
+          command = [];
+          continue;
+        }
+
+        current += c;
+      }
+    }
+
+    consume();
+    if (command) {
+      result.push(command);
+    }
+    return result;
+  }
+
+  function executeAction(target, command) {
+    var cmd = command[0];
+    var args = command.slice(1);
+
+    if (cmd == 'delay') {
+      return delay.apply(null, args);
+    } else if (cmd == 'stop') {
+      e.stopPropagation();
+    } else if (cmd == 'cancel') {
+      e.preventDefault();
+
+    } else if (cmd == 'addClass') {
+      target.classList.add.apply(target.classList, args);
+    } else if (cmd == 'removeClass') {
+      target.classList.remove.apply(target.classList, args);
+    } else if (cmd == 'toggleClass') {
+      target.classList.toggle.apply(target.classList, args);
+    } else if (cmd == 'replaceClass') {
+      target.classList.replace.apply(target.classList, args);
+
+    } else if (cmd in target) {
+      // remove etc
+      target[cmd].apply(target, args);
+    } else if (cmd in window) {
+      // extension point
+      window[cmd].apply(window, args);
+    }
+  }
+
+  function doAction(el, e) {
+    var target = findTarget(el);
+    var commands = parseActionSpec(el.getAttribute('ts-action'));
+
+    commands.reduce(function(p, command) {
+      return p.then(function(_) { return executeAction(target, command); });
+    }, new Promise(function(resolve) { resolve(1); }));
   }
 
   var actionSel = '[ts-action]';
   register(actionSel, function(el) {
-    var spec = el.getAttribute('ts-action');
     el.addEventListener('ts-trigger', function(e) {
       doAction(el, e);
     });
@@ -233,8 +332,8 @@
       DEBUG = !DEBUG;
     },
     _internal: {DIRECTIVES: DIRECTIVES,
-                getReady: function() { return READY; },
-                init: init}
+                init: init,
+                parse: parseActionSpec}
   };
 
   window[tsname] = twinspark;
