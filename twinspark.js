@@ -230,9 +230,9 @@
           string = false;
         }
       } else {
-        if (c == "{") {
+        if ((c == "{") || (c == "[")) {
           json = c;
-        } else if (c == "'") {
+        } else if ((c == "'") || (c == '"')) {
           string = c;
         } else if (c == " ") {
           consume();
