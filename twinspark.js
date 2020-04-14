@@ -83,14 +83,12 @@
 
   /// Ajax
 
-  function sleep(ms) {
-    return new Promise(function(resolve) { setTimeout(resolve, ms) });
+  function delay(ms, rv) {
+    return new Promise(function(resolve) { setTimeout(resolve, ms, rv); });
   }
 
   function xhr(url, opts) {
-    return sleep(10).then(function() {
-      return fetch(url, opts);
-    })
+    return fetch(url, opts)
       .then(function(res) {
         return res.text().then(function(text) {
           res.content = text;
@@ -157,8 +155,7 @@
       })
       .catch(function(r) {
         el.classList.remove('ts-active');
-        err('Network interrupt or something');
-        err(arguments);
+        err('Network interrupt or something', arguments);
       });
   }
 
@@ -169,6 +166,9 @@
         return;
 
       e.preventDefault();
+      doRequest(el);
+    });
+    el.addEventListener('ts-trigger', function(e) {
       doRequest(el);
     });
   });
@@ -196,18 +196,18 @@
   var actionSel = '[ts-action]';
   register(actionSel, function(el) {
     var spec = el.getAttribute('ts-action');
+    el.addEventListener('ts-trigger', function(e) {
+      doAction(el, e);
+    });
   });
 
 
   /// Triggers
 
   function doTrigger(el, e) {
-    if (el.matches(requestSel)) {
-      doRequest(el, e);
-    }
-    if (el.matches(actionSel)) {
-      doAction(el, e);
-    }
+    var event = new Event('ts-trigger', {bubbles: false});
+    event.reason = e;
+    el.dispatchEvent(event);
   }
 
   register('[ts-trigger]', function(el) {
