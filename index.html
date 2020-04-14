@@ -147,12 +147,12 @@
   </div>
 
   <p class="card-body">
-    <span id="target">I'm waiting...</span>
-    <a href="/target" ts-req ts-target="#target">Do it!</a>
+    <span id="replace">I'm waiting...</span>
+    <a href="/target" ts-req ts-target="#replace">Do it!</a>
   </p>
 
   <script type="text/html">
-    <span id="target">Good catch!</span>
+    <span id="replace">Good catch!</span>
   </script>
   <script>
     fetchMock.get("/target", prev());
@@ -249,7 +249,7 @@
 
 <div class="card">
   <div class="card-header">
-    <h5 class="d-inline mr-2">Demo</h5>
+    <h5 class="d-inline mr-2">Demo of <code>remove</code></h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
     <button class="btn btn-link btn-sm source">View Source</button>
   </div>
@@ -265,7 +265,7 @@
 
 <div class="card">
   <div class="card-header">
-    <h5 class="d-inline mr-2">Demo</h5>
+    <h5 class="d-inline mr-2">Demo of <code>delay</code></h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
     <button class="btn btn-link btn-sm source">View Source</button>
   </div>
@@ -281,14 +281,55 @@
 
 <div class="card">
   <div class="card-header">
-    <h5 class="d-inline mr-2">Demo (no Safari here)</h5>
+    <h5 class="d-inline mr-2">Demo of <code>animate</code> (no Safari here)</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
     <button class="btn btn-link btn-sm source">View Source</button>
   </div>
 
   <div class="card-body">
     <p ts-target="this">
-      <button class="btn" ts-action='animate [{"transform": "translate3D(0,0,0)"},{"transform": "translate3D(300px,0,0)"}] {"duration": 1000, "iterations": 10}' ts-trigger="click">Animate</button>
+      <button class="btn"
+              ts-action='animate [{"transform": "translate3D(0,0,0)"},{"transform": "translate3D(300px,0,0)"}] {"duration": 1000, "iterations": 10}'
+              ts-trigger="click">Animate</button>
+    </p>
+  </div>
+</div>
+
+<!--
+     <h3 id="timer" class="mt-2">Extending with external function</h3>
+     <p>In case you need to implement some weird functionality, there is an extension point to </p>
+
+
+     <div class="card">
+     <div class="card-header">
+     <h5 class="d-inline mr-2">Demo (no Safari here)</h5>
+     <button class="btn btn-link btn-sm reset">Reset</button>
+     <button class="btn btn-link btn-sm source">View Source</button>
+     </div>
+
+     <div class="card-body">
+     <p ts-target="this">
+     <time datetime="2022-03-21T00:00:00Z" ts-action="timeUntil" ts-trigger="timeout 1000"></time>
+     </p>
+     </div>
+     </div>
+-->
+
+
+<h3 id="visible" class="mt-2">Triggering on changed visibility</h3>
+<p>Doing something when element is almost visible makes it possible to implement lazy
+  loading and various analytical events</p>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p ts-action="addClass loading" ts-trigger="visible">
+      Here was some text written. Probably.
     </p>
   </div>
 </div>

@@ -41,8 +41,9 @@
 
 
   function sendEvent(el, type, bubbles, attrs) {
+    log('dispatching event', type, el, attrs);
     var event = new Event(type, {bubbles: bubbles});
-    attrs && Object.assign(event, attrs);
+    if (attrs) Object.assign(event, attrs);
     el.dispatchEvent(event);
   }
 
@@ -295,7 +296,7 @@
 
     commands.reduce(function(p, command) {
       return p.then(function(_) { return executeAction(target, command); });
-    }, new Promise(function(resolve) { resolve(1); }));
+    }, Promise.resolve(1));
   }
 
   var actionSel = '[ts-action]';
@@ -308,14 +309,32 @@
 
   /// Triggers
 
+  var obs = new IntersectionObserver(function(entries, obs) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        sendEvent(entry.target, 'ts-trigger', false, {reason: entry});
+      }
+    });
+  }, {rootMargin: '100px', threshold: 0.5});
+
+
   register('[ts-trigger]', function(el) {
     // intercooler modifiers? like changed, once, delay?
     // TODO: implement 'seen'
     var trigger = el.getAttribute('ts-trigger');
-    trigger.split(',').forEach(function(x) {
-      el.addEventListener(x.trim(), function(e) {
-        sendEvent(el, 'ts-trigger', false, {reason: e});
-      });
+    if (!trigger) return;
+
+    trigger.split(',').forEach(function(t) {
+      t = t.trim();
+      if (t == 'load') {
+        sendEvent(el, 'ts-trigger', false, {reason: 'load'});
+      } else if (t == 'visible') {
+        obs.observe(el);
+      } else {
+        el.addEventListener(t, function(e) {
+          sendEvent(el, 'ts-trigger', false, {reason: e});
+        });
+      }
     });
   });
 
@@ -332,7 +351,8 @@
     },
     _internal: {DIRECTIVES: DIRECTIVES,
                 init: init,
-                parse: parseActionSpec}
+                parse: parseActionSpec,
+                obs: obs}
   };
 
   window[tsname] = twinspark;
