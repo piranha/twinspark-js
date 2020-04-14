@@ -11,6 +11,7 @@
 
     function escape(s) {
       return s
+        .replace(/&quot;/g, '"') // because json-in-attrs will be disgusting
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -129,6 +130,34 @@
   </script>
   <script>
     fetchMock.get("/trigger", prev());
+  </script>
+</div>
+
+
+<h3 id="data" class="mt-2">Collecting data</h3>
+<p>Sometimes collecting the data you need to send in templates is really
+  annoying: you'll have to teach lower-level components/partials/etc some
+  knowledge about higher levels. That is something TwinSpark can prevent: when
+  you send a request, it iterates through element parents and searches for
+  <code>ts-data</code> attributes, parses their content as JSON and merges it into a single object.</p>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <span  ts-data='{"a": 1}'>
+      <a href="/data" ts-data='{"b": 2}' ts-req ts-method="POST" ts-target="parent span">So. Much. Data.</a>
+    </span>
+  </p>
+
+  <script>
+    fetchMock.post("/data", function(url, opts) {
+      return '<span>' + opts.body + '</span>';
+    });
   </script>
 </div>
 

@@ -153,13 +153,21 @@
     var method = el.getAttribute('ts-method') ||
         target.tagName == 'FORM' ? 'POST' : 'GET';
 
-    var data = collect(el, 'ts-data',
-                       function(r, v) { Object.assign(r, JSON.parse(v)); });
+    var data = collect(el, 'ts-data', function(acc, v) {
+      if (!acc) { acc = []; }
+      acc.unshift(JSON.parse(v));
+      return acc;
+    }).reduce(function(x,y) { return Object.assign(x,y); });
+
+    var qs = data && method == 'GET' ? '?' + new URLSearchParams(data).toString() : '';
+    var body = data && method != 'GET' ? JSON.stringify(data) : null;
+    var opts = {method:  method,
+                headers: {'Accept-Encoding': 'text/html+partial'},
+                body:    body};
+    var req = xhr(url + qs, opts);
 
     el.classList.add('ts-active');
-    xhr(url, {method:  method,
-              headers: {'Accept-Encoding': 'text/html+partial'}})
-      .then(function(res) {
+    req.then(function(res) {
         el.classList.remove('ts-active');
         if (res.ok) {
           swap(target, targetSel, res.content);
