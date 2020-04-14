@@ -40,6 +40,13 @@
   }
 
 
+  function sendEvent(el, type, bubbles, attrs) {
+    var event = new Event(type, {bubbles: bubbles});
+    attrs && Object.assign(event, attrs);
+    el.dispatchEvent(event);
+  }
+
+
   /// Core
 
   function attach(el, directive) {
@@ -63,6 +70,7 @@
 
   function activate(el) {
     DIRECTIVES.forEach(function(d) { attach(el, d); });
+    sendEvent(el, 'ts-ready', true);
   }
 
   function autofocus(el) {
@@ -112,7 +120,9 @@
       return document.querySelector(sel);
     }
 
-    return findTarget(el.parentElement, true) || (_recurse ? null : el);
+    return el.parentElement &&
+      findTarget(el.parentElement, true) ||
+      (_recurse ? null : el);
   }
 
   function swap(el, targetSel, content) {
@@ -193,12 +203,7 @@
     return s;
   }
 
-  var closing = {
-    '"': '"',
-    "'": "'",
-    "{": "}",
-    "[": "]"
-  };
+  var CLOSING = {'"': '"', "'": "'", "{": "}", "[": "]"};
 
   function parseActionSpec(cmd) {
     var result = [];
@@ -221,12 +226,12 @@
 
       if (json) {
         current += c;
-        if (c == closing[json]) {
+        if (c == CLOSING[json]) {
           json = false;
         }
       } else if (string) {
         current += c;
-        if (c == closing[string]) {
+        if (c == CLOSING[string]) {
           string = false;
         }
       } else {
@@ -303,19 +308,13 @@
 
   /// Triggers
 
-  function doTrigger(el, e) {
-    var event = new Event('ts-trigger', {bubbles: false});
-    event.reason = e;
-    el.dispatchEvent(event);
-  }
-
   register('[ts-trigger]', function(el) {
     // intercooler modifiers? like changed, once, delay?
     // TODO: implement 'seen'
     var trigger = el.getAttribute('ts-trigger');
     trigger.split(',').forEach(function(x) {
       el.addEventListener(x.trim(), function(e) {
-        doTrigger(el, e);
+        sendEvent(el, 'ts-trigger', false, {reason: e});
       });
     });
   });
