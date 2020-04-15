@@ -6,13 +6,14 @@
   /// Internal data structures
 
   var READY = false;
-  var DEBUG = localStorage._ts_debug || false;
+  var DEBUG = window.localStorage._ts_debug || false;
   var DIRECTIVES = []; // [{selector: x, handler: y}]
 
 
   /// Utils
 
   var err = console.log.bind(console, 'TwinSpark error:');
+  /** @type {function(...*):void} */
   function log() {
     if (DEBUG) {
       console.log.apply(console, arguments);
@@ -42,7 +43,7 @@
     return result;
   }
 
-
+  /** @type {function(Element, string, boolean, Object=):void} */
   function sendEvent(el, type, bubbles, attrs) {
     log('dispatching event', type, el, attrs);
     var event = new Event(type, {bubbles: bubbles});
@@ -112,6 +113,7 @@
 
   /// Fragments
 
+  /** @type {function(Element, boolean=):?Element} */
   function findTarget(el, _recurse) {
     var sel = el.getAttribute('ts-target');
     if (sel) {
@@ -153,7 +155,10 @@
     if (!v) return;
 
     if (v.startsWith('{')) {
-      return Object.entries(JSON.parse(v));
+      var data = JSON.parse(v);
+      if (typeof data === 'object' && data !== null) {
+        return Object.entries(data);
+      }
     } else {
       return new URLSearchParams(v);
     }
@@ -206,7 +211,7 @@
       });
   }
 
-  var requestSel = '[ts-req], [ts-href]';
+  var requestSel = '[ts-req], [ts-req-batch], [ts-href]';
   register(requestSel, function(el) {
     el.addEventListener('click', function(e) {
       if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey || e.button != 0)
@@ -294,7 +299,7 @@
     return result;
   }
 
-  function executeAction(target, command) {
+  function executeAction(e, target, command) {
     var cmd = command[0];
     var args = command.slice(1);
 
@@ -328,7 +333,7 @@
     var commands = parseActionSpec(el.getAttribute('ts-action'));
 
     commands.reduce(function(p, command) {
-      return p.then(function(_) { return executeAction(target, command); });
+      return p.then(function(_) { return executeAction(e, target, command); });
     }, Promise.resolve(1));
   }
 
@@ -379,7 +384,7 @@
     register: register,
     collect: collect,
     log_toggle: function() {
-      localStorage._ts_debug = DEBUG ? '' : 'true';
+      window.localStorage._ts_debug = DEBUG ? '' : 'true';
       DEBUG = !DEBUG;
     },
     _internal: {DIRECTIVES: DIRECTIVES,
