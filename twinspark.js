@@ -1,3 +1,5 @@
+/* jshint esversion: 6 */
+
 (function(window,document,tsname) {
   var twinspark = {};
 
@@ -25,13 +27,14 @@
     }
   }
 
-  function collect(el, attribute, merge) {
-    var result, value;
+  function collect(el, attribute) {
+    var result = [];
+    var value;
 
     while(el) {
       value = el.getAttribute(attribute);
       if (value) {
-        result = merge(result, value);
+        result.push(value);
       }
       el = el.parentElement;
     }
@@ -70,7 +73,7 @@
   }
 
   function activate(el) {
-    DIRECTIVES.forEach(function(d) { attach(el, d); });
+    DIRECTIVES.forEach(d => attach(el, d));
     sendEvent(el, 'ts-ready', true);
   }
 
@@ -93,13 +96,13 @@
   /// Ajax
 
   function delay(ms, rv) {
-    return new Promise(function(resolve) { setTimeout(resolve, ms, rv); });
+    return new Promise(resolve => setTimeout(resolve, ms, rv));
   }
 
   function xhr(url, opts) {
     return fetch(url, opts)
       .then(function(res) {
-        return res.text().then(function(text) {
+        return res.text().then(text => {
           res.content = text;
           return Promise.resolve(res);
         });
@@ -146,6 +149,31 @@
     autofocus(el);
   }
 
+  function parseData(v) {
+    if (!v) return;
+
+    if (v.startsWith('{')) {
+      return Object.entries(JSON.parse(v));
+    } else {
+      return new URLSearchParams(v);
+    }
+  }
+
+  function collectData(el) {
+    // reduceRight because deepest element is the first one
+    var data = collect(el, 'ts-data').reduceRight((acc, v) => {
+      for (var x of parseData(v)) {
+        if ((x[1] === null) || (x[1] === '')) {
+          acc.delete(x[0]);
+        } else {
+          acc.append(x[0], x[1]);
+        }
+      }
+      return acc;
+    }, new URLSearchParams());
+    return data;
+  }
+
   function doRequest(el) {
     var url = el.getAttribute('ts-href') || el.getAttribute('href');
     var targetSel = el.getAttribute('ts-target');
@@ -153,16 +181,13 @@
     var method = el.getAttribute('ts-method') ||
         target.tagName == 'FORM' ? 'POST' : 'GET';
 
-    var data = collect(el, 'ts-data', function(acc, v) {
-      if (!acc) { acc = []; }
-      acc.unshift(JSON.parse(v));
-      return acc;
-    }).reduce(function(x,y) { return Object.assign(x,y); });
+    var data = collectData(el).toString();
 
-    var qs = data && method == 'GET' ? '?' + new URLSearchParams(data).toString() : '';
-    var body = data && method != 'GET' ? JSON.stringify(data) : null;
+    var qs = data && method == 'GET' ? '?' + data : '';
+    var body = data && method != 'GET' ? data : null;
     var opts = {method:  method,
-                headers: {'Accept-Encoding': 'text/html+partial'},
+                headers: {'Accept-Encoding': 'text/html+partial',
+                          'Content-Type': body ? 'application/x-www-form-urlencoded' : null},
                 body:    body};
     var req = xhr(url + qs, opts);
 

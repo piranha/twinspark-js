@@ -12,6 +12,7 @@
     function escape(s) {
       return s
         .replace(/&quot;/g, '"') // because json-in-attrs will be disgusting
+        .replace(/&amp;/g, '&')
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -139,7 +140,10 @@
   annoying: you'll have to teach lower-level components/partials/etc some
   knowledge about higher levels. That is something TwinSpark can prevent: when
   you send a request, it iterates through element parents and searches for
-  <code>ts-data</code> attributes, parses their content as JSON and merges it into a single object.</p>
+  <code>ts-data</code> attributes, parses their content as query string or JSON
+  and merges it into a single object. Note how values with same keys are aggregated
+  into an array (like normal query string or form data). You can override that by
+  specifying key with null or empty string (see demo source).</p>
 
 <div class="card">
   <div class="card-header">
@@ -149,8 +153,9 @@
   </div>
 
   <p class="card-body">
-    <span  ts-data='{"a": 1}'>
-      <a href="/data" ts-data='{"b": 2}' ts-req ts-method="POST" ts-target="parent span">So. Much. Data.</a>
+    <span ts-data="a=1&b=2&c=3">
+      <!-- this will override 'c' value -->
+      <a href="/data" ts-data="b=4&c&c=5" ts-req ts-method="POST" ts-target="parent span">So. Much. Data.</a>
     </span>
   </p>
 
