@@ -94,6 +94,7 @@
   #wru div.error{background:#000;color:#fff}
 </style>
 <div id="wru"></div>
+<script src="vendor/wru.min.js"></script>
 <script>
   var TESTS = [];
   function test(testfn) {
@@ -134,12 +135,11 @@
       el.dispatchEvent(e);
     }
     window.click = (el) => event('click', {button: 0}, el);
-    window.wait = (fn) => setTimeout(wru.async(fn), 100);
+    window.wait = (fn, t) => setTimeout(wru.async(fn, (t || 1) + 16), t || 1);
 
     TESTS.forEach(t => wru.test(t));
   }
 </script>
-<script src="vendor/wru.min.js"></script>
 <!-- END TESTS -->
 
 
@@ -200,6 +200,10 @@
   </script>
   <script>
     fetchMock.get("/trigger", prev());
+    test(el => {
+      event('mouseenter', null, el.$('a'));
+      wait(() => wru.assert(el.$('a').innerText == 'Good girl! :)'));
+    });
   </script>
 </div>
 
@@ -224,13 +228,17 @@
   <p class="card-body">
     <span ts-data="a=1&b=2&c=3">
       <!-- this will override 'c' value -->
-      <a href="/data" ts-data="b=4&c&c=5" ts-req ts-method="POST" ts-target="parent span">So. Much. Data.</a>
+      <a href="/data" ts-data="b=4&c&c=5" ts-req ts-method="POST">So. Much. Data.</a>
     </span>
   </p>
 
   <script>
     fetchMock.post("/data", function(url, opts) {
-      return '<span>' + opts.body + '</span>';
+      return '<a>' + opts.body + '</a>';
+    });
+    test(el => {
+      click(el.$('a'));
+      wait(() => wru.assert(el.$('a').innerText == 'a=1&b=2&b=4&c=5'));
     });
   </script>
 </div>
@@ -259,6 +267,10 @@
   </script>
   <script>
     fetchMock.get("/target", prev());
+    test(el => {
+      click(el.$('a'));
+      wait(() => wru.assert(el.$('span').innerText = 'Good catch!'));
+    });
   </script>
 </div>
 
@@ -288,6 +300,10 @@
   </script>
   <script>
     fetchMock.get("/closest", prev());
+    test(el => {
+      click(el.$('a'));
+      wait(() => wru.assert(el.$('p').innerText.startsWith('Did you know')));
+    });
   </script>
 </div>
 
@@ -341,6 +357,11 @@
         return new Promise(res => setTimeout(res, 1000, markup))
       });
     })(prev());
+    test(el => {
+      click(el.$('a'));
+      wait(() => wru.assert(el.$('a').classList.contains('ts-active')));
+      //wait(() => wru.assert(!el.$('a').classList.contains('ts-active')), 1050);
+    });
   </script>
 </div>
 
@@ -363,6 +384,13 @@
       <button class="btn" ts-action="remove" ts-trigger="click" ts-target="parent p">Remove me!</button>
     </p>
   </div>
+
+  <script>
+    test(el => {
+      click(el.$('button'));
+      wait(() => wru.assert(el.$('button') == null));
+      });
+  </script>
 </div>
 
 
@@ -379,6 +407,14 @@
       <button class="btn" ts-action="addClass loading, delay 1000, remove" ts-trigger="click">Do it!</button>
     </p>
   </div>
+
+  <script>
+    test(el => {
+      click(el.$('button'));
+      wait(() => wru.assert(el.$('button')));
+      //wait(() => wru.assert(el.$('button')), 1050);
+    });
+  </script>
 </div>
 
 
@@ -396,6 +432,17 @@
               ts-trigger="click">Animate</button>
     </p>
   </div>
+
+  <script>
+    // i don't know if it's possible
+    (el => {
+      click(el.$('button'));
+      wait(() => {
+        console.log(getComputedStyle(el.$('button')).transform);
+        wru.assert(getComputedStyle(el.$('button')).transform != 'none')
+      }, 100);
+    });
+  </script>
 </div>
 
 <!--
