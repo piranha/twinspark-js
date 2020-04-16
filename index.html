@@ -135,7 +135,7 @@
       el.dispatchEvent(e);
     }
     window.click = (el) => event('click', {button: 0}, el);
-    window.wait = (fn, t) => setTimeout(wru.async(fn, (t || 1) + 16), t || 1);
+    window.wait = (fn, t) => setTimeout(wru.async(fn, (t || 16) + 16), t || 16);
 
     TESTS.forEach(t => wru.test(t));
   }
@@ -484,6 +484,7 @@
   </div>
 </div>
 
+<hr>
 
 <h2>Advanced</h2>
 
