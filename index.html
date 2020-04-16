@@ -78,6 +78,71 @@
   <li>jQuery. It is 2020 on the streets already, can we just drop that?</li>
 </ul>
 
+<!-- TESTS -->
+<h2>Tests</h2>
+<p>
+  This document has tests embedded in examples, to run them, press:
+  <button class="btn" onclick="runTests()">Run tests</button>
+</p>
+<style>
+  #wru{font-family:sans-serif;font-size:11pt}
+  #wru div{cursor:default;padding:0;color:#000}
+  #wru div span,#wru div strong{display:block;padding:4px;margin:0}
+  #wru div ul{margin:0;padding-bottom:4px}
+  #wru div.pass{background:#90ee90}
+  #wru div.fail{background:tomato}
+  #wru div.error{background:#000;color:#fff}
+</style>
+<div id="wru"></div>
+<script>
+  var TESTS = [];
+  function test(testfn) {
+    var parent = document.currentScript.closest('div');
+    var example = parent.querySelector('.card-body');
+    var h = parent;
+    while(h && !((h = h.previousElementSibling).tagName == 'H3')) {
+    }
+
+    var test = {
+      name: h && h.innerText || 'test',
+      setup: () => {
+        example.innerHTML = example.initial;
+        twinspark.activate(example);
+      },
+      test: () => {
+        try {
+          testfn(example)
+        } catch (e) {
+          console.error(e);
+          throw e;
+        }
+      },
+      teardown: () => {
+        example.innerHTML = example.initial;
+        twinspark.activate(example);
+      }
+    };
+    TESTS.push(test);
+  }
+
+  function runTests() {
+    Element.prototype.$ = Element.prototype.querySelector;
+    Element.prototype.$$ = Element.prototype.querySelectorAll;
+    window.event = (type, attrs, el) => {
+      var e = new Event(type);
+      if (attrs) Object.assign(e, attrs);
+      el.dispatchEvent(e);
+    }
+    window.click = (el) => event('click', {button: 0}, el);
+    window.wait = (fn) => setTimeout(wru.async(fn), 100);
+
+    TESTS.forEach(t => wru.test(t));
+  }
+</script>
+<script src="vendor/wru.min.js"></script>
+<!-- END TESTS -->
+
+
 <hr>
 
 <h2>Guide</h2>
@@ -106,6 +171,10 @@
   </script>
   <script>
     fetchMock.get("/req", prev());
+    test(el => {
+      click(el.$('a'));
+      wait(() => wru.assert(el.$('a').innerText == 'Updated!'));
+    });
   </script>
 </div>
 
@@ -366,4 +435,42 @@
       Here was some text written. Probably.
     </p>
   </div>
+</div>
+
+
+<h2>Advanced</h2>
+
+<h3 id="batch">Batching requests</h3>
+<p>This is a thing which is not immediately obvious, but is one of the reasons why
+  TwinSpark appeared. It is an important optimization. Our use case for it was
+  following: page renders for an anonymous user (for efficient caching on CDN) and
+  then status of wishlisted products is checked. It's a pattern we use often and
+  we really wanted it to be a first-class feature.</p>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <span ts-data="campaign_id=123">
+      <!-- <span ts-req-batch ts-href="/batch" ts-data="id=1" ts-trigger="visible">Span 1</span>
+           <span ts-req-batch ts-href="/batch" ts-data="id=2" ts-trigger="visible">Span 2</span>
+           <span ts-req-batch ts-href="/batch" ts-data="id=3" ts-trigger="visible">Span 3</span> -->
+    </span>
+  </p>
+
+  <script type="text/html">
+    <span ts-req ts-href="/batch" ts-req-batch="XXX">Span XXX updated</span>
+  </script>
+  <script>
+    (function(markup) {
+      fetchMock.get("/batch", function(url, opts) {
+        var qs = url.split('?')[1]; // FIXME: как определить ts-req-batch'и?
+        return new Promise(res => setTimeout(res, 1000, markup))
+      });
+    })(prev());
+  </script>
 </div>
