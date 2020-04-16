@@ -6,20 +6,24 @@
   /// Internal data structures
 
   var READY = false;
+  /** @type {boolean} */
   var DEBUG = window.localStorage._ts_debug || false;
-  var DIRECTIVES = []; // [{selector: x, handler: y}]
+
+  /** @type Array<{selector: string, handler: (function(Element): void)}> */
+  var DIRECTIVES = [];
 
 
   /// Utils
 
   var err = console.log.bind(console, 'TwinSpark error:');
-  /** @type {function(...*):void} */
+  /** @type {function(...*): void} */
   function log() {
     if (DEBUG) {
       console.log.apply(console, arguments);
     }
   }
 
+  /** @type {function(Function): void} */
   function onload(fn) {
     if (document.readyState == 'loading') {
       document.addEventListener('DOMContentLoaded', fn);
@@ -28,6 +32,7 @@
     }
   }
 
+  /** @type {function(Element, string): Array<string>} */
   function collect(el, attribute) {
     var result = [];
     var value;
@@ -43,7 +48,7 @@
     return result;
   }
 
-  /** @type {function(Element, string, boolean, Object=):void} */
+  /** @type {function(Element, string, boolean, Object=): void} */
   function sendEvent(el, type, bubbles, attrs) {
     log('dispatching event', type, el, attrs);
     var event = new Event(type, {bubbles: bubbles});
@@ -54,6 +59,7 @@
 
   /// Core
 
+  /** @type {function(Element, {selector: string, handler: (function(Element): void)}): void} */
   function attach(el, directive) {
     if (el.matches(directive.selector)) {
       directive.handler(el);
@@ -65,6 +71,12 @@
     }
   }
 
+  /**
+   * Registers new directive.
+   * @param  {string} selector Directive selector.
+   * @param  {function(Element): void} handler Directive callback.
+   * @return void
+   */
   function register(selector, handler) {
     var directive = {selector: selector, handler: handler};
     DIRECTIVES.push(directive);
@@ -73,11 +85,13 @@
     }
   }
 
+  /** @type {function(Element): void} */
   function activate(el) {
     DIRECTIVES.forEach(d => attach(el, d));
     sendEvent(el, 'ts-ready', true);
   }
 
+  /** @type {function(Element): void} */
   function autofocus(el) {
     var els = el.querySelectorAll('[autofocus]');
     if (els.length > 0) {
@@ -85,6 +99,7 @@
     }
   }
 
+  /** @type {function(Event=): void} */
   function init(_e) {
     activate(document.body);
     READY = true;
@@ -96,12 +111,14 @@
 
   /// Ajax
 
+  /** @type {function(number, *): Promise<*> } */
   function delay(ms, rv) {
     return new Promise(resolve => setTimeout(resolve, ms, rv));
   }
 
+  /** @type {function(string, RequestInit): Promise<*> } */
   function xhr(url, opts) {
-    return fetch(url, opts)
+    return fetch(url, opts || undefined)
       .then(function(res) {
         return res.text().then(text => {
           res.content = text;
@@ -113,7 +130,7 @@
 
   /// Fragments
 
-  /** @type {function(Element, boolean=):?Element} */
+  /** @type {function(Element, boolean=): ?Element} */
   function findTarget(el, _recurse) {
     var sel = el.getAttribute('ts-target');
     if (sel) {
@@ -131,6 +148,7 @@
       (_recurse ? null : el);
   }
 
+  /** @type {function(Element, ?string, string): void} */
   function swap(el, targetSel, content) {
     var html = new DOMParser().parseFromString(content, 'text/html');
     var toSwap;
@@ -144,6 +162,9 @@
       // NOTE: maybe just html.body.children[0] ?
       toSwap = html.getElementsByTagName(el.tagName)[0];
     }
+    if (!toSwap) {
+      err('no new HTML found!');
+    }
     el.replaceWith(toSwap);
 
     el = toSwap;
@@ -151,8 +172,13 @@
     autofocus(el);
   }
 
+  /**
+   * Parse either query string or JSON object.
+   * @param {string} v String to be parsed.
+   * @return URLSearchParams|Array<Array<string,*>>|null
+   */
   function parseData(v) {
-    if (!v) return;
+    if (v == "") return null;
 
     if (v.startsWith('{')) {
       var data = JSON.parse(v);
@@ -164,6 +190,10 @@
     }
   }
 
+  /**
+   * @type {function(Element): URLSearchParams}
+   * @suppress {reportUnknownTypes}
+   */
   function collectData(el) {
     // reduceRight because deepest element is the first one
     var data = collect(el, 'ts-data').reduceRight((acc, v) => {
@@ -179,6 +209,7 @@
     return data;
   }
 
+  /** @type {function(Element): void} */
   function doRequest(el) {
     var url = el.getAttribute('ts-href') || el.getAttribute('href');
     var targetSel = el.getAttribute('ts-target');
@@ -212,7 +243,7 @@
   }
 
   var requestSel = '[ts-req], [ts-req-batch], [ts-href]';
-  register(requestSel, function(el) {
+  register('[ts-req], [ts-href]', function(el) {
     el.addEventListener('click', function(e) {
       if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey || e.button != 0)
         return;
@@ -220,15 +251,19 @@
       e.preventDefault();
       doRequest(el);
     });
-    el.addEventListener('ts-trigger', function(e) {
-      doRequest(el);
-    });
+    el.addEventListener('ts-trigger', e => doRequest(el));
   });
+
 
 
   /// Actions
 
+  /**
+   * @type {function(string): string|number|Object}
+   * @suppress {reportUnknownTypes}
+   */
   function parseValue(s) {
+    /** @type {string} */
     var c = s[0];
     if (c == '{' || c == '[') {
       return JSON.parse(s);
@@ -244,6 +279,10 @@
 
   var CLOSING = {'"': '"', "'": "'", "{": "}", "[": "]"};
 
+  /**
+   * @type {function(string): Array<Array<string|number|Object>> }
+   * @suppress {reportUnknownTypes}
+   */
   function parseActionSpec(cmd) {
     var result = [];
     var command = [];
@@ -266,12 +305,12 @@
       if (json) {
         current += c;
         if (c == CLOSING[json]) {
-          json = false;
+          json = null;
         }
       } else if (string) {
         current += c;
         if (c == CLOSING[string]) {
-          string = false;
+          string = null;
         }
       } else {
         if ((c == "{") || (c == "[")) {
@@ -299,35 +338,62 @@
     return result;
   }
 
+  /**
+   * @type {function(Event, Element, Array<string|number|Object>): Promise|null|undefined}
+   * @suppress {checkTypes|reportUnknownTypes}
+   */
   function executeAction(e, target, command) {
     var cmd = command[0];
+    if (typeof cmd != 'string') {
+      throw 'Cannot work with action ' + cmd + ' of type ' + typeof cmd;
+    }
     var args = command.slice(1);
 
     if (cmd == 'delay') {
       return delay.apply(null, args);
-    } else if (cmd == 'stop') {
-      e.stopPropagation();
-    } else if (cmd == 'cancel') {
-      e.preventDefault();
-
-    } else if (cmd == 'addClass') {
-      target.classList.add.apply(target.classList, args);
-    } else if (cmd == 'removeClass') {
-      target.classList.remove.apply(target.classList, args);
-    } else if (cmd == 'toggleClass') {
-      target.classList.toggle.apply(target.classList, args);
-    } else if (cmd == 'replaceClass') {
-      target.classList.replace.apply(target.classList, args);
-
-    } else if (cmd in target) {
-      // remove etc
-      target[cmd].apply(target, args);
-    } else if (cmd in window) {
-      // extension point
-      window[cmd].apply(window, args);
     }
+
+    if (cmd == 'stop') {
+      return e.stopPropagation();
+    }
+
+    if (cmd == 'cancel') {
+      return e.preventDefault();
+    }
+
+    if (cmd == 'addClass') {
+      return target.classList.add.apply(target.classList, args);
+    }
+
+    if (cmd == 'removeClass') {
+      return target.classList.remove.apply(target.classList, args);
+    }
+
+    if (cmd == 'toggleClass') {
+      return target.classList.toggle.apply(target.classList, args);
+    }
+
+    if (cmd == 'replaceClass') {
+      return target.classList.replace.apply(target.classList, args);
+    }
+
+    // remove etc
+    if (cmd in target) {
+      return target[cmd].apply(target, args);
+    }
+
+    // extension point
+    if (cmd in window) {
+      if (typeof window[cmd] != 'function') {
+        return err("Expected function '" + cmd + "', but got", typeof window[cmd])
+      }
+      return window[cmd].apply(window, args);
+    }
+
+    return err('Unknown action', cmd);
   }
 
+  /** @type {function(Element, Event): void} */
   function doAction(el, e) {
     var target = findTarget(el);
     var commands = parseActionSpec(el.getAttribute('ts-action'));
@@ -358,9 +424,8 @@
 
   register('[ts-trigger]', function(el) {
     // intercooler modifiers? like changed, once, delay?
-    // TODO: implement 'seen'
     var trigger = el.getAttribute('ts-trigger');
-    if (!trigger) return;
+    if (trigger == null || trigger == '') return;
 
     trigger.split(',').forEach(function(t) {
       t = t.trim();
@@ -368,7 +433,7 @@
         sendEvent(el, 'ts-trigger', false, {reason: 'load'});
       } else if (t == 'visible') {
         obs.observe(el);
-      } else {
+      } else if (t != "") {
         el.addEventListener(t, function(e) {
           sendEvent(el, 'ts-trigger', false, {reason: e});
         });
@@ -382,13 +447,14 @@
   twinspark = {
     onload: onload,
     register: register,
-    collect: collect,
+    activate: activate,
     log_toggle: function() {
       window.localStorage._ts_debug = DEBUG ? '' : 'true';
       DEBUG = !DEBUG;
     },
     _internal: {DIRECTIVES: DIRECTIVES,
                 init: init,
+                collect: collect,
                 parse: parseActionSpec,
                 obs: obs}
   };

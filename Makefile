@@ -1,10 +1,12 @@
-CCOPTS = --language_out ECMASCRIPT_2019
+CCOPTS = --language_out ECMASCRIPT_2017 --jscomp_warning=reportUnknownTypes
 
-min: twinspark.min.js
-adv: twinspark.adv.js
+min: dist/twinspark.min.js
+adv: dist/twinspark.adv.js
 
-%.min.js: %.js
+dist/%.min.js: %.js
+	@mkdir -p $(@D)
 	closure-compiler $(CCOPTS) $*.js > $@
 
-%.adv.js: %.js
+dist/%.adv.js: %.js
+	@mkdir -p $(@D)
 	closure-compiler -O ADVANCED $(CCOPTS) $*.js > $@
