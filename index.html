@@ -49,6 +49,11 @@
         }
       });
     });
+
+    // Extensions for our "app"
+    function get_user() {
+      return localStorage.getItem('user');
+    }
   </script>
   <style>
     body {padding-bottom: 3em;} /* until we get footer? */
@@ -203,6 +208,42 @@
     test(el => {
       event('mouseenter', null, el.$('a'));
       wait(() => wru.assert(el.$('a').innerText == 'Good girl! :)'));
+    });
+  </script>
+</div>
+
+
+<h3 id="before" class="mt-2">Doing stuff before/after request</h3>
+<p>If you need to do some custom things around your request, you can use
+  <code>ts-req-before</code> and <code>ts-req-after</code>. Those use same
+  syntax as <a href="#action"><code>ts-action</code></a>, so it's pretty
+  flexible. One additional thing is that if last (or the only) command of
+  <code>ts-req-before</code> returns falsy value (<code>false</code>, or
+  an empty string, or a zero) - this stops that request.</p>
+
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <a href="/before" ts-req ts-req-before="delay 200">This will work with delay</a><br>
+    <a href="/before" ts-req ts-req-before="get_user">This is prevented</a>
+  </p>
+
+  <script type="text/html">
+    <a href="/before" ts-req>Did you see it?</a>
+  </script>
+  <script>
+    fetchMock.get("/before", prev());
+    test(el => {
+      click(el.$$('a')[0])
+      click(el.$$('a')[1])
+      wait(() => wru.assert(el.$$('a')[0].innerText == 'Did you see it?'), 220);
+      wait(() => wru.assert(el.$$('a')[1].innerText == 'This is prevented'));
     });
   </script>
 </div>

@@ -140,7 +140,7 @@
 
   /** @type {function(number, *): Promise<*> } */
   function delay(ms, rv) {
-    return new Promise(resolve => setTimeout(resolve, ms, rv));
+    return new Promise(resolve => setTimeout(resolve, ms, rv || true));
   }
 
   /** @type {function(string, RequestInit): Promise<*> } */
@@ -191,7 +191,7 @@
   // `origin` - an element where request started from, a link or a button
   // `target` - where the incoming HTML will end up
   // `reply` - incoming HTML to end up in target
-  /** @type {function(Element[], string): void} */
+  /** @type {function(Element[], string): Element[]} */
   function swap(origins, content) {
     var html = new DOMParser().parseFromString(content, 'text/html');
     var children = Array.from(html.body.children);
@@ -217,6 +217,7 @@
     });
 
     autofocus(swapped);
+    return swapped;
   }
 
   /**
@@ -260,7 +261,9 @@
     return data;
   }
 
-  function doBatch(batch) {
+  function _doBatch(batch) {
+    if (batch.length == 0) return;
+
     var url = batch[0].url;
     var method = batch[0].method;
     var data = batch.reduce(
@@ -282,16 +285,25 @@
       .then(function(res) {
         origins.forEach(el => el.classList.remove('ts-active'));
         if (res.ok) {
-          swap(origins, res.content);
+          return swap(origins, res.content);
         } else {
           err(res.content);
         }
+      })
+      .then(function(swapped) {
+        if (swapped)
+          swapped.forEach(el => doAction(el, null, firstAttr(el, 'ts-req-after')));
       })
       .catch(function(res) {
         origins.forEach(el => el.classList.remove('ts-active'));
         err('Network interrupt or something', arguments);
       });
+  }
 
+  function doBatch(batch) {
+    Promise.all(batch.map(req => doAction(req.el, null, firstAttr(req.el, 'ts-req-before'))))
+      .then(result => batch.filter((req, i) => result[i]))
+      .then(_doBatch);
   }
 
   // Batch Request Queue
@@ -437,7 +449,7 @@
    * @type {function(Event, Element, Array<string|number|Object>): Promise|null|undefined}
    * @suppress {checkTypes|reportUnknownTypes}
    */
-  function executeAction(e, target, command) {
+  function executeAction(target, e, command) {
     var cmd = command[0];
     if (typeof cmd != 'string') {
       throw 'Cannot work with action ' + cmd + ' of type ' + typeof cmd;
@@ -489,18 +501,19 @@
   }
 
   /** @type {function(Element, Event): void} */
-  function doAction(el, e) {
-    var target = findTarget(el);
-    var commands = parseActionSpec(el.getAttribute('ts-action'));
+  function doAction(target, e, elspec) {
+    if (!elspec) return true;
 
-    commands.reduce(function(p, command) {
-      return p.then(function(_) { return executeAction(e, target, command); });
+    var commands = parseActionSpec(elspec[1]);
+
+    return commands.reduce(function(p, command) {
+      return p.then(function(_) { return executeAction(target, e, command); });
     }, Promise.resolve(1));
   }
 
   register('[ts-action]', function(el) {
     el.addEventListener('ts-trigger', function(e) {
-      doAction(el, e);
+      doAction(findTarget(el), e, firstAttr(el, 'ts-action'));
     });
   });
 
