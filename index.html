@@ -505,29 +505,30 @@
 
   <p class="card-body">
     <span ts-data="campaign=123">
-      <span ts-req-batch ts-href="/batch" ts-data="id=1" ts-trigger="visible">Span 1</span>
-      <span ts-req-batch ts-href="/batch" ts-data="id=2" ts-trigger="visible">Span 2</span>
-      <span ts-req-batch ts-href="/batch" ts-data="id=3" ts-trigger="visible">Span 3</span>
+      <span ts-req-batch ts-href="/batch" ts-data="id=1" ts-trigger="visible">Span 1</span><br>
+      <span ts-req-batch ts-href="/batch" ts-data="id=2" ts-trigger="visible">Span 2</span><br>
+      <span ts-req-batch ts-href="/batch" ts-data="id=3" ts-trigger="visible">Span 3</span><br>
     </span>
   </p>
 
   <script type="text/html">
-    <span>Updated Span 1</span>
-    <span>Updated Span 2</span>
-    <span>Updated Span 3</span>
+    <span>Updated Span 1 at</span>
+    <span>Updated Span 2 at</span>
+    <span>Updated Span 3 at</span>
   </script>
   <script>
     (function(markup) {
       fetchMock.get("path:/batch", function(url, opts) {
         var qs = url.split('?')[1]; // FIXME: как определить ts-req-batch'и?
         //console.log(qs);
-        return markup;
+        var now = +new Date();
+        return markup.replace(/ at/g, ' at ' + now);
       });
     })(prev());
     // how do I emulate "visibility" from intersection observer
     /*test*/(el => {
       wait(() => {
-        el.$('span').innerText == 'Updated Span 1';
+        el.$('span').innerText.startsWith('Updated Span 1');
       });
     })
   </script>

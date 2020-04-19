@@ -32,20 +32,40 @@
     }
   }
 
+  function qsf(el, selector) { // querySelectorFirst
+    if (el.matches(selector))
+      return el;
+    return el.querySelector(selector);
+  }
+
+  function qse(el, selector) { // querySelectorEvery
+    var els = Array.from(el.querySelectorAll(selector));
+    if (el.matches(selector))
+      els.unshift(el);
+    return els;
+  }
+
   /** @type {function(Element, string): Array<string>} */
   function collect(el, attribute) {
     var result = [];
     var value;
 
-    while(el) {
+    do {
       value = el.getAttribute(attribute);
       if (value) {
         result.push(value);
       }
-      el = el.parentElement;
-    }
+    } while (el = el.parentElement);
 
     return result;
+  }
+
+  function firstAttr(el, attribute) {
+    do {
+      if (el.hasAttribute(attribute)) {
+        return [el, el.getAttribute(attribute)];
+      }
+    } while (el = el.parentElement);
   }
 
   /** @type {function(Element, string, boolean, Object=): void} */
@@ -69,14 +89,7 @@
 
   /** @type {function(Element, {selector: string, handler: (function(Element): void)}): void} */
   function attach(el, directive) {
-    if (el.matches(directive.selector)) {
-      directive.handler(el);
-    }
-
-    var els = el.querySelectorAll(directive.selector);
-    if (els.length) {
-      [].forEach.call(els, directive.handler);
-    }
+    qse(el, directive.selector).forEach(directive.handler);
   }
 
   /**
@@ -99,12 +112,12 @@
     sendEvent(el, 'ts-ready', true);
   }
 
-  /** @type {function(...Element): void} */
+  /** @type {function(Element|Element[]): void} */
   function autofocus(els) {
     if (!(Array.isArray(els))) {
       els = [els];
     }
-    var toFocus = els.map(el => el.querySelectorAll('[autofocus]'))
+    var toFocus = els.map(el => qse(el, '[autofocus]'))
         .filter(els => els.length)
         .reduce((acc, els) => acc.concat(els), []);
 
@@ -144,66 +157,66 @@
 
   /// Fragments
 
-  /** @type {function(Element, boolean=): ?Element} */
-  function findTarget(el, _recurse) {
-    var sel = el.getAttribute('ts-target');
-    if (sel) {
-      if (sel == 'this')
-        return el;
-      if (sel.startsWith('parent '))
-        return el.closest(sel.slice(7));
-      if (sel.startsWith('child '))
-        return el.querySelector(sel.slice(6));
-      return document.querySelector(sel);
-    }
+  /** @type {function(Element): Element} */
+  function findTarget(el) {
+    var res = firstAttr(el, 'ts-target');
+    if (!res)
+      return el;
 
-    return el.parentElement &&
-      findTarget(el.parentElement, true) ||
-      (_recurse ? null : el);
+    var target = res[0];
+    var sel = res[1];
+
+    if (sel == 'this')
+      return target;
+    if (sel.startsWith('parent '))
+      return target.closest(sel.slice(7));
+    if (sel.startsWith('child '))
+      return target.querySelector(sel.slice(6));
+    return document.querySelector(sel);
   }
 
-  /** @type {function(Element, ?string, string): void} */
-  function swap(el, targetSel, content) {
-    var html = new DOMParser().parseFromString(content, 'text/html');
-    var toSwap;
-    if (targetSel) {
-      toSwap = html.querySelector(targetSel.startsWith('parent ') ?
-                                  targetSel.slice(7) :
-                                  targetSel);
-    } else {
-      // this should be used in case of prepend/append only, to simplify logic
-      //toSwap = html.body.children;
-      // NOTE: maybe just html.body.children[0] ?
-      toSwap = html.getElementsByTagName(el.tagName)[0];
-    }
-    if (!toSwap) {
-      throw 'no new HTML found!';
-    }
-    el.replaceWith(toSwap);
+  function findReply(el, reply) {
+    var res = firstAttr(el, 'ts-req-selector');
+    if (!res)
+      return reply;
 
-    el = toSwap;
-    activate(el);
-    autofocus(el);
+    var sel = res[1];
+
+    if (sel == 'this')
+      return reply;
+    return qsf(reply, sel);
   }
 
-  function batchSwap(els, content) {
+  // Terminology:
+  // `origin` - an element where request started from, a link or a button
+  // `target` - where the incoming HTML will end up
+  // `reply` - incoming HTML to end up in target
+  /** @type {function(Element[], string): void} */
+  function batchSwap(origins, content) {
     var html = new DOMParser().parseFromString(content, 'text/html');
     var children = Array.from(html.body.children);
 
-    if (children.length < els.length) {
-      throw ('Batch request requires at least ' + els.length +
+    if (children.length < origins.length) {
+      throw ('Batch request requires at least ' + origins.length +
              ' elements, but only ' + children.length + ' were returned');
     }
 
-    var swapped = els.map((el, i) => {
-      var target = findTarget(el);
-      var toSwap = children[i];
-      target.replaceWith(toSwap);
-      activate(toSwap);
-      return toSwap;
+    var swapped = origins.map((origin, i) => {
+      var target = findTarget(origin);
+      var reply = findReply(origin, children[i]);
+      var strategy = firstAttr(origin, 'ts-req-strategy') || 'replace';
+
+      switch (strategy) {
+      case 'replace': target.replaceWith(reply); break;
+      case 'prepend': target.prepend(reply); break;
+      case 'append': target.append(reply); break;
+      }
+
+      activate(reply);
+      return reply;
     });
 
-    autofocus.apply(null, swapped);
+    autofocus(swapped);
   }
 
   /**
@@ -254,9 +267,6 @@
         target.tagName == 'FORM' ? 'POST' : 'GET';
     var data = collectData(el).toString();
 
-    var targetSel = el.getAttribute('ts-target');
-    var target = findTarget(el);
-
     var qs = data && method == 'GET' ? '?' + data : '';
     var body = data && method != 'GET' ? data : null;
     var opts = {method:  method,
@@ -270,7 +280,7 @@
       .then(function(res) {
         el.classList.remove('ts-active');
         if (res.ok) {
-          swap(target, targetSel, res.content);
+          batchSwap([el], res.content);
         } else {
           err(res.content);
         }
@@ -284,7 +294,6 @@
   function batchRequest(batch) {
     var url = batch[0].url;
     var method = batch[0].method;
-    // FIXME: collectData(req.el) is endless now
     var data = batch.reduce(
       (acc, req) => mergeParams(acc, collectData(req.el)),
       new URLSearchParams()).toString();
@@ -297,20 +306,20 @@
                           'Content-Type': body ? 'application/x-www-form-urlencoded' : ''},
                 body:    body};
     var req = xhr(url + qs, opts);
-    var els = batch.map(req => req.el);
+    var origins = batch.map(req => req.el);
 
-    els.forEach(el => el.classList.add('ts-active'));
+    origins.forEach(el => el.classList.add('ts-active'));
     req
       .then(function(res) {
-        els.forEach(el => el.classList.remove('ts-active'));
+        origins.forEach(el => el.classList.remove('ts-active'));
         if (res.ok) {
-          batchSwap(els, res.content);
+          batchSwap(origins, res.content);
         } else {
           err(res.content);
         }
       })
       .catch(function(res) {
-        els.forEach(el => el.classList.remove('ts-active'));
+        origins.forEach(el => el.classList.remove('ts-active'));
         err('Network interrupt or something', arguments);
       });
 
