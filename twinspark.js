@@ -192,7 +192,7 @@
   // `target` - where the incoming HTML will end up
   // `reply` - incoming HTML to end up in target
   /** @type {function(Element[], string): void} */
-  function batchSwap(origins, content) {
+  function swap(origins, content) {
     var html = new DOMParser().parseFromString(content, 'text/html');
     var children = Array.from(html.body.children);
 
@@ -260,38 +260,7 @@
     return data;
   }
 
-  /** @type {function(Element): void} */
-  function doRequest(el) {
-    var url = el.getAttribute('ts-href') || el.getAttribute('href');
-    var method = el.getAttribute('ts-method') ||
-        target.tagName == 'FORM' ? 'POST' : 'GET';
-    var data = collectData(el).toString();
-
-    var qs = data && method == 'GET' ? '?' + data : '';
-    var body = data && method != 'GET' ? data : null;
-    var opts = {method:  method,
-                headers: {'Accept-Encoding': 'text/html+partial',
-                          'Content-Type': body ? 'application/x-www-form-urlencoded' : null},
-                body:    body};
-    var req = xhr(url + qs, opts);
-
-    el.classList.add('ts-active');
-    req
-      .then(function(res) {
-        el.classList.remove('ts-active');
-        if (res.ok) {
-          batchSwap([el], res.content);
-        } else {
-          err(res.content);
-        }
-      })
-      .catch(function(r) {
-        el.classList.remove('ts-active');
-        err('Network interrupt or something', arguments);
-      });
-  }
-
-  function batchRequest(batch) {
+  function doBatch(batch) {
     var url = batch[0].url;
     var method = batch[0].method;
     var data = batch.reduce(
@@ -313,7 +282,7 @@
       .then(function(res) {
         origins.forEach(el => el.classList.remove('ts-active'));
         if (res.ok) {
-          batchSwap(origins, res.content);
+          swap(origins, res.content);
         } else {
           err(res.content);
         }
@@ -326,26 +295,35 @@
   }
 
   // Batch Request Queue
-  var _reqs = [];
-  var _request = null;
+  var queue = {
+    reqs: [],
+    request: null
+  };
 
   function executeRequests() {
-    var batches = groupBy(_reqs, req => req.method + req.url);
-    _reqs = [];
-    _request = null;
+    var batches = groupBy(queue.reqs, req => req.method + req.url);
+    queue = {reqs: [], request: null};
 
-    Object.values(batches).forEach(batchRequest);
+    Object.values(batches).forEach(doBatch);
   }
 
-  function queueRequest(el) {
-    var url = el.getAttribute('ts-href') || el.getAttribute('href');
+  function queueRequest(req) {
+    queue.reqs.push(req);
+    if (!queue.request) {
+      queue.request = setTimeout(executeRequests, 16);
+    }
+  }
+
+  function makeReq(el, batch) {
+    var url = (batch ? el.getAttribute('ts-req-batch') : el.getAttribute('ts-req')) ||
+        el.getAttribute('href');
     var method = el.getAttribute('ts-method') ||
         target.tagName == 'FORM' ? 'POST' : 'GET';
 
-    _reqs.push({el: el, url: url, method: method});
-    if (!_request) {
-      _request = setTimeout(executeRequests, 16);
-    }
+    return {el:     el,
+            url:    url,
+            method: method,
+            batch:  batch};
   }
   // End Batch Request Queue
 
@@ -355,9 +333,9 @@
         return;
 
       e.preventDefault();
-      doRequest(el);
+      doBatch([makeReq(el, false)]);
     });
-    el.addEventListener('ts-trigger', e => doRequest(el));
+    el.addEventListener('ts-trigger', e => doBatch([makeReq(el, false)]));
   });
 
 
@@ -367,9 +345,9 @@
         return;
 
       e.preventDefault();
-      queueRequest(el);
+      queueRequest(makeReq(el, true));
     });
-    el.addEventListener('ts-trigger', e => queueRequest(el));
+    el.addEventListener('ts-trigger', e => queueRequest(makeReq(el, true)));
   });
 
 
