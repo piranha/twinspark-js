@@ -482,7 +482,7 @@
       if (typeof window[cmd] != 'function') {
         return err("Expected function '" + cmd + "', but got", typeof window[cmd])
       }
-      return window[cmd].apply(window, args);
+      return window[cmd].apply(target, args);
     }
 
     return err('Unknown action', cmd);
