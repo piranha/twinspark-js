@@ -435,7 +435,7 @@
 
   <script>
     // i don't know if it's possible
-    (el => {
+    /*test*/(el => {
       click(el.$('button'));
       wait(() => {
         console.log(getComputedStyle(el.$('button')).transform);
@@ -478,8 +478,9 @@
   </div>
 
   <div class="card-body">
-    <p ts-action="addClass loading" ts-trigger="visible">
-      Here was some text written. Probably.
+    <p ts-action="addClass loading, delay 5000, removeClass loading" ts-trigger="visible">
+      You'll probably this text after around 5 seconds or so. Click "Reset" to see
+      loader again.
     </p>
   </div>
 </div>
@@ -503,22 +504,31 @@
   </div>
 
   <p class="card-body">
-    <span ts-data="campaign_id=123">
-      <!-- <span ts-req-batch ts-href="/batch" ts-data="id=1" ts-trigger="visible">Span 1</span>
-           <span ts-req-batch ts-href="/batch" ts-data="id=2" ts-trigger="visible">Span 2</span>
-           <span ts-req-batch ts-href="/batch" ts-data="id=3" ts-trigger="visible">Span 3</span> -->
+    <span ts-data="campaign=123">
+      <span ts-req-batch ts-href="/batch" ts-data="id=1" ts-trigger="visible">Span 1</span>
+      <span ts-req-batch ts-href="/batch" ts-data="id=2" ts-trigger="visible">Span 2</span>
+      <span ts-req-batch ts-href="/batch" ts-data="id=3" ts-trigger="visible">Span 3</span>
     </span>
   </p>
 
   <script type="text/html">
-    <span ts-req ts-href="/batch" ts-req-batch="XXX">Span XXX updated</span>
+    <span>Updated Span 1</span>
+    <span>Updated Span 2</span>
+    <span>Updated Span 3</span>
   </script>
   <script>
     (function(markup) {
-      fetchMock.get("/batch", function(url, opts) {
+      fetchMock.get("path:/batch", function(url, opts) {
         var qs = url.split('?')[1]; // FIXME: как определить ts-req-batch'и?
-        return new Promise(res => setTimeout(res, 1000, markup))
+        //console.log(qs);
+        return markup;
       });
     })(prev());
+    // how do I emulate "visibility" from intersection observer
+    /*test*/(el => {
+      wait(() => {
+        el.$('span').innerText == 'Updated Span 1';
+      });
+    })
   </script>
 </div>

@@ -56,6 +56,14 @@
     el.dispatchEvent(event);
   }
 
+  function groupBy(arr, keyfn) {
+    return arr.reduce((acc, v) => {
+      var key = keyfn(v);
+      (acc[key] || (acc[key] = [])).push(v);
+      return acc;
+    }, {});
+  }
+
 
   /// Core
 
@@ -91,11 +99,17 @@
     sendEvent(el, 'ts-ready', true);
   }
 
-  /** @type {function(Element): void} */
-  function autofocus(el) {
-    var els = el.querySelectorAll('[autofocus]');
-    if (els.length > 0) {
-      els[els.length - 1].focus();
+  /** @type {function(...Element): void} */
+  function autofocus(els) {
+    if (!(Array.isArray(els))) {
+      els = [els];
+    }
+    var toFocus = els.map(el => el.querySelectorAll('[autofocus]'))
+        .filter(els => els.length)
+        .reduce((acc, els) => acc.concat(els), []);
+
+    if (toFocus.length > 0) {
+      toFocus[toFocus.length - 1].focus();
     }
   }
 
@@ -163,13 +177,33 @@
       toSwap = html.getElementsByTagName(el.tagName)[0];
     }
     if (!toSwap) {
-      err('no new HTML found!');
+      throw 'no new HTML found!';
     }
     el.replaceWith(toSwap);
 
     el = toSwap;
     activate(el);
     autofocus(el);
+  }
+
+  function batchSwap(els, content) {
+    var html = new DOMParser().parseFromString(content, 'text/html');
+    var children = Array.from(html.body.children);
+
+    if (children.length < els.length) {
+      throw ('Batch request requires at least ' + els.length +
+             ' elements, but only ' + children.length + ' were returned');
+    }
+
+    var swapped = els.map((el, i) => {
+      var target = findTarget(el);
+      var toSwap = children[i];
+      target.replaceWith(toSwap);
+      activate(toSwap);
+      return toSwap;
+    });
+
+    autofocus.apply(null, swapped);
   }
 
   /**
@@ -190,34 +224,38 @@
     }
   }
 
+  function mergeParams(p1, p2) {
+    for (var x of p2) {
+        if ((x[1] === null) || (x[1] === '')) {
+          p1.delete(x[0]);
+        } else {
+          p1.append(x[0], x[1]);
+        }
+    }
+    return p1;
+  }
+
   /**
    * @type {function(Element): URLSearchParams}
    * @suppress {reportUnknownTypes}
    */
   function collectData(el) {
     // reduceRight because deepest element is the first one
-    var data = collect(el, 'ts-data').reduceRight((acc, v) => {
-      for (var x of parseData(v)) {
-        if ((x[1] === null) || (x[1] === '')) {
-          acc.delete(x[0]);
-        } else {
-          acc.append(x[0], x[1]);
-        }
-      }
-      return acc;
-    }, new URLSearchParams());
+    var data = collect(el, 'ts-data').reduceRight(
+      (acc, v) => mergeParams(acc, parseData(v)),
+      new URLSearchParams());
     return data;
   }
 
   /** @type {function(Element): void} */
   function doRequest(el) {
     var url = el.getAttribute('ts-href') || el.getAttribute('href');
-    var targetSel = el.getAttribute('ts-target');
-    var target = findTarget(el);
     var method = el.getAttribute('ts-method') ||
         target.tagName == 'FORM' ? 'POST' : 'GET';
-
     var data = collectData(el).toString();
+
+    var targetSel = el.getAttribute('ts-target');
+    var target = findTarget(el);
 
     var qs = data && method == 'GET' ? '?' + data : '';
     var body = data && method != 'GET' ? data : null;
@@ -228,7 +266,8 @@
     var req = xhr(url + qs, opts);
 
     el.classList.add('ts-active');
-    req.then(function(res) {
+    req
+      .then(function(res) {
         el.classList.remove('ts-active');
         if (res.ok) {
           swap(target, targetSel, res.content);
@@ -242,8 +281,66 @@
       });
   }
 
-  var requestSel = '[ts-req], [ts-req-batch], [ts-href]';
-  register('[ts-req], [ts-href]', function(el) {
+  function batchRequest(batch) {
+    var url = batch[0].url;
+    var method = batch[0].method;
+    // FIXME: collectData(req.el) is endless now
+    var data = batch.reduce(
+      (acc, req) => mergeParams(acc, collectData(req.el)),
+      new URLSearchParams()).toString();
+
+    var qs = data && method == 'GET' ? '?' + data : '';
+    var body = data && method != 'GET' ? data : null;
+
+    var opts = {method:  method,
+                headers: {'Accept': 'text/html+partial',
+                          'Content-Type': body ? 'application/x-www-form-urlencoded' : ''},
+                body:    body};
+    var req = xhr(url + qs, opts);
+    var els = batch.map(req => req.el);
+
+    els.forEach(el => el.classList.add('ts-active'));
+    req
+      .then(function(res) {
+        els.forEach(el => el.classList.remove('ts-active'));
+        if (res.ok) {
+          batchSwap(els, res.content);
+        } else {
+          err(res.content);
+        }
+      })
+      .catch(function(res) {
+        els.forEach(el => el.classList.remove('ts-active'));
+        err('Network interrupt or something', arguments);
+      });
+
+  }
+
+  // Batch Request Queue
+  var _reqs = [];
+  var _request = null;
+
+  function executeRequests() {
+    var batches = groupBy(_reqs, req => req.method + req.url);
+    _reqs = [];
+    _request = null;
+
+    Object.values(batches).forEach(batchRequest);
+  }
+
+  function queueRequest(el) {
+    var url = el.getAttribute('ts-href') || el.getAttribute('href');
+    var method = el.getAttribute('ts-method') ||
+        target.tagName == 'FORM' ? 'POST' : 'GET';
+
+    _reqs.push({el: el, url: url, method: method});
+    if (!_request) {
+      _request = setTimeout(executeRequests, 16);
+    }
+  }
+  // End Batch Request Queue
+
+  register('[ts-req]', function(el) {
     el.addEventListener('click', function(e) {
       if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey || e.button != 0)
         return;
@@ -254,6 +351,17 @@
     el.addEventListener('ts-trigger', e => doRequest(el));
   });
 
+
+  register('[ts-req-batch]', function(el) {
+    el.addEventListener('click', function(e) {
+      if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey || e.button != 0)
+        return;
+
+      e.preventDefault();
+      queueRequest(el);
+    });
+    el.addEventListener('ts-trigger', e => queueRequest(el));
+  });
 
 
   /// Actions
@@ -403,8 +511,7 @@
     }, Promise.resolve(1));
   }
 
-  var actionSel = '[ts-action]';
-  register(actionSel, function(el) {
+  register('[ts-action]', function(el) {
     el.addEventListener('ts-trigger', function(e) {
       doAction(el, e);
     });
@@ -455,6 +562,7 @@
     _internal: {DIRECTIVES: DIRECTIVES,
                 init: init,
                 collect: collect,
+                collectData: collectData,
                 parse: parseActionSpec,
                 obs: obs}
   };
