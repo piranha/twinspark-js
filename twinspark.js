@@ -13,6 +13,38 @@
   var DIRECTIVES = [];
 
 
+  /// Wrap attribute handling
+  /** @type {function(Element, string): boolean} */
+  function hasattr(el, attr) {
+    return el.hasAttribute(attr);
+  }
+
+  /** @type {function(Element, string): string|null} */
+  function getattr(el, attr) {
+    return el.getAttribute(attr);
+  }
+
+  /** @type {function(Element, string, string): void} */
+  function setattr(el, attr, value) {
+    return el.setAttribute(attr, value);
+  }
+
+  /** @type {function(Element, string): ([Element, string])|null} */
+  function findelattr(el, attr) {
+    do {
+      if (hasattr(el, attr))
+        return [el, getattr(el, attr)];
+    } while (el = el.parentElement);
+  }
+
+  /** @type {function(Element, string): string|null} */
+  function findattr(el, attr) {
+    var res = findelattr(el, attr);
+    return res && res[1];
+  }
+  /// End wrap attribute handling
+
+
   /// Utils
 
   var err = console.log.bind(console, 'TwinSpark error:');
@@ -21,6 +53,14 @@
     if (DEBUG) {
       console.log.apply(console, arguments);
     }
+  }
+
+  function groupBy(arr, keyfn) {
+    return arr.reduce((acc, v) => {
+      var key = keyfn(v);
+      (acc[key] || (acc[key] = [])).push(v);
+      return acc;
+    }, {});
   }
 
   /** @type {function(Function): void} */
@@ -45,13 +85,15 @@
     return els;
   }
 
-  /** @type {function(Element, string): Array<string>} */
-  function collect(el, attribute) {
+  /**
+   * Collects all non-empty attribute values from element and its parents.
+   * @type {function(Element, string): Array<string>} */
+  function collect(el, attr) {
     var result = [];
     var value;
 
     do {
-      value = el.getAttribute(attribute);
+      value = getattr(el, attr);
       if (value) {
         result.push(value);
       }
@@ -60,13 +102,6 @@
     return result;
   }
 
-  function firstAttr(el, attribute) {
-    do {
-      if (el.hasAttribute(attribute)) {
-        return [el, el.getAttribute(attribute)];
-      }
-    } while (el = el.parentElement);
-  }
 
   /** @type {function(Element, string, boolean, Object=): void} */
   function sendEvent(el, type, bubbles, attrs) {
@@ -74,14 +109,6 @@
     var event = new Event(type, {bubbles: bubbles});
     if (attrs) Object.assign(event, attrs);
     el.dispatchEvent(event);
-  }
-
-  function groupBy(arr, keyfn) {
-    return arr.reduce((acc, v) => {
-      var key = keyfn(v);
-      (acc[key] || (acc[key] = [])).push(v);
-      return acc;
-    }, {});
   }
 
 
@@ -112,7 +139,7 @@
     sendEvent(el, 'ts-ready', true);
   }
 
-  /** @type {function(Element|Element[]): void} */
+  /** @type {function(Array<Element>): void} */
   function autofocus(els) {
     if (!(Array.isArray(els))) {
       els = [els];
@@ -155,70 +182,7 @@
   }
 
 
-  /// Fragments
-
-  /** @type {function(Element): Element} */
-  function findTarget(el) {
-    var res = firstAttr(el, 'ts-target');
-    if (!res)
-      return el;
-
-    var target = res[0];
-    var sel = res[1];
-
-    if (sel == 'this')
-      return target;
-    if (sel.startsWith('parent '))
-      return target.closest(sel.slice(7));
-    if (sel.startsWith('child '))
-      return target.querySelector(sel.slice(6));
-    return document.querySelector(sel);
-  }
-
-  function findReply(el, reply) {
-    var res = firstAttr(el, 'ts-req-selector');
-    if (!res)
-      return reply;
-
-    var sel = res[1];
-
-    if (sel == 'this')
-      return reply;
-    return qsf(reply, sel);
-  }
-
-  // Terminology:
-  // `origin` - an element where request started from, a link or a button
-  // `target` - where the incoming HTML will end up
-  // `reply` - incoming HTML to end up in target
-  /** @type {function(Element[], string): Element[]} */
-  function swap(origins, content) {
-    var html = new DOMParser().parseFromString(content, 'text/html');
-    var children = Array.from(html.body.children);
-
-    if (children.length < origins.length) {
-      throw ('Batch request requires at least ' + origins.length +
-             ' elements, but only ' + children.length + ' were returned');
-    }
-
-    var swapped = origins.map((origin, i) => {
-      var target = findTarget(origin);
-      var reply = findReply(origin, children[i]);
-      var strategy = firstAttr(origin, 'ts-req-strategy') || 'replace';
-
-      switch (strategy) {
-      case 'replace': target.replaceWith(reply); break;
-      case 'prepend': target.prepend(reply); break;
-      case 'append': target.append(reply); break;
-      }
-
-      activate(reply);
-      return reply;
-    });
-
-    autofocus(swapped);
-    return swapped;
-  }
+  /// Data collection
 
   /**
    * Parse either query string or JSON object.
@@ -261,6 +225,70 @@
     return data;
   }
 
+
+  /// Fragments
+
+  /** @type {function(Element): Element} */
+  function findTarget(el) {
+    var res = findelattr(el, 'ts-target');
+    if (!res)
+      return el;
+
+    var target = res[0];
+    var sel = res[1];
+
+    if (sel == 'this')
+      return target;
+    if (sel.startsWith('parent '))
+      return target.closest(sel.slice(7));
+    if (sel.startsWith('child '))
+      return target.querySelector(sel.slice(6));
+    return document.querySelector(sel);
+  }
+
+  function findReply(el, reply) {
+    var sel = findattr(el, 'ts-req-selector');
+    if (!sel)
+      return reply;
+
+    if (sel == 'this')
+      return reply;
+    return qsf(reply, sel);
+  }
+
+  // Terminology:
+  // `origin` - an element where request started from, a link or a button
+  // `target` - where the incoming HTML will end up
+  // `reply` - incoming HTML to end up in target
+  /** @type {function(Array<Element>, string): Array<Element>} */
+  function swap(origins, content) {
+    var html = new DOMParser().parseFromString(content, 'text/html');
+    var children = Array.from(html.body.children);
+
+    if (children.length < origins.length) {
+      throw ('Batch request requires at least ' + origins.length +
+             ' elements, but only ' + children.length + ' were returned');
+    }
+
+    var swapped = origins.map((origin, i) => {
+      var target = findTarget(origin);
+      var reply = findReply(origin, children[i]);
+      var strategy = findattr(origin, 'ts-req-strategy') || 'replace';
+
+      switch (strategy) {
+      case 'replace': target.replaceWith(reply); break;
+      case 'prepend': target.prepend(reply);     break;
+      case 'append':  target.append(reply);      break;
+      }
+
+      activate(reply);
+      return reply;
+    });
+
+    autofocus(swapped);
+    return swapped;
+  }
+
   function _doBatch(batch) {
     if (batch.length == 0) return;
 
@@ -292,7 +320,7 @@
       })
       .then(function(swapped) {
         if (swapped)
-          swapped.forEach(el => doAction(el, null, firstAttr(el, 'ts-req-after')));
+          swapped.forEach(el => doAction(el, null, findattr(el, 'ts-req-after')));
       })
       .catch(function(res) {
         origins.forEach(el => el.classList.remove('ts-active'));
@@ -301,12 +329,15 @@
   }
 
   function doBatch(batch) {
-    Promise.all(batch.map(req => doAction(req.el, null, firstAttr(req.el, 'ts-req-before'))))
+    // Skip requests unless `doAction` for `ts-req-before` returned `true`
+    Promise
+      .all(batch.map(req => doAction(req.el, null, findattr(req.el, 'ts-req-before'))))
       .then(result => batch.filter((req, i) => result[i]))
       .then(_doBatch);
   }
 
   // Batch Request Queue
+  /** @type {reqs: Array<{el: Element, url: string, method: string, batch: boolean}>, request: Object} */
   var queue = {
     reqs: [],
     request: null
@@ -326,10 +357,12 @@
     }
   }
 
+  /** @type {function(Element, boolean): {el: Element, url: string, method: string, batch: boolean} } */
   function makeReq(el, batch) {
-    var url = (batch ? el.getAttribute('ts-req-batch') : el.getAttribute('ts-req')) ||
-        el.getAttribute('href');
-    var method = el.getAttribute('ts-method') ||
+    var target = findTarget(el);
+    var url = ((batch ? getattr(el, 'ts-req-batch') : getattr(el, 'ts-req')) ||
+               (target.tagName == 'FORM' ? getattr(target, 'action') : getattr(el, 'href')));
+    var method = getattr(el, 'ts-method') ||
         target.tagName == 'FORM' ? 'POST' : 'GET';
 
     return {el:     el,
@@ -363,7 +396,7 @@
   });
 
 
-  /// Actions
+  /// Parsing actions
 
   /**
    * @type {function(string): string|number|Object}
@@ -445,8 +478,10 @@
     return result;
   }
 
+
+  /// Actions
   /**
-   * @type {function(Event, Element, Array<string|number|Object>): Promise|null|undefined}
+   * @type {function(Element, Event, Array<string|number|Object>): Promise|null|undefined}
    * @suppress {checkTypes|reportUnknownTypes}
    */
   function executeAction(target, e, command) {
@@ -500,11 +535,12 @@
     return err('Unknown action', cmd);
   }
 
-  /** @type {function(Element, Event): void} */
-  function doAction(target, e, elspec) {
-    if (!elspec) return true;
+  /** @type {function(Element, Event, (string|null)): boolean} */
+  function doAction(target, e, spec) {
+    // special case for request-cancelling events
+    if (!spec) return true;
 
-    var commands = parseActionSpec(elspec[1]);
+    var commands = parseActionSpec(spec);
 
     return commands.reduce(function(p, command) {
       return p.then(function(_) { return executeAction(target, e, command); });
@@ -513,7 +549,7 @@
 
   register('[ts-action]', function(el) {
     el.addEventListener('ts-trigger', function(e) {
-      doAction(findTarget(el), e, firstAttr(el, 'ts-action'));
+      doAction(findTarget(el), e, findattr(el, 'ts-action'));
     });
   });
 
@@ -531,7 +567,7 @@
 
   register('[ts-trigger]', function(el) {
     // intercooler modifiers? like changed, once, delay?
-    var trigger = el.getAttribute('ts-trigger');
+    var trigger = getattr(el, 'ts-trigger');
     if (trigger == null || trigger == '') return;
 
     trigger.split(',').forEach(function(t) {
