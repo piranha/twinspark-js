@@ -480,43 +480,29 @@
 
 
   /// Actions
+  function classList(el, method, args) {
+    return el.classList[method].apply(el.classList, args);
+  }
+
   /**
    * @type {function(Element, Event, Array<string|number|Object>): Promise|null|undefined}
    * @suppress {checkTypes|reportUnknownTypes}
    */
-  function executeAction(target, e, command) {
+  function executeCommand(target, e, command) {
     var cmd = command[0];
     if (typeof cmd != 'string') {
       throw 'Cannot work with action ' + cmd + ' of type ' + typeof cmd;
     }
     var args = command.slice(1);
 
-    if (cmd == 'delay') {
-      return delay.apply(null, args);
-    }
-
-    if (cmd == 'stop') {
-      return e.stopPropagation();
-    }
-
-    if (cmd == 'cancel') {
-      return e.preventDefault();
-    }
-
-    if (cmd == 'addClass') {
-      return target.classList.add.apply(target.classList, args);
-    }
-
-    if (cmd == 'removeClass') {
-      return target.classList.remove.apply(target.classList, args);
-    }
-
-    if (cmd == 'toggleClass') {
-      return target.classList.toggle.apply(target.classList, args);
-    }
-
-    if (cmd == 'replaceClass') {
-      return target.classList.replace.apply(target.classList, args);
+    switch (cmd) {
+    case 'delay':        return delay.apply(null, args);
+    case 'stop':         return e.stopPropagation();
+    case 'cancel':       return e.preventDefault();
+    case 'addClass':     return classList(target, 'add',     args);
+    case 'removeClass':  return classList(target, 'remove',  args);
+    case 'toggleClass':  return classList(target, 'toggle',  args);
+    case 'replaceClass': return classList(target, 'replace', args);
     }
 
     // remove etc
@@ -543,7 +529,7 @@
     var commands = parseActionSpec(spec);
 
     return commands.reduce(function(p, command) {
-      return p.then(function(_) { return executeAction(target, e, command); });
+      return p.then(function(_) { return executeCommand(target, e, command); });
     }, Promise.resolve(1));
   }
 
