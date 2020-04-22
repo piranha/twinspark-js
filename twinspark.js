@@ -390,8 +390,8 @@
     var target = findTarget(el);
     var url = ((batch ? getattr(el, 'ts-req-batch') : getattr(el, 'ts-req')) ||
                (target.tagName == 'FORM' ? getattr(target, 'action') : getattr(el, 'href')));
-    var method = getattr(el, 'ts-method') ||
-        target.tagName == 'FORM' ? 'POST' : 'GET';
+    var method = getattr(el, 'ts-req-method') ||
+        (target.tagName == 'FORM' ? 'POST' : 'GET');
 
     return {el:     el,
             url:    url,
