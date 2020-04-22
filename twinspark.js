@@ -266,13 +266,16 @@
     return document.querySelector(sel);
   }
 
-  function findReply(el, reply) {
-    var sel = findattr(el, 'ts-req-selector');
-    if (!sel)
-      return reply;
+  function findReply(target, origin, reply) {
+    var sel = findattr(origin, 'ts-req-selector');
 
-    if (sel == 'this')
+    if (!sel || (sel == 'this')) {
+      if ((reply.tagName == 'BODY') && (target.tagName != 'BODY')) {
+        return reply.children[0];
+      }
       return reply;
+    }
+
     return qsf(reply, sel);
   }
 
@@ -286,8 +289,8 @@
     var children = Array.from(html.body.children);
 
     if (children.length < origins.length) {
-      throw ('Batch request requires at least ' + origins.length +
-             ' elements, but only ' + children.length + ' were returned');
+      throw ('This request needs at least ' + origins.length +
+             ' elements, but ' + children.length + ' were returned');
     }
 
     if (hasattr(origins[0], 'ts-req-history')) {
@@ -297,13 +300,15 @@
 
     var swapped = origins.map((origin, i) => {
       var target = findTarget(origin);
-      var reply = findReply(origin, children[i]);
+      var reply = findReply(target, origin, origins.length > 1 ? children[i] : html.body);
       var strategy = findattr(origin, 'ts-req-strategy') || 'replace';
 
       switch (strategy) {
       case 'replace': target.replaceWith(reply); break;
       case 'prepend': target.prepend(reply);     break;
       case 'append':  target.append(reply);      break;
+      case 'inner':   target.innerHTML = '';
+                      target.append(reply);      break;
       }
 
       activate(reply);
