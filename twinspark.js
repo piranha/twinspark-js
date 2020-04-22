@@ -226,6 +226,24 @@
   }
 
 
+  /// History
+
+  function storeCurrentState() {
+    history.replaceState({html: document.body.innerHTML}, null);
+  }
+
+  function pushState(url, title) {
+    // before every push replaces current data to store current state
+    storeCurrentState();
+    history.pushState(null, title, url);
+  }
+
+  window.addEventListener('popstate', e => {
+    document.body.innerHTML = e.state.html;
+    activate(document.body);
+  });
+
+
   /// Fragments
 
   /** @type {function(Element): Element} */
@@ -261,13 +279,18 @@
   // `target` - where the incoming HTML will end up
   // `reply` - incoming HTML to end up in target
   /** @type {function(Array<Element>, string): Array<Element>} */
-  function swap(origins, content) {
+  function swap(url, origins, content) {
     var html = new DOMParser().parseFromString(content, 'text/html');
     var children = Array.from(html.body.children);
 
     if (children.length < origins.length) {
       throw ('Batch request requires at least ' + origins.length +
              ' elements, but only ' + children.length + ' were returned');
+    }
+
+    if (hasattr(origins[0], 'ts-req-history')) {
+      // empty titles just don't change page title
+      pushState(url, html.title);
     }
 
     var swapped = origins.map((origin, i) => {
@@ -286,6 +309,8 @@
     });
 
     autofocus(swapped);
+
+    storeCurrentState();
     return swapped;
   }
 
@@ -305,7 +330,8 @@
                 headers: {'Accept': 'text/html+partial',
                           'Content-Type': body ? 'application/x-www-form-urlencoded' : ''},
                 body:    body};
-    var req = xhr(url + qs, opts);
+    var fullurl = url + qs;
+    var req = xhr(fullurl, opts);
     var origins = batch.map(req => req.el);
 
     origins.forEach(el => el.classList.add('ts-active'));
@@ -313,7 +339,7 @@
       .then(function(res) {
         origins.forEach(el => el.classList.remove('ts-active'));
         if (res.ok) {
-          return swap(origins, res.content);
+          return swap(fullurl, origins, res.content);
         } else {
           err(res.content);
         }

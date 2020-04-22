@@ -349,6 +349,38 @@
 </div>
 
 
+<h3 id="history" class="mt-2">Changing URLs</h3>
+<p>URLs are a fundament of the Web. Changing URLs in line with activity makes your
+  app reloadable, browseable with backward/forward button and overall a good
+  citizen of the Web.</p>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <a href="/history" ts-req ts-req-history>Let's change history!</a>
+  </p>
+
+  <script type="text/html">
+    <span>Now check that back button works</span>
+  </script>
+  <script>
+    fetchMock.get("/history", prev());
+    test(el => {
+      click(el.$('a'));
+      wait(() => {
+        wru.assert(location.pathname == '/history');
+        history.replaceState(null, null, '/');
+      });
+    });
+  </script>
+</div>
+
+
 <h3 id="indicator" class="mt-2">Indicating activity</h3>
 <p>It's really irritating when you click a link and nothing happens for some time. Luckily
   TwinSpark makes it really easy: it adds class <code>ts-active</code> to an element, enhanced with <code>ts-req</code>.</p>
