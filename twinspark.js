@@ -479,7 +479,7 @@
     var trigger = getattr(el, 'ts-trigger');
     if (trigger == null || trigger == '') return;
 
-    trigger.split(',').forEach(function(t) {
+    trigger.split(/ +/).forEach(function(t) {
       t = t.trim();
       if (t == 'load') {
         sendEvent(el, 'ts-trigger', false, {reason: 'load'});
