@@ -405,27 +405,33 @@
   }
   // End Batch Request Queue
 
-  register('[ts-req]', function(el) {
-    el.addEventListener('click', function(e) {
+  function onClick(el, func) {
+    return el.addEventListener('click', function(e) {
       if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey || e.button != 0)
         return;
 
       e.preventDefault();
-      doBatch([makeReq(el, false)]);
+      func(e);
     });
-    el.addEventListener('ts-trigger', e => doBatch([makeReq(el, false)]));
+  }
+
+  register('[ts-req]', function(el) {
+    var handler = e => doBatch([makeReq(el, false)]);
+    if (hasattr(el, 'ts-trigger')) {
+      el.addEventListener('ts-trigger', handler);
+    } else {
+      onClick(el, handler);
+    }
   });
 
 
   register('[ts-req-batch]', function(el) {
-    el.addEventListener('click', function(e) {
-      if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey || e.button != 0)
-        return;
-
-      e.preventDefault();
-      queueRequest(makeReq(el, true));
-    });
-    el.addEventListener('ts-trigger', e => queueRequest(makeReq(el, true)));
+    var handler = e => queueRequest(makeReq(el, true));
+    if (hasattr(el, 'ts-trigger')) {
+      el.addEventListener('ts-trigger', handler);
+    } else {
+      onClick(el, handler);
+    }
   });
 
 
@@ -451,7 +457,8 @@
 
   /** @type {function(Element, Event, (string|null)): boolean} */
   function doAction(target, e, spec) {
-    // special case for request-cancelling events
+    // special case for ts-req-before, where request will be cancelled if true
+    // is not returned
     if (!spec) return true;
 
     var commands = spec.split(/ +/);
@@ -462,9 +469,12 @@
   }
 
   register('[ts-action]', function(el) {
-    el.addEventListener('ts-trigger', function(e) {
-      doAction(findTarget(el), e, findattr(el, 'ts-action'));
-    });
+    var handler = e => doAction(findTarget(el), e.reason || e, findattr(el, 'ts-action'));
+    if (el.tagName == 'A' && !hasattr(el, 'ts-trigger')) {
+      onClick(el, handler);
+    } else {
+      el.addEventListener('ts-trigger', handler);
+    }
   });
 
 
