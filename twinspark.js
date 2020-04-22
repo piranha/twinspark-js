@@ -11,6 +11,8 @@
 
   /** @type Array<{selector: string, handler: (function(Element): void)}> */
   var DIRECTIVES = [];
+  var FUNCS = {remove: el => el.remove(),
+               stop: (_, e) => e && e.stopPropagation()};
 
 
   /// Wrap attribute handling
@@ -422,129 +424,24 @@
   });
 
 
-  /// Parsing actions
-
-  /**
-   * @type {function(string): string|number|Object}
-   * @suppress {reportUnknownTypes}
-   */
-  function parseValue(s) {
-    /** @type {string} */
-    var c = s[0];
-    if (c == '{' || c == '[') {
-      return JSON.parse(s);
-    }
-    if (c == '"' || c == "'") {
-      return s.slice(1, s.length - 1);
-    }
-    if (c >= '0' && c <= '9') {
-      return parseFloat(s);
-    }
-    return s;
-  }
-
-  var CLOSING = {'"': '"', "'": "'", "{": "}", "[": "]"};
-
-  /**
-   * @type {function(string): Array<Array<string|number|Object>> }
-   * @suppress {reportUnknownTypes}
-   */
-  function parseActionSpec(cmd) {
-    var result = [];
-    var command = [];
-    var current = '';
-
-    var string = null;
-    var json = null;
-
-    function consume() {
-      var token = current.trim();
-      if (token.length) {
-        command.push(parseValue(token));
-      }
-      current = '';
-    }
-
-    for (var i = 0; i < cmd.length; i++) {
-      var c = cmd[i];
-
-      if (json) {
-        current += c;
-        if (c == CLOSING[json]) {
-          json = null;
-        }
-      } else if (string) {
-        current += c;
-        if (c == CLOSING[string]) {
-          string = null;
-        }
-      } else {
-        if ((c == "{") || (c == "[")) {
-          json = c;
-        } else if ((c == "'") || (c == '"')) {
-          string = c;
-        } else if (c == " ") {
-          consume();
-          continue;
-        } else if (c == ",") {
-          consume();
-          result.push(command);
-          command = [];
-          continue;
-        }
-
-        current += c;
-      }
-    }
-
-    consume();
-    if (command) {
-      result.push(command);
-    }
-    return result;
-  }
-
-
   /// Actions
-  function classList(el, method, args) {
-    return el.classList[method].apply(el.classList, args);
+
+  function registerCommands(cmds) {
+    return Object.assign(FUNCS, cmds);
   }
 
-  /**
-   * @type {function(Element, Event, Array<string|number|Object>): Promise|null|undefined}
-   * @suppress {checkTypes|reportUnknownTypes}
-   */
-  function executeCommand(target, e, command) {
-    var cmd = command[0];
-    if (typeof cmd != 'string') {
-      throw 'Cannot work with action ' + cmd + ' of type ' + typeof cmd;
+  function executeCommand(command, target, e) {
+    if (FUNCS[command]) {
+      return FUNCS[command](target, e);
     }
-    var args = command.slice(1);
-
-    switch (cmd) {
-    case 'delay':        return delay.apply(null, args);
-    case 'stop':         return e.stopPropagation();
-    case 'cancel':       return e.preventDefault();
-    case 'addClass':     return classList(target, 'add',     args);
-    case 'removeClass':  return classList(target, 'remove',  args);
-    case 'toggleClass':  return classList(target, 'toggle',  args);
-    case 'replaceClass': return classList(target, 'replace', args);
+    if (window._ts_func && window._ts_func[command]) {
+      return window._ts_func[command](target, e);
+    }
+    if (window[command]) {
+      return window[command](target, e);
     }
 
-    // remove etc
-    if (cmd in target) {
-      return target[cmd].apply(target, args);
-    }
-
-    // extension point
-    if (cmd in window) {
-      if (typeof window[cmd] != 'function') {
-        return err("Expected function '" + cmd + "', but got", typeof window[cmd])
-      }
-      return window[cmd].apply(target, args);
-    }
-
-    return err('Unknown action', cmd);
+    throw err('Unknown action', command);
   }
 
   /** @type {function(Element, Event, (string|null)): boolean} */
@@ -552,10 +449,10 @@
     // special case for request-cancelling events
     if (!spec) return true;
 
-    var commands = parseActionSpec(spec);
+    var commands = spec.split(/ +/);
 
     return commands.reduce(function(p, command) {
-      return p.then(function(_) { return executeCommand(target, e, command); });
+      return p.then(function(_) { return executeCommand(command, target, e); });
     }, Promise.resolve(1));
   }
 
@@ -603,6 +500,8 @@
     onload: onload,
     register: register,
     activate: activate,
+    delay: delay,
+    func: registerCommands,
     log_toggle: function() {
       window.localStorage._ts_debug = DEBUG ? '' : 'true';
       DEBUG = !DEBUG;
@@ -611,7 +510,6 @@
                 init: init,
                 collect: collect,
                 collectData: collectData,
-                parse: parseActionSpec,
                 obs: obs}
   };
 

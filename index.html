@@ -50,10 +50,6 @@
       });
     });
 
-    // Extensions for our "app"
-    function get_user() {
-      return localStorage.getItem('user');
-    }
   </script>
   <style>
     body {padding-bottom: 3em;} /* until we get footer? */
@@ -67,7 +63,8 @@
 
 <h1><a href="/">TwinSpark</a></h1>
 <ul>
-  <li>Dual ignition engines from Alfa Romeo, used from 1914 in Grand Prix cars to 2009.</li>
+  <li><a href="https://en.wikipedia.org/wiki/TwinSpark">Dual ignition engines</a>
+    from Alfa Romeo, used from 1914 in Grand Prix cars to 2009.</li>
   <li>Declarative enhancement for HTML: simple, composable, lean.</li>
 </ul>
 
@@ -77,8 +74,8 @@
 <ul>
   <li>Intercooler limited (and I don't mean in a bad sense) extensibility meant
     there is no way to implement analytics.</li>
-  <li>There is no (official) way to update few fragments at the same time.</li>
-  <li>As a related problem, there is no way to batch few requests into a single
+  <li>There is no (official) way to update more than one fragment at the same time.</li>
+  <li>As a related problem, there is no way to batch several requests into a single
     one, and our architecture makes that pretty important.</li>
   <li>jQuery. It is 2020 on the streets already, can we just drop that?</li>
 </ul>
@@ -232,7 +229,7 @@
   </div>
 
   <p class="card-body">
-    <a href="/before" ts-req ts-req-before="delay 200">This will work with delay</a><br>
+    <a href="/before" ts-req ts-req-before="shortly">This will work with delay</a><br>
     <a href="/before" ts-req ts-req-before="get_user">This is prevented</a>
   </p>
 
@@ -240,11 +237,13 @@
     <a href="/before" ts-req>Did you see it?</a>
   </script>
   <script>
+    twinspark.func({shortly: el => twinspark.delay(300),
+                    get_user: el => localStorage.getItem('user')});
     fetchMock.get("/before", prev());
     test(el => {
       click(el.$$('a')[0])
       click(el.$$('a')[1])
-      wait(() => wru.assert(el.$$('a')[0].innerText == 'Did you see it?'), 220);
+      wait(() => wru.assert(el.$$('a')[0].innerText == 'Did you see it?'), 320);
       wait(() => wru.assert(el.$$('a')[1].innerText == 'This is prevented'));
     });
   </script>
@@ -461,6 +460,7 @@
   </div>
 
   <script>
+    twinspark.func({remove: el => el.remove()});
     test(el => {
       click(el.$('button'));
       wait(() => wru.assert(el.$('button') == null));
@@ -479,11 +479,15 @@
   <div class="card-body">
     <p ts-target="child span">
       <span>Remove with timeout</span>
-      <button class="btn" ts-action="addClass loading, delay 1000, remove" ts-trigger="click">Do it!</button>
+      <button class="btn" ts-action="loading onesec remove" ts-trigger="click">Do it!</button>
     </p>
   </div>
 
   <script>
+    twinspark.func({loading: el => el.classList.add('loading'),
+                    notloading: el => el.classList.remove('loading'),
+                    remove: el => el.remove(),
+                    onesec: el => twinspark.delay(1000)});
     test(el => {
       click(el.$('button'));
       wait(() => wru.assert(el.$('button')));
@@ -502,21 +506,22 @@
 
   <div class="card-body">
     <p ts-target="this">
-      <button class="btn"
-              ts-action='animate [{"transform": "translate3D(0,0,0)"},{"transform": "translate3D(300px,0,0)"}] {"duration": 1000, "iterations": 10}'
-              ts-trigger="click">Animate</button>
+      <button class="btn" ts-action="anim" ts-trigger="click">Animate</button>
     </p>
   </div>
 
   <script>
-    // i don't know if it's possible
-    /*test*/(el => {
-      click(el.$('button'));
-      wait(() => {
-        console.log(getComputedStyle(el.$('button')).transform);
-        wru.assert(getComputedStyle(el.$('button')).transform != 'none')
-      }, 100);
-    });
+    twinspark.func({anim: el => el.animate([{transform: "translate3D(0,0,0)"},
+                                            {transform: "translate3D(300px,0,0)"}],
+                                           {duration: 1000, iterations: 10})});
+      // i don't know if it's possible
+      /*test*/(el => {
+        click(el.$('button'));
+        wait(() => {
+          console.log(getComputedStyle(el.$('button')).transform);
+          wru.assert(getComputedStyle(el.$('button')).transform != 'none')
+        }, 100);
+      });
   </script>
 </div>
 
@@ -553,11 +558,17 @@
   </div>
 
   <div class="card-body">
-    <p ts-action="addClass loading, delay 5000, removeClass loading" ts-trigger="visible">
+    <p ts-action="loading longer notloading" ts-trigger="visible">
       You'll probably this text after around 5 seconds or so. Click "Reset" to see
       loader again.
     </p>
   </div>
+
+  <script>
+    twinspark.func({loading: el => el.classList.add('loading'),
+                    notloading: el => el.classList.remove('loading'),
+                    longer: el => twinspark.delay(5000)});
+  </script>
 </div>
 
 <hr>
