@@ -408,7 +408,7 @@
   function onNative(el, func) {
     var event = el.tagName == 'FORM' ? 'submit' : 'click';
     return el.addEventListener(event, function(e) {
-      if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey || e.button != 0)
+      if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey || (e.button || 0) != 0)
         return;
 
       e.preventDefault();
