@@ -224,6 +224,17 @@
     var data = collect(el, 'ts-data').reduceRight(
       (acc, v) => mergeParams(acc, parseData(v)),
       new URLSearchParams());
+
+    if (el.tagName == 'FORM') {
+      [].forEach.call(el.elements, (el) => {
+        if (((el.type == 'radio') || (el.type == 'checkbox')) &&
+            !el.checked) {
+          return;
+        }
+        data.append(el.name, el.value);
+      });
+    }
+
     return data;
   }
 
