@@ -398,27 +398,26 @@
   </p>
 
   <style>
+    @keyframes border {
+      0%   {left: 0;}
+      51%  {left: calc(100% - 20px);}
+      100% {left: 0;}
+    }
+
     .indicator.ts-active {
-      min-height: .8rem;
       pointer-events: none;
       position: relative;
     }
-    .indicator.ts-active::after {
-      animation: loading .5s infinite linear;
-      border: .1rem solid #5755d9;
-      border-radius: 50%;
-      border-right-color: transparent;
-      border-top-color: transparent;
-      content: "";
-      display: block;
-      height: .8rem;
-      left: 110%;
-      margin-left: -.4rem;
-      margin-top: -.4rem;
+    .indicator.ts-active::after{
+      animation: border 1.5s infinite linear;
       position: absolute;
-      top: 50%;
-      width: .8rem;
+      width: 20px;
+      height: 2px;
+      bottom: -2px;
+      left: 0;
+      background: #807fe2;
       z-index: 1;
+      content: "";
     }
   </style>
 
@@ -434,6 +433,7 @@
     test(el => {
       click(el.$('a'));
       wait(() => wru.assert(el.$('a').classList.contains('ts-active')));
+      // I'm too lazy to wait for so long
       //wait(() => wru.assert(!el.$('a').classList.contains('ts-active')), 1050);
     });
   </script>
