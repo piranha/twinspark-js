@@ -204,13 +204,13 @@
     }
   }
 
-  function mergeParams(p1, p2) {
+  function mergeParams(p1, p2, removeEmpty) {
     for (var x of p2) {
-        if ((x[1] === null) || (x[1] === '')) {
-          p1.delete(x[0]);
-        } else {
-          p1.append(x[0], x[1]);
-        }
+      if (removeEmpty && ((x[1] === null) || (x[1] === ''))) {
+        p1.delete(x[0]);
+      } else {
+        p1.append(x[0], x[1]);
+      }
     }
     return p1;
   }
@@ -222,7 +222,7 @@
   function collectData(el) {
     // reduceRight because deepest element is the first one
     var data = collect(el, 'ts-data').reduceRight(
-      (acc, v) => mergeParams(acc, parseData(v)),
+      (acc, v) => mergeParams(acc, parseData(v), true),
       new URLSearchParams());
 
     if (el.tagName == 'FORM') {
@@ -338,7 +338,7 @@
     var url = batch[0].url;
     var method = batch[0].method;
     var data = batch.reduce(
-      (acc, req) => mergeParams(acc, collectData(req.el)),
+      (acc, req) => mergeParams(acc, collectData(req.el), false),
       new URLSearchParams()).toString();
 
     var qs = data && method == 'GET' ? '?' + data : '';
