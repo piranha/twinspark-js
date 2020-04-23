@@ -405,8 +405,9 @@
   }
   // End Batch Request Queue
 
-  function onClick(el, func) {
-    return el.addEventListener('click', function(e) {
+  function onNative(el, func) {
+    var event = el.tagName == 'FORM' ? 'submit' : 'click';
+    return el.addEventListener(event, function(e) {
       if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey || e.button != 0)
         return;
 
@@ -420,7 +421,7 @@
     if (hasattr(el, 'ts-trigger')) {
       el.addEventListener('ts-trigger', handler);
     } else {
-      onClick(el, handler);
+      onNative(el, handler);
     }
   });
 
@@ -430,7 +431,7 @@
     if (hasattr(el, 'ts-trigger')) {
       el.addEventListener('ts-trigger', handler);
     } else {
-      onClick(el, handler);
+      onNative(el, handler);
     }
   });
 
@@ -471,7 +472,7 @@
   register('[ts-action]', function(el) {
     var handler = e => doAction(findTarget(el), e.reason || e, findattr(el, 'ts-action'));
     if (el.tagName == 'A' && !hasattr(el, 'ts-trigger')) {
-      onClick(el, handler);
+      onNative(el, handler);
     } else {
       el.addEventListener('ts-trigger', handler);
     }
