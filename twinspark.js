@@ -65,6 +65,14 @@
     }, {});
   }
 
+  function toObj(entries) {
+    var x, r = {};
+    while (x = entries.next().value) {
+      r[x[0]] = r[x[1]];
+    }
+    return r;
+  }
+
   /** @type {function(Function): void} */
   function onload(fn) {
     if (document.readyState == 'loading') {
@@ -260,7 +268,10 @@
   /// Fragments
 
   /** @type {function(Element): Element} */
-  function findTarget(el) {
+  function findTarget(el, override) {
+    if (override)
+      return document.querySelector(override);
+
     var res = findelattr(el, 'ts-target');
     if (!res)
       return el;
@@ -295,8 +306,10 @@
   // `target` - where the incoming HTML will end up
   // `reply` - incoming HTML to end up in target
   /** @type {function(Array<Element>, string): Array<Element>} */
-  function swap(url, origins, content) {
+  function swap(url, origins, content, headers) {
     var html = new DOMParser().parseFromString(content, 'text/html');
+    var title = headers['x-ts-title'] || html.title;
+    var pushurl = headers['x-ts-history'] || hasattr(origins[0], 'ts-req-history') && url;
     var children = Array.from(html.body.children);
 
     if (children.length < origins.length) {
@@ -304,13 +317,12 @@
              ' elements, but ' + children.length + ' were returned');
     }
 
-    if (hasattr(origins[0], 'ts-req-history')) {
-      // empty titles just don't change page title
-      pushState(url, html.title);
+    if (pushurl) {
+      pushState(pushurl, title);
     }
 
     var swapped = origins.map((origin, i) => {
-      var target = findTarget(origin);
+      var target = findTarget(origin, headers['x-ts-target']);
       var reply = findReply(target, origin, origins.length > 1 ? children[i] : html.body);
       var strategy = findattr(origin, 'ts-req-strategy') || 'replace';
 
@@ -354,20 +366,29 @@
 
     origins.forEach(el => el.classList.add('ts-active'));
     req
-      .then(function(res) {
+      .finally(function(res) {
         origins.forEach(el => el.classList.remove('ts-active'));
-        if (res.ok) {
-          return swap(fullurl, origins, res.content);
-        } else {
-          err(res.content);
+        return res;
+      })
+      .then(function(res) {
+        var headers = toObj(res.headers.entries());
+
+        if (res.ok && res.redirected) {
+          headers['x-ts-history'] = res.url;
+          return swap(res.url, [document.body], res.content, headers);
         }
+
+        if (res.ok) {
+          return swap(res.url, origins, res.content, headers);
+        }
+
+        err(res.content);
       })
       .then(function(swapped) {
         if (swapped)
           swapped.forEach(el => doAction(el, null, findattr(el, 'ts-req-after')));
       })
       .catch(function(res) {
-        origins.forEach(el => el.classList.remove('ts-active'));
         err('Network interrupt or something', arguments);
       });
   }

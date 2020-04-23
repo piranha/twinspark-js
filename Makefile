@@ -1,4 +1,4 @@
-CCOPTS = --language_out ECMASCRIPT_2017 --jscomp_warning=reportUnknownTypes
+CCOPTS = --language_out ECMASCRIPT_2018 --jscomp_warning=reportUnknownTypes
 
 min: dist/twinspark.min.js
 adv: dist/twinspark.adv.js
