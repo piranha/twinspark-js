@@ -214,6 +214,8 @@
 
   function mergeParams(p1, p2, removeEmpty) {
     for (var x of p2) {
+      if (!x[0]) continue;
+
       if (removeEmpty && ((x[1] === null) || (x[1] === ''))) {
         p1.delete(x[0]);
       } else {
@@ -235,6 +237,7 @@
 
     if (el.tagName == 'FORM') {
       [].forEach.call(el.elements, (el) => {
+        if (!el.name) return;
         if (((el.type == 'radio') || (el.type == 'checkbox')) &&
             !el.checked) {
           return;
