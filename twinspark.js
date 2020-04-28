@@ -306,7 +306,7 @@
       return reply;
     }
 
-    return qsf(reply, sel);
+    return qse(reply, sel);
   }
 
   // Terminology:
@@ -332,20 +332,24 @@
     var swapped = origins.map((origin, i) => {
       var target = findTarget(origin, headers['x-ts-target']);
       var reply = findReply(target, origin, origins.length > 1 ? children[i] : html.body);
+      if (!Array.isArray(reply))
+        reply = [reply];
       var strategy = findattr(origin, 'ts-req-strategy') || 'replace';
 
       switch (strategy) {
-      case 'replace': target.replaceWith(reply); break;
-      case 'prepend': target.prepend(reply);     break;
-      case 'append':  target.append(reply);      break;
+      case 'replace': target.replaceWith.apply(target, reply); break;
+      case 'prepend': target.prepend.apply(target, reply);     break;
+      case 'append':  target.append.apply(target, reply);      break;
       case 'inner':   target.innerHTML = '';
-                      target.append(reply);      break;
+                      target.append.apply(target, reply);      break;
       }
 
-      activate(reply);
       return reply;
     });
 
+    swapped = [].concat.apply([], swapped);
+
+    swapped.forEach(activate);
     autofocus(swapped);
 
     storeCurrentState();
@@ -387,13 +391,16 @@
         }
 
         if (res.ok) {
-          return swap(res.url, origins, res.content, headers);
+          // cannot use res.url here since fetchMock will not set it to right
+          // value
+          return swap(fullurl, origins, res.content, headers);
         }
 
         err(res.content);
       })
       .then(function(swapped) {
         if (swapped)
+          // FIXME: this should be done on new or old elements?
           swapped.forEach(el => doAction(el, null, findattr(el, 'ts-req-after')));
       })
       .catch(function(res) {
