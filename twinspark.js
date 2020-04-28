@@ -2,12 +2,13 @@
 
 (function(window,document,tsname) {
   var twinspark = {};
+  var localStorage = window.localStorage;
 
   /// Internal data structures
 
   var READY = false;
   /** @type {boolean} */
-  var DEBUG = window.localStorage._ts_debug || false;
+  var DEBUG = localStorage._ts_debug || false;
 
   /** @type Array<{selector: string, handler: (function(Element): void)}> */
   var DIRECTIVES = [];
@@ -98,7 +99,7 @@
   /**
    * Collects all non-empty attribute values from element and its parents.
    * @type {function(Element, string): Array<string>} */
-  function collect(el, attr) {
+  function elcrumbs(el, attr) {
     var result = [];
     var value;
 
@@ -226,14 +227,18 @@
   }
 
   /**
-   * @type {function(Element): URLSearchParams}
+   * @type {function(Element, string): URLSearchParams}
    * @suppress {reportUnknownTypes}
    */
-  function collectData(el) {
+  function eldata(el, attr) {
     // reduceRight because deepest element is the first one
-    var data = collect(el, 'ts-data').reduceRight(
+    return elcrumbs(el, attr).reduceRight(
       (acc, v) => mergeParams(acc, parseData(v), true),
       new URLSearchParams());
+  }
+
+  function collectData(el) {
+    var data = eldata(el, 'ts-data');
 
     if (el.tagName == 'FORM') {
       [].forEach.call(el.elements, (el) => {
@@ -548,19 +553,15 @@
   /// Public interface
 
   twinspark = {
-    onload: onload,
-    register: register,
-    activate: activate,
-    delay: delay,
-    func: registerCommands,
-    log_toggle: function() {
-      window.localStorage._ts_debug = DEBUG ? '' : 'true';
-      DEBUG = !DEBUG;
-    },
+    onload:    onload,
+    register:  register,
+    activate:  activate,
+    delay:     delay,
+    func:      registerCommands,
+    elcrumbs:  elcrumbs,
+    logtoggle: () => localStorage._ts_debug = (DEBUG=!DEBUG) ? 'true' : '',
     _internal: {DIRECTIVES: DIRECTIVES,
                 init: init,
-                collect: collect,
-                collectData: collectData,
                 obs: obs}
   };
 
