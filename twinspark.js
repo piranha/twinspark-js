@@ -528,14 +528,16 @@
 
   /// Triggers
 
-  var obs = new IntersectionObserver(function(entries, obs) {
+  function observed(entries, obs) {
     entries.forEach(function(entry) {
       if (entry.isIntersecting) {
-        sendEvent(entry.target, 'ts-trigger', false, {reason: entry});
+        sendEvent(entry.target, 'ts-trigger', false);
       }
     });
-  }, {rootMargin: '100px', threshold: 0.5});
+  }
 
+  var visible = new IntersectionObserver(observed, {rootMargin: '0px', threshold: 0.5});
+  var closeby = new IntersectionObserver(observed, {rootMargin: '100px', threshold: 0.2});
 
   register('[ts-trigger]', function(el) {
     // intercooler modifiers? like changed, once, delay?
@@ -547,7 +549,9 @@
       if (t == 'load') {
         sendEvent(el, 'ts-trigger', false, {reason: 'load'});
       } else if (t == 'visible') {
-        obs.observe(el);
+        visible.observe(el);
+      } else if (t == 'closeby') {
+        closeby.observe(el);
       } else if (t != "") {
         el.addEventListener(t, function(e) {
           sendEvent(el, 'ts-trigger', false, {reason: e});
@@ -568,8 +572,7 @@
     elcrumbs:  elcrumbs,
     logtoggle: () => localStorage._ts_debug = (DEBUG=!DEBUG) ? 'true' : '',
     _internal: {DIRECTIVES: DIRECTIVES,
-                init: init,
-                obs: obs}
+                init: init}
   };
 
   window[tsname] = twinspark;
