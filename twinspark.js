@@ -31,20 +31,6 @@
   function setattr(el, attr, value) {
     return el.setAttribute(attr, value);
   }
-
-  /** @type {function(Element, string): ([Element, string])|null} */
-  function findelattr(el, attr) {
-    do {
-      if (hasattr(el, attr))
-        return [el, getattr(el, attr)];
-    } while (el = el.parentElement);
-  }
-
-  /** @type {function(Element, string): string|null} */
-  function findattr(el, attr) {
-    var res = findelattr(el, attr);
-    return res && res[1];
-  }
   /// End wrap attribute handling
 
 
@@ -280,24 +266,21 @@
     if (override)
       return document.querySelector(override);
 
-    var res = findelattr(el, 'ts-target');
-    if (!res)
+    var sel = getattr(el, 'ts-target');
+    if (!sel)
       return el;
 
-    var target = res[0];
-    var sel = res[1];
-
     if (sel == 'this')
-      return target;
+      return el;
     if (sel.startsWith('parent '))
-      return target.closest(sel.slice(7));
+      return el.closest(sel.slice(7));
     if (sel.startsWith('child '))
-      return target.querySelector(sel.slice(6));
+      return el.querySelector(sel.slice(6));
     return document.querySelector(sel);
   }
 
   function findReply(target, origin, reply) {
-    var sel = findattr(origin, 'ts-req-selector');
+    var sel = getattr(origin, 'ts-req-selector');
 
     if (!sel || (sel == 'this')) {
       if ((reply.tagName == 'BODY') && (target.tagName != 'BODY')) {
@@ -334,7 +317,7 @@
       var reply = findReply(target, origin, origins.length > 1 ? children[i] : html.body);
       if (!Array.isArray(reply))
         reply = [reply];
-      var strategy = findattr(origin, 'ts-req-strategy') || 'replace';
+      var strategy = getattr(origin, 'ts-req-strategy') || 'replace';
 
       switch (strategy) {
       case 'replace': target.replaceWith.apply(target, reply); break;
@@ -398,11 +381,6 @@
 
         err(res.content);
       })
-      .then(function(swapped) {
-        if (swapped)
-          // FIXME: this should be done on new or old elements?
-          swapped.forEach(el => doAction(el, null, findattr(el, 'ts-req-after')));
-      })
       .catch(function(res) {
         err('Network interrupt or something', arguments);
       });
@@ -411,7 +389,7 @@
   function doBatch(batch) {
     // Skip requests unless `doAction` for `ts-req-before` returned `true`
     Promise
-      .all(batch.map(req => doAction(req.el, null, findattr(req.el, 'ts-req-before'))))
+      .all(batch.map(req => doAction(req.el, null, getattr(req.el, 'ts-req-before'))))
       .then(result => batch.filter((req, i) => result[i]))
       .then(_doBatch);
   }
@@ -518,7 +496,7 @@
   }
 
   register('[ts-action]', function(el) {
-    var handler = e => doAction(findTarget(el), e.reason || e, findattr(el, 'ts-action'));
+    var handler = e => doAction(findTarget(el), e.reason || e, getattr(el, 'ts-action'));
     if (el.tagName == 'A' && !hasattr(el, 'ts-trigger')) {
       onNative(el, handler);
     } else {
