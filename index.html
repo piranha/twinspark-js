@@ -681,6 +681,9 @@
     <div>
       <p class="secondary" ts-req-join="join" ts-req-selector=".secondary">And me!</p>
     </div>
+    <div>
+      <p class="ternary">Also waiting here.</p>
+    </div>
     <button class="btn"
             ts-req="/join" ts-req-id="join"
             ts-target="#join-example .primary" ts-req-selector=".primary">Update them</button>
@@ -688,13 +691,14 @@
 
   <script type="text/html">
     <p class="primary">Hey, you see this stuff?</p>
-    <p class="secondary">Two separate targets!</p>
+    <p class="secondary">This one updated from attributes!</p>
+    <p class="ternary">And this one by a header.</p>
   </script>
   <script>
     (function(markup) {
       fetchMock.get("/join", function(url, opts) {
-        return {body:    markup,
-                headers: {'x-ts-swap': '#join-example .secondary <= .secondary'}};
+        return {body: markup,
+                headers: {'x-ts-swap': 'replace: #join-example .ternary <= .ternary'}};
       });
     })(prev());
   </script>

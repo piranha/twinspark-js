@@ -55,7 +55,7 @@
   function toObj(entries) {
     var x, r = {};
     while (x = entries.next().value) {
-      r[x[0]] = r[x[1]];
+      r[x[0]] = x[1];
     }
     return r;
   }
@@ -284,9 +284,9 @@
 
     if (!sel) {
       if ((reply.tagName == 'BODY') && (target.tagName != 'BODY')) {
-        return reply.children[0];
+        return [reply.children[0]];
       }
-      return reply;
+      return [reply];
     }
 
     if (sel.startsWith('children ')) {
@@ -294,16 +294,10 @@
       return el && el.children && Array.from(el.children);
     }
 
-    return qsf(reply, sel);
+    return [qsf(reply, sel)];
   }
 
-  function actualSwap(origin, replyParent) {
-    var target = findTarget(origin);
-    var reply = findReply(target, origin, replyParent);
-    if (!Array.isArray(reply))
-      reply = [reply];
-    var strategy = getattr(origin, 'ts-req-strategy') || 'replace';
-
+  function executeSwap(strategy, target, reply) {
     switch (strategy) {
     case 'replace': target.replaceWith.apply(target, reply); break;
     case 'prepend': target.prepend.apply(target, reply);     break;
@@ -311,8 +305,25 @@
     case 'inner':   target.innerHTML = '';
                     target.append.apply(target, reply);      break;
     }
-
     return reply;
+  }
+
+  function elementSwap(origin, replyParent) {
+    var target = findTarget(origin);
+    var reply = findReply(target, origin, replyParent);
+    var strategy = getattr(origin, 'ts-req-strategy') || 'replace';
+    return executeSwap(strategy, target, reply);
+  }
+
+  function headerSwap(header, replyParent) {
+    // `replace: css selector <= css selector`
+    var m = header.match(/(\w+):(.+)<=(.+)/);
+    if (!m)
+      return err('Cannot parse ts-req-swap value', header);
+    var target = qsf(document.body, m[2]);
+    var reply = qsf(replyParent, m[3]);
+
+    return executeSwap(m[1], target, [reply]);
   }
 
   // Terminology:
@@ -336,21 +347,28 @@
     }
 
     // `joiners` are elements which want to `join` current request by specifying
-    // its ts-req-id in ts-req-join attribute
+    // its ts-req-id in ts-req-join attribute. They should be found before doing
+    // any swaps.
     var joiners = origins.filter(origin => hasattr(origin, 'ts-req-id')).map(origin => {
       var id = getattr(origin, 'ts-req-id');
       return Array.from(document.querySelectorAll('[ts-req-join~="' +  id +'"]'));
     }).flat(1);
 
+    // swap original elements
     var swapped = origins.map(function (origin, i) {
-      return actualSwap(origin, origins.length > 1 ? children[i] : html.body);
+      return elementSwap(origin, origins.length > 1 ? children[i] : html.body);
     });
 
-    swapped = swapped.concat(joiners.map(function (joiner) {
-      return actualSwap(joiner, html.body);
-    }));
+    // swap joiners
+    swapped = swapped.concat(joiners.map(joiner => elementSwap(joiner, html.body)));
 
-    swapped = flat(swapped);
+    // swap any header requests
+    if (headers['x-ts-swap']) {
+      swapped = swapped.concat(headers['x-ts-swap'].split(',')
+                               .map(header => headerSwap(header, html.body)));
+    }
+
+    swapped = flat(swapped).filter(x => x);
 
     swapped.forEach(activate);
     autofocus(swapped);
