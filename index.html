@@ -332,7 +332,7 @@
 
   <div class="card-body">
     <p>Wanna read text behind me?
-      <a href="/closest" ts-req ts-target="parent p">Do it!</a>
+      <a href="/parent" ts-req ts-target="parent p">Do it!</a>
     </p>
   </div>
 
@@ -341,7 +341,7 @@
       logic with markup?</p>
   </script>
   <script>
-    fetchMock.get("/closest", prev());
+    fetchMock.get("/parent", prev());
     test(el => {
       click(el.$('a'));
       wait(() => wru.assert(el.$('p').innerText.startsWith('Did you know')));
@@ -661,3 +661,42 @@
     })
   </script>
 </div>
+
+
+<h3 id="join" class="mt-2">Joining requests</h3>
+<p></p>
+
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body" style="margin-bottom: 1.2rem" id="join-example">
+    <div>
+      <p class="primary">Update me!</p>
+    </div>
+    <div>
+      <p class="secondary" ts-req-join="join" ts-req-selector=".secondary">And me!</p>
+    </div>
+    <button class="btn"
+            ts-req="/join" ts-req-id="join"
+            ts-target="#join-example .primary" ts-req-selector=".primary">Update them</button>
+  </div>
+
+  <script type="text/html">
+    <p class="primary">Hey, you see this stuff?</p>
+    <p class="secondary">Two separate targets!</p>
+  </script>
+  <script>
+    (function(markup) {
+      fetchMock.get("/join", function(url, opts) {
+        return {body:    markup,
+                headers: {'x-ts-swap': '#join-example .secondary <= .secondary'}};
+      });
+    })(prev());
+  </script>
+</div>
+

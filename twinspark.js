@@ -4,7 +4,7 @@
   var twinspark = {};
   var localStorage = window.localStorage;
 
-  /// Internal data structures
+  /// Internal variables
 
   var READY = false;
   /** @type {boolean} */
@@ -58,6 +58,11 @@
       r[x[0]] = r[x[1]];
     }
     return r;
+  }
+
+  function flat(arr) {
+    if (arr.flat) return arr.flat();
+    return [].concat.apply([], arr);
   }
 
   /** @type {function(Function): void} */
@@ -244,7 +249,7 @@
   /// History
 
   function storeCurrentState() {
-    history.replaceState({html: document.body.innerHTML}, null);
+    history.replaceState({html: document.body.innerHTML}, "");
   }
 
   function pushState(url, title) {
@@ -262,10 +267,7 @@
   /// Fragments
 
   /** @type {function(Element): Element} */
-  function findTarget(el, override) {
-    if (override)
-      return document.querySelector(override);
-
+  function findTarget(el) {
     var sel = getattr(el, 'ts-target');
     if (!sel)
       return el;
@@ -295,11 +297,29 @@
     return qsf(reply, sel);
   }
 
+  function actualSwap(origin, replyParent) {
+    var target = findTarget(origin);
+    var reply = findReply(target, origin, replyParent);
+    if (!Array.isArray(reply))
+      reply = [reply];
+    var strategy = getattr(origin, 'ts-req-strategy') || 'replace';
+
+    switch (strategy) {
+    case 'replace': target.replaceWith.apply(target, reply); break;
+    case 'prepend': target.prepend.apply(target, reply);     break;
+    case 'append':  target.append.apply(target, reply);      break;
+    case 'inner':   target.innerHTML = '';
+                    target.append.apply(target, reply);      break;
+    }
+
+    return reply;
+  }
+
   // Terminology:
   // `origin` - an element where request started from, a link or a button
   // `target` - where the incoming HTML will end up
   // `reply` - incoming HTML to end up in target
-  /** @type {function(Array<Element>, string): Array<Element>} */
+  /** @type {function(string, Array<Element>, string, Object): Array<Element>} */
   function swap(url, origins, content, headers) {
     var html = new DOMParser().parseFromString(content, 'text/html');
     var title = headers['x-ts-title'] || html.title;
@@ -315,25 +335,22 @@
       pushState(pushurl, title);
     }
 
-    var swapped = origins.map((origin, i) => {
-      var target = findTarget(origin, headers['x-ts-target']);
-      var reply = findReply(target, origin, origins.length > 1 ? children[i] : html.body);
-      if (!Array.isArray(reply))
-        reply = [reply];
-      var strategy = getattr(origin, 'ts-req-strategy') || 'replace';
+    // `joiners` are elements which want to `join` current request by specifying
+    // its ts-req-id in ts-req-join attribute
+    var joiners = origins.filter(origin => hasattr(origin, 'ts-req-id')).map(origin => {
+      var id = getattr(origin, 'ts-req-id');
+      return Array.from(document.querySelectorAll('[ts-req-join~="' +  id +'"]'));
+    }).flat(1);
 
-      switch (strategy) {
-      case 'replace': target.replaceWith.apply(target, reply); break;
-      case 'prepend': target.prepend.apply(target, reply);     break;
-      case 'append':  target.append.apply(target, reply);      break;
-      case 'inner':   target.innerHTML = '';
-                      target.append.apply(target, reply);      break;
-      }
-
-      return reply;
+    var swapped = origins.map(function (origin, i) {
+      return actualSwap(origin, origins.length > 1 ? children[i] : html.body);
     });
 
-    swapped = [].concat.apply([], swapped);
+    swapped = swapped.concat(joiners.map(function (joiner) {
+      return actualSwap(joiner, html.body);
+    }));
+
+    swapped = flat(swapped);
 
     swapped.forEach(activate);
     autofocus(swapped);
@@ -490,7 +507,7 @@
     // is not returned
     if (!spec) return true;
 
-    var commands = spec.split(/ +/);
+    var commands = spec.split(/\s+/);
 
     return commands.reduce(function(p, command) {
       return p.then(function(_) { return executeCommand(command, target, e); });
@@ -525,7 +542,7 @@
     var trigger = getattr(el, 'ts-trigger');
     if (trigger == null || trigger == '') return;
 
-    trigger.split(/ +/).forEach(function(t) {
+    trigger.split(/\s+/).forEach(function(t) {
       t = t.trim();
       if (t == 'load') {
         sendEvent(el, 'ts-trigger', false, {reason: 'load'});
