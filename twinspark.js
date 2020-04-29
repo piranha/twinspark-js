@@ -497,7 +497,7 @@
 
   register('[ts-action]', function(el) {
     var handler = e => doAction(findTarget(el), e.reason || e, getattr(el, 'ts-action'));
-    if (el.tagName == 'A' && !hasattr(el, 'ts-trigger')) {
+    if ((el.tagName == 'A' || el.tagName == 'BUTTON') && !hasattr(el, 'ts-trigger')) {
       onNative(el, handler);
     } else {
       el.addEventListener('ts-trigger', handler);
