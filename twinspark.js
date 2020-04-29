@@ -364,9 +364,8 @@
 
     origins.forEach(el => el.classList.add('ts-active'));
     req
-      .finally(function(res) {
+      .finally(function() {
         origins.forEach(el => el.classList.remove('ts-active'));
-        return res;
       })
       .then(function(res) {
         var headers = toObj(res.headers.entries());
