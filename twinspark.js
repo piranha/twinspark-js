@@ -270,8 +270,6 @@
     if (!sel)
       return el;
 
-    if (sel == 'this')
-      return el;
     if (sel.startsWith('parent '))
       return el.closest(sel.slice(7));
     if (sel.startsWith('child '))
@@ -282,14 +280,19 @@
   function findReply(target, origin, reply) {
     var sel = getattr(origin, 'ts-req-selector');
 
-    if (!sel || (sel == 'this')) {
+    if (!sel) {
       if ((reply.tagName == 'BODY') && (target.tagName != 'BODY')) {
         return reply.children[0];
       }
       return reply;
     }
 
-    return qse(reply, sel);
+    if (sel.startsWith('children ')) {
+      var el = qsf(reply, sel.slice(9));
+      return el && el.children && Array.from(el.children);
+    }
+
+    return qsf(reply, sel);
   }
 
   // Terminology:

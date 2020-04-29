@@ -575,7 +575,48 @@
 
 <h2>Advanced</h2>
 
-<h3 id="batch">Batching requests</h3>
+<h3 id="children">Dealing with multiple elements</h3>
+<p>Twinspark usually deals with single element being target (<code>ts-target</code>)
+  and single element being replacement (<code>ts-req-selector</code>) - this is
+  much more controlled behavior than multiple elements. But if you look how
+  endless scrolling is implemented in HTML, it's usually a long list of elements
+  inside some other element - so you have to deal with several elements being appended
+  to a parent. For this and similar use cases there is a modifier <code>children</code>
+  in <code>ts-req-selector</code>.</p>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <span class="list">
+      <span class="chip">Element 1</span><br>
+      <span class="chip">Element 2</span><br>
+      <button class="btn" ts-req="/children" ts-req-selector="children .list">Load more</button>
+    </span>
+  </p>
+
+  <script type="text/html">
+    <span class="list">
+      <span class="chip">Element 3</span><br>
+      <span class="chip">Element 4</span><br>
+    </span>
+  </script>
+  <script>
+    fetchMock.get("/children", prev());
+    test(el => {
+      click(el.$('button'));
+      wait(() => {
+          wru.assert(el.$$('.list span').length == 4)});
+      });
+  </script>
+</div>
+
+
+<h3 id="batch" class="mt-2">Batching requests</h3>
 <p>This is a thing which is not immediately obvious, but is one of the reasons why
   TwinSpark appeared. It is an important optimization. Our use case for it was
   following: page renders for an anonymous user (for efficient caching on CDN) and
