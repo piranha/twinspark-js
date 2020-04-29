@@ -459,6 +459,7 @@
         return;
 
       e.preventDefault();
+      e.stopPropagation();
       func(e);
     });
   }
