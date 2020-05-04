@@ -396,14 +396,22 @@
       (acc, req) => mergeParams(acc, collectData(req.el), false),
       new URLSearchParams()).toString();
 
-    var qs = data && method == 'GET' ? '?' + data : '';
+    var qs = data && method == 'GET' ? data : null;
     var body = data && method != 'GET' ? data : null;
 
     var opts = {method:  method,
                 headers: {'Accept': 'text/html+partial',
                           'Content-Type': body ? 'application/x-www-form-urlencoded' : ''},
                 body:    body};
-    var fullurl = url + qs;
+
+    var fullurl = url;
+    if (qs) {
+      if (fullurl.indexOf('?') == -1) {
+        fullurl += '?';
+      }
+      fullurl += qs;
+    }
+
     var req = xhr(fullurl, opts);
     var origins = batch.map(req => req.el);
 
@@ -464,11 +472,10 @@
 
   /** @type {function(Element, boolean): {el: Element, url: string, method: string, batch: boolean} } */
   function makeReq(el, batch) {
-    var target = findTarget(el);
     var url = ((batch ? getattr(el, 'ts-req-batch') : getattr(el, 'ts-req')) ||
-               (target.tagName == 'FORM' ? getattr(target, 'action') : getattr(el, 'href')));
+               (el.tagName == 'FORM' ? getattr(el, 'action') : getattr(el, 'href')));
     var method = getattr(el, 'ts-req-method') ||
-        (target.tagName == 'FORM' ? 'POST' : 'GET');
+        (el.tagName == 'FORM' ? 'POST' : 'GET');
 
     return {el:     el,
             url:    url,
