@@ -12,8 +12,14 @@
 
   /** @type Array<{selector: string, handler: (function(Element): void)}> */
   var DIRECTIVES = [];
-  var FUNCS = {remove: el => el.remove(),
-               stop: (_, e) => e && e.stopPropagation()};
+  var FUNCS = {stop:        function(e)   { if (e) e.stopPropagation(); },
+               delay:       function(ms)  { return new Promise(function(resolve) { setTimeout(resolve, parseInt(ms), true); });},
+               remove:      function()    { this.remove(); },
+               class:       function(cls) { this.classList.add(cls); },
+               "class+":    function(cls) { this.classList.add(cls); },
+               "class-":    function(cls) { this.classList.remove(cls); },
+               "class^":    function(cls) { this.classList.toggle(cls); },
+               classtoggle: function(cls) { this.classList.toggle(cls); }};
 
 
   /// Wrap attribute handling
@@ -166,11 +172,6 @@
 
 
   /// Ajax
-
-  /** @type {function(number, *): Promise<*> } */
-  function delay(ms, rv) {
-    return new Promise(resolve => setTimeout(resolve, ms, rv || true));
-  }
 
   /** @type {function(string, RequestInit): Promise<*> } */
   function xhr(url, opts) {
@@ -514,18 +515,24 @@
     return Object.assign(FUNCS, cmds);
   }
 
-  function executeCommand(command, target, e) {
+  function executeCommand(command, args, target, e) {
+    args.push(e);
+
     if (FUNCS[command]) {
-      return FUNCS[command](target, e);
+      return FUNCS[command].apply(target, args);
     }
     if (window._ts_func && window._ts_func[command]) {
-      return window._ts_func[command](target, e);
+      return window._ts_func[command].apply(target, args);
     }
     if (window[command]) {
-      return window[command](target, e);
+      return window[command].apply(target, args);
     }
 
     throw err('Unknown action', command);
+  }
+
+  function parseActions(s) {
+    return s.split(',').map(c => c.trim().split(/\s+/));
   }
 
   /** @type {function(Element, Event, (string|null)): boolean} */
@@ -534,10 +541,12 @@
     // is not returned
     if (!spec) return true;
 
-    var commands = spec.split(/\s+/);
+    var commands = parseActions(spec);
 
     return commands.reduce(function(p, command) {
-      return p.then(function(_) { return executeCommand(command, target, e); });
+      return p.then(function(_) {
+        return executeCommand(command[0], command.slice(1), target, e);
+      });
     }, Promise.resolve(1));
   }
 
@@ -592,7 +601,6 @@
     onload:    onload,
     register:  register,
     activate:  activate,
-    delay:     delay,
     func:      registerCommands,
     elcrumbs:  elcrumbs,
     logtoggle: () => localStorage._ts_debug = (DEBUG=!DEBUG) ? 'true' : '',

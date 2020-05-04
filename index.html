@@ -229,7 +229,7 @@
   </div>
 
   <p class="card-body">
-    <a href="/before" ts-req ts-req-before="shortly">This will work with delay</a><br>
+    <a href="/before" ts-req ts-req-before="delay 300">This will work with delay</a><br>
     <a href="/before" ts-req ts-req-before="get_user">This is prevented</a>
   </p>
 
@@ -237,8 +237,7 @@
     <a href="/before" ts-req>Did you see it?</a>
   </script>
   <script>
-    twinspark.func({shortly: el => twinspark.delay(300),
-                    get_user: el => localStorage.getItem('user')});
+    twinspark.func({get_user: () => localStorage.getItem('user')});
     fetchMock.get("/before", prev());
     test(el => {
       click(el.$$('a')[0])
@@ -460,7 +459,6 @@
   </div>
 
   <script>
-    twinspark.func({remove: el => el.remove()});
     test(el => {
       click(el.$('button'));
       wait(() => wru.assert(el.$('button') == null));
@@ -479,15 +477,11 @@
   <div class="card-body">
     <p ts-target="child span">
       <span>Remove with timeout</span>
-      <button class="btn" ts-action="loading onesec remove" ts-trigger="click">Do it!</button>
+      <button class="btn" ts-action="class+ loading, delay 1000, remove" ts-target="inherit">Do it!</button>
     </p>
   </div>
 
   <script>
-    twinspark.func({loading: el => el.classList.add('loading'),
-                    notloading: el => el.classList.remove('loading'),
-                    remove: el => el.remove(),
-                    onesec: el => twinspark.delay(1000)});
     test(el => {
       click(el.$('button'));
       wait(() => wru.assert(el.$('button')));
@@ -511,9 +505,11 @@
   </div>
 
   <script>
-    twinspark.func({anim: el => el.animate([{transform: "translate3D(0,0,0)"},
-                                            {transform: "translate3D(300px,0,0)"}],
-                                           {duration: 1000, iterations: 10})});
+    twinspark.func({anim: function () {
+      this.animate([{transform: "translate3D(0,0,0)"},
+                    {transform: "translate3D(300px,0,0)"}],
+                   {duration: 1000, iterations: 10})
+    }});
       // i don't know if it's possible
       /*test*/(el => {
         click(el.$('button'));
@@ -558,17 +554,11 @@
   </div>
 
   <div class="card-body">
-    <p ts-action="loading longer notloading" ts-trigger="visible">
+    <p ts-action="class+ loading, delay 5000, class- loading" ts-trigger="visible">
       You'll probably this text after around 5 seconds or so. Click "Reset" to see
       loader again.
     </p>
   </div>
-
-  <script>
-    twinspark.func({loading: el => el.classList.add('loading'),
-                    notloading: el => el.classList.remove('loading'),
-                    longer: el => twinspark.delay(5000)});
-  </script>
 </div>
 
 <hr>
@@ -704,3 +694,16 @@
   </script>
 </div>
 
+
+
+
+<form action="/form" method="POST">
+  <input type="text" name="text"> <!-- should be empty for test -->
+  <input type="checkbox" name="checkbox" checked>
+  <input type="radio" name="radio" value="one" checked>
+  <input type="radio" name="radio" value="two">
+  <select name="select">
+    <option value="qwe">qwe</option>
+    <option value="asd">asd</option>
+  </select>
+</form>
