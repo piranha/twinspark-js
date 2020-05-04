@@ -272,6 +272,15 @@
     if (!sel)
       return el;
 
+    if (sel == 'inherit') {
+      while (el = el.parentElement) {
+        if (hasattr(el, 'ts-target')) {
+          return findTarget(el);
+        }
+      }
+      return;
+    }
+
     if (sel.startsWith('parent '))
       return el.closest(sel.slice(7));
     if (sel.startsWith('child '))
