@@ -244,7 +244,7 @@
       new URLSearchParams());
   }
 
-  function formElementData(el) {
+  function formElementValue(el) {
     if (!el.name) return;
     if (((el.type == 'radio') || (el.type == 'checkbox')) &&
         !el.checked) {
@@ -260,11 +260,11 @@
 
     if (tag == 'FORM') {
       [].forEach.call(el.elements, (el) => {
-        if (res = formElementData(el))
+        if (res = formElementValue(el))
           data.append(el.name, res);
       });
     } else if ((tag == 'INPUT') || (tag == 'SELECT') || (tag == 'TEXTAREA')) {
-      if (res = formElementData(el))
+      if (res = formElementValue(el))
         data.append(el.name, res);
     }
 
@@ -593,7 +593,7 @@
     throw err('Unknown action', command);
   }
 
-  function parseActions(s) {
+  function parseActionSpec(s) {
     return s.split(',').map(c => c.trim().split(/\s+/));
   }
 
@@ -603,7 +603,7 @@
     // is not returned
     if (!spec) return true;
 
-    var commands = parseActions(spec);
+    var commands = parseActionSpec(spec);
 
     return commands.reduce(function(p, command) {
       return p.then(function(_) {
@@ -625,34 +625,79 @@
   /// Triggers
 
   function observed(entries, obs) {
-    entries.forEach(function(entry) {
-      if (entry.isIntersecting) {
-        sendEvent(entry.target, 'ts-trigger', false);
+    for (var i = 0; i < entries.length; i++) {
+      if (entries[i].isIntersecting) {
+        entries[i].target.tsTrigger();
       }
-    });
+    }
   }
 
   var visible = new IntersectionObserver(observed, {rootMargin: '0px', threshold: 0.5});
   var closeby = new IntersectionObserver(observed, {rootMargin: '100px', threshold: 0.2});
 
-  register('[ts-trigger]', function(el) {
-    // intercooler modifiers? like changed, once, delay?
-    var trigger = getattr(el, 'ts-trigger');
-    if (trigger == null || trigger == '') return;
+  function getInternalData(el) {
+    var prop = 'twinspark-internal';
+    return el[prop] || (el[prop] = {});
+  }
 
-    trigger.split(/\s+/).forEach(function(t) {
-      t = t.trim();
-      if (t == 'load') {
-        sendEvent(el, 'ts-trigger', false, {reason: 'load'});
-      } else if (t == 'visible') {
-        visible.observe(el);
-      } else if (t == 'closeby') {
-        closeby.observe(el);
-      } else if (t != "") {
-        el.addEventListener(t, function(e) {
-          sendEvent(el, 'ts-trigger', false, {reason: e});
-        });
+  function makeTriggerListener(el, t) {
+    var delay = t.indexOf('delay');
+    var spec = {changed: t.indexOf('changed') > 0,
+                once:    t.indexOf('once') > 0,
+                delay:   delay > 0 ? parseTime(t[delay + 1]) : null};
+    return function(e) {
+      var data = getInternalData(el);
+
+      function executeTrigger() {
+        sendEvent(el, 'ts-trigger', false, e && {reason: e});
       }
+
+      if (spec.once) {
+        if (data.once) {
+          return;
+        }
+        data.once = true;
+      }
+
+      if (spec.changed) {
+        if (data.value == formElementValue(el)) {
+          return;
+        }
+        data.value = formElementValue(el);
+      }
+
+      if (spec.delay) {
+        if (data.delay) {
+          clearTimeout(data.delay);
+        }
+        data.delay = setTimeout(executeTrigger, spec.delay);
+      } else {
+        executeTrigger();
+      }
+    };
+  }
+
+  function registerTrigger(el, t) {
+    var type = t[0];
+    var tsTrigger = makeTriggerListener(el, t);
+    el.tsTrigger = tsTrigger; // for IntersectionObserver
+
+    switch (type) {
+    case 'load':    el.tsTrigger(); break;
+    case 'visible': visible.observe(el); break;
+    case 'closeby': closeby.observe(el); break;
+    default:        el.addEventListener(type, function(e) { tsTrigger(e); }); break;
+    }
+  }
+
+  register('[ts-trigger]', function(el) {
+    var spec = getattr(el, 'ts-trigger');
+    if (!spec) return;
+
+    var triggers = parseActionSpec(spec);
+
+    triggers.forEach(function(t) {
+      registerTrigger(el, t);
     });
   });
 

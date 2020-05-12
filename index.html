@@ -707,3 +707,41 @@
     })(prev());
   </script>
 </div>
+
+
+<h2>Use cases</h2>
+
+<h3 id="autocomplete">Writing autocomplete</h3>
+<p>Autocomplete is interesting because it executes many things at once. Just look
+  at the source, the interesting part is trigger modifiers - it does something only
+  if user typed something (rather than just navigated field with cursor keys) and
+  then stopped for 200 ms.
+</p>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p><input type="text"
+              name="q"
+              ts-req="/autocomplete"
+              ts-trigger="keyup changed delay 200"
+              ts-target="#search-results"
+              ts-swap="inner"
+              placeholder="Search..."/></p>
+    <div id="search-results"></div>
+  </div>
+
+  <script>
+    fetchMock.get('path:/autocomplete', function(url, opts) {
+      var q = new URLSearchParams(url.split('?')[1]).get('q');
+      var now = +new Date;
+      return '<div>' + 'one two three four five six seven'.split(' ').map(
+        s => '<p>' + q + ' ' + s + ' ' + now + '</p>').join('') + '</div>';
+    });
+  </script>
+</div>
