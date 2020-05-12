@@ -7,7 +7,12 @@
   <script src="vendor/fetch-mock.js"></script>
   <script src="twinspark.js"></script>
   <script>
-    function prev() { return document.currentScript.previousElementSibling.innerText; }
+    function prev(n) {
+      var el = document.currentScript.previousElementSibling;
+      if (n == 2)
+        el = el.previousElementSibling;
+      return el.innerText;
+    }
 
     function escape(s) {
       return s
@@ -743,5 +748,70 @@
       return '<div>' + 'one two three four five six seven'.split(' ').map(
         s => '<p>' + q + ' ' + s + ' ' + now + '</p>').join('') + '</div>';
     });
+  </script>
+</div>
+
+
+<h3 id="progressbar">Progress bar</h3>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <div>
+      <h3>Start progress</h3>
+      <button class="btn" ts-req="/progress" ts-req-method="post" ts-target="parent div">
+        Start job
+      </button>
+    </div>
+  </div>
+
+  <style>
+    .bar-item {
+      transition: width .5s linear;
+    }
+  </style>
+
+  <script type="text/html">
+    <div ts-req="/progress" ts-trigger="load delay 500">
+      <h3>Job in progress</h3>
+      <div class="bar bar-sm">
+        <div class="bar-item" role="progressbar" style="width:XXX%;"></div>
+      </div>
+    </div>
+  </script>
+
+  <script type="text/html">
+    <div>
+      <h3>Job in progress</h3>
+      <div class="bar bar-sm">
+        <div class="bar-item" role="progressbar" style="width:100%;"></div>
+      </div>
+      <button class="btn" ts-req="/progress" ts-req-method="post" ts-target="parent div">
+        Restart job
+      </button>
+    </div>
+  </script>
+
+  <script>
+    (function(progress, end) {
+      var state = 0;
+
+      fetchMock.post('/progress', function(url, opts) {
+        state = 0;
+        return progress.replace('XXX', state);
+      });
+
+      fetchMock.get('path:/progress', function(url, opts) {
+        state += Math.floor(Math.random() * 30);
+        if (state >= 100)
+          return end;
+        return progress.replace('XXX', state);
+      });
+    })(prev(2), prev());
   </script>
 </div>
