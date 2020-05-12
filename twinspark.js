@@ -333,12 +333,17 @@
   }
 
   function executeSwap(strategy, target, reply) {
+    // terminology from
+    // https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML
     switch (strategy) {
-    case 'replace': target.replaceWith.apply(target, reply); break;
-    case 'prepend': target.prepend.apply(target, reply);     break;
-    case 'append':  target.append.apply(target, reply);      break;
-    case 'inner':   target.innerHTML = '';
-                    target.append.apply(target, reply);      break;
+    case 'replace':     target.replaceWith.apply(target, reply);       break;
+    case 'inner':       target.innerHTML = '';
+                        target.append.apply(target, reply);            break;
+    case 'beforebegin': target.parentNode.insertBefore(reply, target); break;
+    case 'afterbegin':  target.prepend.apply(target, reply);           break;
+    case 'beforeend':   target.append.apply(target, reply);            break;
+    case 'afterend':    target.parentNode.insertBefore(reply, target.nextSibling); break;
+    default:            err('unknown swap strategy', strategy);        return;
     }
     return reply;
   }
@@ -346,19 +351,33 @@
   function elementSwap(origin, replyParent) {
     var target = findTarget(origin);
     var reply = findReply(target, origin, replyParent);
-    var strategy = getattr(origin, 'ts-req-strategy') || 'replace';
+    var strategy = getattr(origin, 'ts-swap') || 'replace';
     return executeSwap(strategy, target, reply);
+  }
+
+  function pushedSwap(reply) {
+    var sel = getattr(reply, 'ts-swap-push');
+    if (!sel && reply.id) {
+      sel = '#' + reply.id;
+    }
+    if (!sel) {
+      err('cannot find target for server-pushed swap', reply);
+    }
+    var target = qsf(document.body, sel);
+    var strategy = getattr(reply, 'ts-swap') || 'replace';
+    return executeSwap(strategy, target, [reply]);
   }
 
   function headerSwap(header, replyParent) {
     // `replace: css selector <= css selector`
     var m = header.match(/(\w+):(.+)<=(.+)/);
     if (!m)
-      return err('Cannot parse ts-req-swap value', header);
+      return err('Cannot parse x-ts-swap header value', header);
     var target = qsf(document.body, m[2]);
     var reply = qsf(replyParent, m[3]);
+    var strategy = m[1];
 
-    return executeSwap(m[1], target, [reply]);
+    return executeSwap(strategy, target, [reply]);
   }
 
   // Terminology:
@@ -371,6 +390,7 @@
     var title = headers['x-ts-title'] || html.title;
     var pushurl = headers['x-ts-history'] || hasattr(origins[0], 'ts-req-history') && url;
     var children = Array.from(html.body.children);
+    var replyParent = html.body;
 
     if (children.length < origins.length) {
       throw ('This request needs at least ' + origins.length +
@@ -391,16 +411,21 @@
 
     // swap original elements
     var swapped = origins.map(function (origin, i) {
-      return elementSwap(origin, origins.length > 1 ? children[i] : html.body);
+      return elementSwap(origin, origins.length > 1 ? children[i] : replyParent);
+    });
+
+    var oobs = Array.from(replyParent.querySelectorAll('[ts-swap-push]')).map(function (reply) {
+      return pushedSwap(reply);
     });
 
     // swap joiners
     swapped = swapped.concat(joiners.map(joiner => elementSwap(joiner, html.body)));
+    swapped = swapped.concat(oobs);
 
     // swap any header requests
     if (headers['x-ts-swap']) {
       swapped = swapped.concat(headers['x-ts-swap'].split(',')
-                               .map(header => headerSwap(header, html.body)));
+                               .map(header => headerSwap(header, replyParent)));
     }
 
     swapped = flat(swapped).filter(x => x);

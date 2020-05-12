@@ -10,3 +10,6 @@ dist/%.min.js: %.js
 dist/%.adv.js: %.js
 	@mkdir -p $(@D)
 	closure-compiler -O ADVANCED $(CCOPTS) $*.js > $@
+
+serve:
+	darkhttpd . --port 3000
