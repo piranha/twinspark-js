@@ -229,18 +229,28 @@
       new URLSearchParams());
   }
 
+  function formElementData(el) {
+    if (!el.name) return;
+    if (((el.type == 'radio') || (el.type == 'checkbox')) &&
+        !el.checked) {
+      return;
+    }
+    return el.value;
+  }
+
   function collectData(el) {
     var data = eldata(el, 'ts-data');
+    var tag = el.tagName;
+    var res;
 
-    if (el.tagName == 'FORM') {
+    if (tag == 'FORM') {
       [].forEach.call(el.elements, (el) => {
-        if (!el.name) return;
-        if (((el.type == 'radio') || (el.type == 'checkbox')) &&
-            !el.checked) {
-          return;
-        }
-        data.append(el.name, el.value);
+        if (res = formElementData(el))
+          data.append(el.name, res);
       });
+    } else if ((tag == 'INPUT') || (tag == 'SELECT') || (tag == 'TEXTAREA')) {
+      if (res = formElementData(el))
+        data.append(el.name, res);
     }
 
     return data;
@@ -485,7 +495,12 @@
   // End Batch Request Queue
 
   function onNative(el, func) {
-    var event = el.tagName == 'FORM' ? 'submit' : 'click';
+    var tag = el.tagName;
+    var event = 'click';
+    if (tag == 'FORM')
+      event = 'submit';
+    else if ((tag == 'INPUT') || (tag == 'SELECT') || (tag == 'TEXTAREA'))
+      event = 'change';
     return el.addEventListener(event, function(e) {
       if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey || (e.button || 0) != 0)
         return;
