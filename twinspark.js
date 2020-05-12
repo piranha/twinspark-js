@@ -13,7 +13,9 @@
   /** @type Array<{selector: string, handler: (function(Element): void)}> */
   var DIRECTIVES = [];
   var FUNCS = {stop:        function(e)   { if (e) e.stopPropagation(); },
-               delay:       function(ms)  { return new Promise(function(resolve) { setTimeout(resolve, parseInt(ms), true); });},
+               // `delay` returns `true` so it could be used in `ts-req-before`
+               // without preventing action
+               delay:       delay,
                remove:      function()    { this.remove(); },
                class:       function(cls) { this.classList.add(cls); },
                "class+":    function(cls) { this.classList.add(cls); },
@@ -69,6 +71,19 @@
   function flat(arr) {
     if (arr.flat) return arr.flat();
     return [].concat.apply([], arr);
+  }
+
+  function parseTime(s) {
+    s = s && s.trim();
+    if (!s) return;
+    if (s.match(/\d+s/)) return parseFloat(s) * 1000;
+    return parseFloat(s);
+  }
+
+  function delay(s) {
+    return new Promise(function(resolve) {
+      setTimeout(resolve, parseTime(s), true);
+    });
   }
 
   /** @type {function(Function): void} */
