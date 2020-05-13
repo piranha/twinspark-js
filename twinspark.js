@@ -332,7 +332,8 @@
     return [qsf(reply, sel)];
   }
 
-  function executeSwap(strategy, target, reply) {
+  function executeSwap(strategy, origin, target, reply) {
+    origin && doAction(origin, null, getattr(origin, 'ts-req-after'));
     // terminology from
     // https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML
     switch (strategy) {
@@ -352,7 +353,7 @@
     var target = findTarget(origin);
     var reply = findReply(target, origin, replyParent);
     var strategy = getattr(origin, 'ts-swap') || 'replace';
-    return executeSwap(strategy, target, reply);
+    return executeSwap(strategy, origin, target, reply);
   }
 
   function pushedSwap(reply) {
@@ -365,7 +366,7 @@
     }
     var target = qsf(document.body, sel);
     var strategy = getattr(reply, 'ts-swap') || 'replace';
-    return executeSwap(strategy, target, [reply]);
+    return executeSwap(strategy, null, target, [reply]);
   }
 
   function headerSwap(header, replyParent) {
@@ -377,7 +378,7 @@
     var reply = qsf(replyParent, m[3]);
     var strategy = m[1];
 
-    return executeSwap(strategy, target, [reply]);
+    return executeSwap(strategy, null, target, [reply]);
   }
 
   // Terminology:
