@@ -339,9 +339,9 @@
     case 'replace':     target.replaceWith.apply(target, reply);       break;
     case 'inner':       target.innerHTML = '';
                         target.append.apply(target, reply);            break;
+    case 'prepend':     target.prepend.apply(target, reply);           break;
+    case 'append':      target.append.apply(target, reply);            break;
     case 'beforebegin': target.parentNode.insertBefore(reply, target); break;
-    case 'afterbegin':  target.prepend.apply(target, reply);           break;
-    case 'beforeend':   target.append.apply(target, reply);            break;
     case 'afterend':    target.parentNode.insertBefore(reply, target.nextSibling); break;
     default:            err('unknown swap strategy', strategy);        return;
     }
