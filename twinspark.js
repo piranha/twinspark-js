@@ -12,16 +12,16 @@
 
   /** @type Array<{selector: string, handler: (function(Element): void)}> */
   var DIRECTIVES = [];
-  var FUNCS = {stop:        function(e)   { if (e) e.stopPropagation(); },
+  var FUNCS = {stop:        function(el, e)   { if (e) e.stopPropagation(); },
                // `delay` returns `true` so it could be used in `ts-req-before`
                // without preventing action
                delay:       delay,
-               remove:      function()    { this.remove(); },
-               class:       function(cls) { this.classList.add(cls); },
-               "class+":    function(cls) { this.classList.add(cls); },
-               "class-":    function(cls) { this.classList.remove(cls); },
-               "class^":    function(cls) { this.classList.toggle(cls); },
-               classtoggle: function(cls) { this.classList.toggle(cls); }};
+               remove:      function(el)      { el.remove(); },
+               class:       function(cls, el) { el.classList.add(cls); },
+               "class+":    function(cls, el) { el.classList.add(cls); },
+               "class-":    function(cls, el) { el.classList.remove(cls); },
+               "class^":    function(cls, el) { el.classList.toggle(cls); },
+               classtoggle: function(cls, el) { el.classList.toggle(cls); }};
 
 
   /// Wrap attribute handling
@@ -578,6 +578,7 @@
   }
 
   function executeCommand(command, args, target, e) {
+    args.push(target);
     args.push(e);
 
     if (FUNCS[command]) {
