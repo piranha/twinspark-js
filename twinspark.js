@@ -16,7 +16,14 @@
                // `delay` returns `true` so it could be used in `ts-req-before`
                // without preventing action
                delay:       delay,
-               remove:      function(el)      { el.remove(); },
+               remove:      function(el) {
+                 if (arguments.length == 2) {
+                   return el.remove();
+                 }
+                 var selcount = arguments.length - 2;
+                 var sel = [].slice.call(arguments, 0, selcount);
+                 findTarget(arguments[selcount], sel.join(' ')).remove();
+               },
                class:       function(cls, el) { el.classList.add(cls); },
                "class+":    function(cls, el) { el.classList.add(cls); },
                "class-":    function(cls, el) { el.classList.remove(cls); },
@@ -293,8 +300,8 @@
   /// Fragments
 
   /** @type {function(Element): Element} */
-  function findTarget(el) {
-    var sel = getattr(el, 'ts-target');
+  function findTarget(el, sel) {
+    sel || (sel = getattr(el, 'ts-target'));
     if (!sel)
       return el;
 
