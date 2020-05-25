@@ -499,11 +499,14 @@
       fullurl += qs;
     }
 
-    var req = xhr(fullurl, opts);
     var origins = batch.map(req => req.el);
+    var detail = {url: fullurl, opts: opts};
+    origins.forEach(function (el) {
+      sendEvent(el, 'ts-before-xhr', detail);
+      el.classList.add('ts-active');
+    });
 
-    origins.forEach(el => el.classList.add('ts-active'));
-    req
+    return xhr(fullurl, opts)
       .finally(function() {
         origins.forEach(el => el.classList.remove('ts-active'));
       })
