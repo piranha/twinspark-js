@@ -32,36 +32,18 @@
                classtoggle: function(cls, el) { el.classList.toggle(cls); }};
 
 
-  /// Wrap attribute handling
-  /** @type {function(Element, string): boolean} */
-  function hasattr(el, attr) {
-    return el.hasAttribute(attr);
-  }
-
-  /** @type {function(Element, string): string|null} */
-  function getattr(el, attr) {
-    return el.getAttribute(attr);
-  }
-
-  /** @type {function(Element, string, string): void} */
-  function setattr(el, attr, value) {
-    return el.setAttribute(attr, value);
-  }
-  /// End wrap attribute handling
-
-
   /// Utils
 
   var err = console.log.bind(console, 'TwinSpark error:');
   /** @type {function(...*): void} */
-  function log() {
+  function LOG() {
     if (DEBUG) {
       console.log.apply(console, arguments);
     }
   }
 
   function groupBy(arr, keyfn) {
-    return arr.reduce((acc, v) => {
+    return arr.reduce(function (acc, v) {
       var key = keyfn(v);
       (acc[key] || (acc[key] = [])).push(v);
       return acc;
@@ -94,6 +76,8 @@
     });
   }
 
+
+  /// Events
   /** @type {function(Function): void} */
   function onload(fn) {
     if (document.readyState == 'loading') {
@@ -103,6 +87,39 @@
     }
   }
 
+  var onidle = window.requestIdleCallback || function(x) { setTimeout(x, 100); };
+
+  /** @type {function(Element, string, boolean, any=): void} */
+  function sendEvent(el, type, opts) {
+    opts || (opts = {});
+    // bubbles is true by default but could be false
+    var bubbles = opts.hasOwnProperty('bubbles') ? opts.bubbles : true;
+    var event = new CustomEvent(type, {bubbles: bubbles,
+                                       cancelable: true,
+                                       detail: opts.detail});
+    LOG(el, type, opts.detail);
+    el.dispatchEvent(event);
+  }
+
+
+  /// Attribute handling
+  /** @type {function(Element, string): boolean} */
+  function hasattr(el, attr) {
+    return el.hasAttribute(attr);
+  }
+
+  /** @type {function(Element, string): string|null} */
+  function getattr(el, attr) {
+    return el.getAttribute(attr);
+  }
+
+  /** @type {function(Element, string, string): void} */
+  function setattr(el, attr, value) {
+    return el.setAttribute(attr, value);
+  }
+
+
+  /// DOM querying
   function qsf(el, selector) { // querySelectorFirst
     if (el.matches(selector))
       return el;
@@ -143,15 +160,6 @@
   }
 
 
-  /** @type {function(Element, string, boolean, Object=): void} */
-  function sendEvent(el, type, bubbles, attrs) {
-    log('dispatching event', type, el, attrs);
-    var event = new Event(type, {bubbles: bubbles});
-    if (attrs) Object.assign(event, attrs);
-    el.dispatchEvent(event);
-  }
-
-
   /// Core
 
   /** @type {function(Element, {selector: string, handler: (function(Element): void)}): void} */
@@ -176,7 +184,7 @@
   /** @type {function(Element): void} */
   function activate(el) {
     DIRECTIVES.forEach(d => attach(el, d));
-    sendEvent(el, 'ts-ready', true);
+    sendEvent(el, 'ts-ready');
   }
 
   /** @type {function(Array<Element>): void} */
@@ -197,7 +205,7 @@
   function init(_e) {
     activate(document.body);
     READY = true;
-    log('init done');
+    LOG('init done');
   }
 
   onload(init);
@@ -292,7 +300,10 @@
   /// History
 
   function storeCurrentState() {
-    history.replaceState({html: document.body.innerHTML}, "");
+    // one of those is pretty slow
+    var current = document.body.innerHTML;
+    onidle(function() { history.replaceState({html: current}, ""); },
+           {timeout: 1000});
   }
 
   function pushState(url, title) {
@@ -452,6 +463,7 @@
     swapped.forEach(activate);
     autofocus(swapped);
 
+    // store current HTML so on popstate we have somewhere to go forward to
     storeCurrentState();
     return swapped;
   }
@@ -517,10 +529,10 @@
   }
 
   function doBatch(batch) {
-    // Skip requests unless `doAction` for `ts-req-before` returned `true`
-    Promise
+    // Skip requests if `doAction` for `ts-req-before` returned `false`
+    return Promise
       .all(batch.map(req => doAction(req.el, null, getattr(req.el, 'ts-req-before'))))
-      .then(result => batch.filter((req, i) => result[i]))
+      .then(result => batch.filter((req, i) => result[i] !== false))
       .then(_doBatch);
   }
 
@@ -639,7 +651,7 @@
   }
 
   register('[ts-action]', function(el) {
-    var handler = e => doAction(findTarget(el), e.reason || e, getattr(el, 'ts-action'));
+    var handler = e => doAction(findTarget(el), e.detail || e, getattr(el, 'ts-action'));
     if ((el.tagName == 'A' || el.tagName == 'BUTTON') && !hasattr(el, 'ts-trigger')) {
       onNative(el, handler);
     } else {
@@ -651,31 +663,33 @@
   /// Triggers
 
   function observed(entries, obs) {
+    var entry, el;
     for (var i = 0; i < entries.length; i++) {
-      if (entries[i].isIntersecting) {
-        entries[i].target.tsTrigger();
+      entry = entries[i];
+      if (entry.isIntersecting) {
+        (el = entry.target).tsTrigger(el);
       }
     }
   }
 
-  var visible = new IntersectionObserver(observed, {rootMargin: '0px', threshold: 0.5});
+  var visible = new IntersectionObserver(observed, {rootMargin: '0px', threshold: 0.2});
   var closeby = new IntersectionObserver(observed, {rootMargin: '100px', threshold: 0.2});
 
-  function getInternalData(el) {
+  function internalData(el) {
     var prop = 'twinspark-internal';
     return el[prop] || (el[prop] = {});
   }
 
-  function makeTriggerListener(el, t) {
+  function makeTriggerListener(t) {
     var delay = t.indexOf('delay');
-    var spec = {changed: t.indexOf('changed') > 0,
-                once:    t.indexOf('once') > 0,
-                delay:   delay > 0 ? parseTime(t[delay + 1]) : null};
-    return function(e) {
-      var data = getInternalData(el);
+    var spec = {changed: t.indexOf('changed') != -1,
+                once:    t.indexOf('once') != -1,
+                delay:   delay != -1 ? parseTime(t[delay + 1]) : null};
+    return function(el, e) {
+      var data = internalData(el);
 
       function executeTrigger() {
-        sendEvent(el, 'ts-trigger', false, e && {reason: e});
+        sendEvent(el, 'ts-trigger', {bubbles: false, detail: e});
       }
 
       if (spec.once) {
@@ -705,14 +719,14 @@
 
   function registerTrigger(el, t) {
     var type = t[0];
-    var tsTrigger = makeTriggerListener(el, t);
+    var tsTrigger = makeTriggerListener(t);
     el.tsTrigger = tsTrigger; // for IntersectionObserver
 
     switch (type) {
-    case 'load':    el.tsTrigger(); break;
+    case 'load':    tsTrigger(el); break;
     case 'visible': visible.observe(el); break;
     case 'closeby': closeby.observe(el); break;
-    default:        el.addEventListener(type, function(e) { tsTrigger(e); }); break;
+    default:        el.addEventListener(type, function(e) { tsTrigger(e.target, e); }); break;
     }
   }
 
