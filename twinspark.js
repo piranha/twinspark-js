@@ -13,28 +13,28 @@
 
   /** @type Array<{selector: string, handler: (function(Element): void)}> */
   var DIRECTIVES = [];
-  var FUNCS = {stop:        function(el, e)   { if (e) e.stopPropagation(); },
-               // `delay` returns `true` so it could be used in `ts-req-before`
-               // without preventing action
+  var FUNCS = {stop:        function(o) { if (o.event) o.event.stopPropagation(); },
                delay:       delay,
-               remove:      function(el) {
-                 if (arguments.length == 2) {
-                   return el.remove();
+               remove: function(o) {
+                 if (arguments.length == 1) {
+                   return o.el.remove();
                  }
-                 var selcount = arguments.length - 2;
+                 var selcount = arguments.length - 1;
                  var sel = [].slice.call(arguments, 0, selcount);
-                 findTarget(arguments[selcount], sel.join(' ')).remove();
+                 findTarget(arguments[selcount].el, sel.join(' ')).remove();
                },
-               class:       function(cls, el) { el.classList.add(cls); },
-               "class+":    function(cls, el) { el.classList.add(cls); },
-               "class-":    function(cls, el) { el.classList.remove(cls); },
-               "class^":    function(cls, el) { el.classList.toggle(cls); },
-               classtoggle: function(cls, el) { el.classList.toggle(cls); }};
+               class:       function(cls, o) { o.el.classList.add(cls); },
+               "class+":    function(cls, o) { o.el.classList.add(cls); },
+               "class-":    function(cls, o) { o.el.classList.remove(cls); },
+               "class^":    function(cls, o) { o.el.classList.toggle(cls); },
+               classtoggle: function(cls, o) { o.el.classList.toggle(cls); }};
 
 
   /// Utils
 
-  var err = console.log.bind(console, 'TwinSpark error:');
+  var ERR = console.error ?
+      console.error.bind(console, 'TwinSpark error:') :
+      console.log.bind(console, 'TwinSpark error:');
   /** @type {function(...*): void} */
   function LOG() {
     if (DEBUG) {
@@ -59,7 +59,6 @@
   }
 
   function flat(arr) {
-    if (arr.flat) return arr.flat();
     return [].concat.apply([], arr);
   }
 
@@ -89,7 +88,7 @@
 
   var onidle = window.requestIdleCallback || function(x) { setTimeout(x, 100); };
 
-  /** @type {function(Element, string, boolean, any=): void} */
+  /** @type {function(Element, string, Object=): void} */
   function sendEvent(el, type, opts) {
     opts || (opts = {});
     // bubbles is true by default but could be false
@@ -235,10 +234,14 @@
   function parseData(v) {
     if (v == "") return null;
 
-    if (v.startsWith('{')) {
+    if (v[0] == '{') {
       var data = JSON.parse(v);
       if (typeof data === 'object' && data !== null) {
-        return Object.entries(data);
+        var arr = [];
+        for (var k in data) {
+          arr.push([k, data[k]]);
+        }
+        return arr;
       }
     } else {
       return new URLSearchParams(v);
@@ -271,14 +274,19 @@
 
   function formElementValue(el) {
     if (!el.name) return;
+
+    // submit is handled later by looking at e.submitter
+    if (el.type == 'submit') return;
+
     if (((el.type == 'radio') || (el.type == 'checkbox')) &&
         !el.checked) {
       return;
     }
+
     return el.value;
   }
 
-  function collectData(el) {
+  function collectData(el, e) {
     var data = eldata(el, 'ts-data');
     var tag = el.tagName;
     var res;
@@ -288,10 +296,16 @@
         if (res = formElementValue(el))
           data.append(el.name, res);
       });
+
+      if (e && e.type == 'submit' && e.submitter) {
+        data.append(e.submitter.name, e.submitter.value);
+      }
+
     } else if ((tag == 'INPUT') || (tag == 'SELECT') || (tag == 'TEXTAREA')) {
       if (res = formElementValue(el))
         data.append(el.name, res);
     }
+
 
     return data;
   }
@@ -320,24 +334,22 @@
 
   /// Fragments
 
-  /** @type {function(Element): Element} */
+  /** @type {function(Element, string=): Element} */
   function findTarget(el, sel) {
     sel || (sel = getattr(el, 'ts-target'));
     if (!sel)
       return el;
 
     if (sel == 'inherit') {
-      while (el = el.parentElement) {
-        if (hasattr(el, 'ts-target')) {
-          return findTarget(el);
-        }
-      }
-      return;
+      var parent = el.parentElement.closest('[ts-target]');
+      if (!parent)
+        ERR('Could not find parent for target', el);
+      return findTarget(parent);
     }
 
-    if (sel.startsWith('parent '))
+    if (sel.slice(0, 7) == 'parent ')
       return el.closest(sel.slice(7));
-    if (sel.startsWith('child '))
+    if (sel.slice(0, 6) == 'child ')
       return el.querySelector(sel.slice(6));
     return document.querySelector(sel);
   }
@@ -352,7 +364,7 @@
       return [reply];
     }
 
-    if (sel.startsWith('children ')) {
+    if (sel.slice(0, 9) == 'children ') {
       var el = qsf(reply, sel.slice(9));
       return el && el.children && Array.from(el.children);
     }
@@ -371,7 +383,7 @@
     case 'append':      target.append.apply(target, reply);            break;
     case 'beforebegin': target.parentNode.insertBefore(reply, target); break;
     case 'afterend':    target.parentNode.insertBefore(reply, target.nextSibling); break;
-    default:            err('unknown swap strategy', strategy);        return;
+    default:            ERR('unknown swap strategy', strategy);        return;
     }
     return reply;
   }
@@ -391,7 +403,7 @@
       sel = '#' + reply.id;
     }
     if (!sel) {
-      err('cannot find target for server-pushed swap', reply);
+      ERR('cannot find target for server-pushed swap', reply);
     }
     var target = qsf(document.body, sel);
     var strategy = getattr(reply, 'ts-swap') || 'replace';
@@ -402,7 +414,7 @@
     // `replace: css selector <= css selector`
     var m = header.match(/(\w+):(.+)<=(.+)/);
     if (!m)
-      return err('Cannot parse x-ts-swap header value', header);
+      return ERR('Cannot parse x-ts-swap header value', header);
     var target = qsf(document.body, m[2]);
     var reply = qsf(replyParent, m[3]);
     var strategy = m[1];
@@ -434,10 +446,13 @@
     // `joiners` are elements which want to `join` current request by specifying
     // its ts-req-id in ts-req-join attribute. They should be found before doing
     // any swaps.
-    var joiners = origins.filter(origin => hasattr(origin, 'ts-req-id')).map(origin => {
-      var id = getattr(origin, 'ts-req-id');
-      return Array.from(document.querySelectorAll('[ts-req-join~="' +  id +'"]'));
-    }).flat(1);
+    var joiners = flat(
+      origins
+        .filter(origin => hasattr(origin, 'ts-req-id'))
+        .map(origin => {
+          var id = getattr(origin, 'ts-req-id');
+          return Array.from(document.querySelectorAll('[ts-req-join~="' +  id +'"]'));
+        }));
 
     // swap original elements
     var swapped = origins.map(function (origin, i) {
@@ -468,49 +483,65 @@
     return swapped;
   }
 
+
+  /// Making request for fragments
+
+  function mergeHeaders(h1, h2) {
+    for (var k in h2) {
+      if (!h1[k]) {
+        h1[k] = h2[k];
+      } else if (h1[k] != h2[k]) {
+        h1[k] += ', ' + h2[k];
+      }
+    }
+    return h1;
+  }
+
+  function makeOpts(req) {
+    var data = collectData(req.el, req.event);
+    return {
+      method:  req.method,
+      data:    data,
+      headers: {
+        'Accept':       'text/html+partial',
+        'Content-Type': data && req.method != 'GET' ? 'application/x-www-form-urlencoded' : null,
+        'TS-URL':     loc.pathname + loc.search,
+        'TS-Origin':  elid(req.el),
+        'TS-Target':  elid(findTarget(req.el))
+      }
+    };
+  }
+
   function _doBatch(batch) {
-    if (batch.length == 0) return;
+    if (!batch.length) return;
 
     var url = batch[0].url;
     var method = batch[0].method;
-    var data = batch.reduce(
-      (acc, req) => mergeParams(acc, collectData(req.el), false),
-      new URLSearchParams()).toString();
+    var data = batch.reduce(function(acc, req) {
+      return mergeParams(acc, req.opts.data, false);
+    }, new URLSearchParams()).toString();
 
-    var qs = data && method == 'GET' ? data : null;
-    var body = data && method != 'GET' ? data : null;
+    var query = method == 'GET' ? data : null;
+    var body = method != 'GET' ? data : null;
 
     var opts = {
       method:  method,
-      headers: {
-        'Accept':       'text/html+partial',
-        'Content-Type': body ? 'application/x-www-form-urlencoded' : '',
-        'X-TS-URL':     loc.pathname + loc.search,
-        'X-TS-Origin':  batch.map(r => elid(r.el)).join(', '),
-        'X-TS-Target':  batch.map(r => elid(findTarget(r.el))).join(', ')
-      },
-      body:    body};
+      body:    body,
+      headers: batch.reduce(function(h, req) {
+        return mergeHeaders(h, req.opts.headers);
+      }, {})
+    };
 
-    var fullurl = url;
-    if (qs) {
-      if (fullurl.indexOf('?') == -1) {
-        fullurl += '?';
-      }
-      fullurl += qs;
-    }
-
-    var origins = batch.map(req => req.el);
-    var detail = {url: fullurl, opts: opts};
+    var fullurl = url + (url.indexOf('?') == -1 ? '?' : '') + (query || '');
+    var origins = batch.map(function(req) { return req.el; });
     origins.forEach(function (el) {
-      sendEvent(el, 'ts-before-xhr', detail);
       el.classList.add('ts-active');
     });
 
     return xhr(fullurl, opts)
-      .finally(function() {
-        origins.forEach(el => el.classList.remove('ts-active'));
-      })
       .then(function(res) {
+        origins.forEach(el => el.classList.remove('ts-active'));
+
         var headers = toObj(res.headers.entries());
 
         if (res.ok && res.redirected) {
@@ -524,23 +555,36 @@
           return swap(fullurl, origins, res.content, headers);
         }
 
-        err(res.content);
+        ERR(res.content);
       })
       .catch(function(res) {
-        err('Network interrupt or something', arguments);
+        origins.forEach(el => el.classList.remove('ts-active'));
+
+        ERR('Network interrupt or something', arguments);
       });
   }
 
   function doBatch(batch) {
-    // Skip requests if `doAction` for `ts-req-before` returned `false`
     return Promise
-      .all(batch.map(req => doAction(req.el, null, getattr(req.el, 'ts-req-before'))))
-      .then(result => batch.filter((req, i) => result[i] !== false))
+      .all(batch.map(function(req) {
+        req.opts = makeOpts(req);
+        var action = doAction(req.el, req.event, getattr(req.el, 'ts-req-before'), {req: req});
+        if (!action) return req;
+        return action.then(function(res) {
+          // skip if action explicitly returned `false`
+          return res === false ? null : req;
+        });
+      }))
+      .then(function(res) {
+        return res.filter(function(req) { return !!req; });
+      })
       .then(_doBatch);
   }
 
   // Batch Request Queue
-  /** @type {reqs: Array<{el: Element, url: string, method: string, batch: boolean}>, request: Object} */
+  /** @typedef {{el: !Element, url: string, method: string, batch: boolean}} */
+  var Req;
+  /** @type {{reqs: Array<Req>, request: ?number}} */
   var queue = {
     reqs: [],
     request: null
@@ -550,7 +594,9 @@
     var batches = groupBy(queue.reqs, req => req.method + req.url);
     queue = {reqs: [], request: null};
 
-    Object.values(batches).forEach(doBatch);
+    for (var k in batches) {
+      doBatch(batches[k]);
+    }
   }
 
   function queueRequest(req) {
@@ -561,13 +607,14 @@
   }
 
   /** @type {function(Element, boolean): {el: Element, url: string, method: string, batch: boolean} } */
-  function makeReq(el, batch) {
+  function makeReq(el, e, batch) {
     var url = ((batch ? getattr(el, 'ts-req-batch') : getattr(el, 'ts-req')) ||
                (el.tagName == 'FORM' ? getattr(el, 'action') : getattr(el, 'href')));
     var method = getattr(el, 'ts-req-method') ||
         (el.tagName == 'FORM' ? 'POST' : 'GET');
 
     return {el:     el,
+            event:  e,
             url:    url,
             method: method,
             batch:  batch};
@@ -592,7 +639,10 @@
   }
 
   register('[ts-req]', function(el) {
-    var handler = e => doBatch([makeReq(el, false)]);
+    function handler(e) {
+      doBatch([makeReq(el, e, false)]);
+    }
+
     if (hasattr(el, 'ts-trigger')) {
       el.addEventListener('ts-trigger', handler);
     } else {
@@ -602,7 +652,10 @@
 
 
   register('[ts-req-batch]', function(el) {
-    var handler = e => queueRequest(makeReq(el, true));
+    function handler(e) {
+      queueRequest(makeReq(el, e, true));
+    }
+
     if (hasattr(el, 'ts-trigger')) {
       el.addEventListener('ts-trigger', handler);
     } else {
@@ -617,44 +670,44 @@
     return Object.assign(FUNCS, cmds);
   }
 
-  function executeCommand(command, args, target, e) {
-    args.push(target);
-    args.push(e);
+  function executeCommand(command, args, payload) {
+    var cmd = ((window._ts_func && window._ts_func[command]) ||
+               FUNCS[command] ||
+               window[command]);
 
-    if (FUNCS[command]) {
-      return FUNCS[command].apply(target, args);
-    }
-    if (window._ts_func && window._ts_func[command]) {
-      return window._ts_func[command].apply(target, args);
-    }
-    if (window[command]) {
-      return window[command].apply(target, args);
+    if (cmd) {
+      args.push(payload);
+      return cmd.apply(payload.el, args);
     }
 
-    throw err('Unknown action', command);
+    ERR('Unknown action', command, args);
   }
 
   function parseActionSpec(s) {
     return s.split(',').map(c => c.trim().split(/\s+/));
   }
 
-  /** @type {function(Element, Event, (string|null)): boolean} */
-  function doAction(target, e, spec) {
-    // special case for ts-req-before, where request will be cancelled if true
-    // is not returned
-    if (!spec) return true;
+  /** @type {function(Element, Event, string=, Object=): (Promise|undefined)} */
+  function doAction(target, e, spec, payload) {
+    if (!spec) return;
 
     var commands = parseActionSpec(spec);
+    payload = Object.assign(payload || {}, {el: target, event: e});
 
     return commands.reduce(function(p, command) {
-      return p.then(function(_) {
-        return executeCommand(command[0], command.slice(1), target, e);
+      return p.then(function(r) {
+        // `false` indicates that action should stop
+        if (r === false)
+          return r;
+        return executeCommand(command[0], command.slice(1), payload);
       });
-    }, Promise.resolve(1));
+    }, Promise.resolve());
   }
 
   register('[ts-action]', function(el) {
-    var handler = e => doAction(findTarget(el), e.detail || e, getattr(el, 'ts-action'));
+    var handler = function(e) {
+      doAction(findTarget(el), e.detail || e, getattr(el, 'ts-action'));
+    };
     if ((el.tagName == 'A' || el.tagName == 'BUTTON') && !hasattr(el, 'ts-trigger')) {
       onNative(el, handler);
     } else {

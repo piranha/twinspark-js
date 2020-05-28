@@ -249,7 +249,7 @@
     <a href="/before" ts-req>Did you see it?</a>
   </script>
   <script>
-    twinspark.func({get_user: () => localStorage.getItem('user')});
+    twinspark.func({get_user: () => !!localStorage.getItem('user')});
     fetchMock.get("/before", prev());
     test(el => {
       click(el.$$('a')[0])
