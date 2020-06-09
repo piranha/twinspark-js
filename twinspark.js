@@ -327,9 +327,12 @@
     history.pushState(null, title, url);
   }
 
-  window.addEventListener('popstate', e => {
-    document.body.innerHTML = e.state.html;
-    activate(document.body);
+  window.addEventListener('popstate', function(e) {
+    // NOTE: e.state is empty when fired on fragment change?
+    if (e.state) {
+      document.body.innerHTML = e.state.html;
+      activate(document.body);
+    }
   });
 
 
