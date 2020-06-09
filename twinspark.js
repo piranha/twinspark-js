@@ -821,6 +821,7 @@
     activate:  activate,
     func:      registerCommands,
     elcrumbs:  elcrumbs,
+    target:    findTarget,
     logtoggle: () => localStorage._ts_debug = (DEBUG=!DEBUG) ? 'true' : '',
     _internal: {DIRECTIVES: DIRECTIVES,
                 init: init}
