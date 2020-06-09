@@ -15,13 +15,14 @@
   var DIRECTIVES = [];
   var FUNCS = {stop:        function(o) { if (o.event) o.event.stopPropagation(); },
                delay:       delay,
-               remove: function(o) {
-                 if (arguments.length == 1) {
+               remove: function() {
+                 var selcount = arguments.length - 1;
+                 var o = arguments[selcount];
+                 if (selcount == 0) {
                    return o.el.remove();
                  }
-                 var selcount = arguments.length - 1;
                  var sel = [].slice.call(arguments, 0, selcount);
-                 findTarget(arguments[selcount].el, sel.join(' ')).remove();
+                 findTarget(o.el, sel.join(' ')).remove();
                },
                class:       function(cls, o) { o.el.classList.add(cls); },
                "class+":    function(cls, o) { o.el.classList.add(cls); },
