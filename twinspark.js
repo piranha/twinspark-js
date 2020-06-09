@@ -118,6 +118,10 @@
     return el.setAttribute(attr, value);
   }
 
+  function delattr(el, attr) {
+    return el.removeAttribute(attr);
+  }
+
 
   /// DOM querying
   function qsf(el, selector) { // querySelectorFirst
@@ -276,8 +280,9 @@
   function formElementValue(el) {
     if (!el.name) return;
 
-    // submit is handled later by looking at e.submitter
-    if (el.type == 'submit') return;
+    // only clicked submit buttons should be handled. In ideal world we would
+    // look at e.submitter, but no support from Safari
+    if (el.type == 'submit' && !hasattr(el, 'ts-clicked')) return;
 
     if (((el.type == 'radio') || (el.type == 'checkbox')) &&
         !el.checked) {
@@ -287,7 +292,7 @@
     return el.value;
   }
 
-  function collectData(el, e) {
+  function collectData(el) {
     var data = eldata(el, 'ts-data');
     var tag = el.tagName;
     var res;
@@ -298,15 +303,10 @@
           data.append(el.name, res);
       });
 
-      if (e && e.type == 'submit' && e.submitter) {
-        data.append(e.submitter.name, e.submitter.value);
-      }
-
     } else if ((tag == 'INPUT') || (tag == 'SELECT') || (tag == 'TEXTAREA')) {
       if (res = formElementValue(el))
         data.append(el.name, res);
     }
-
 
     return data;
   }
@@ -499,16 +499,16 @@
   }
 
   function makeOpts(req) {
-    var data = collectData(req.el, req.event);
+    var data = collectData(req.el);
     return {
       method:  req.method,
       data:    data,
       headers: {
         'Accept':       'text/html+partial',
         'Content-Type': data && req.method != 'GET' ? 'application/x-www-form-urlencoded' : null,
-        'TS-URL':     loc.pathname + loc.search,
-        'TS-Origin':  elid(req.el),
-        'TS-Target':  elid(findTarget(req.el))
+        'TS-URL':       loc.pathname + loc.search,
+        'TS-Origin':    elid(req.el),
+        'TS-Target':    elid(findTarget(req.el))
       }
     };
   }
@@ -622,6 +622,14 @@
   }
   // End Batch Request Queue
 
+  function markSubmitter(el) {
+    el.addEventListener('click', function(e) {
+      setattr(el, 'ts-clicked', '1');
+      // form data should be handled synchronously
+      onidle(function() { delattr(el, 'ts-clicked'); });
+    });
+  }
+
   function onNative(el, func) {
     var tag = el.tagName;
     var event = 'click';
@@ -629,6 +637,12 @@
       event = 'submit';
     else if ((tag == 'INPUT') || (tag == 'SELECT') || (tag == 'TEXTAREA'))
       event = 'change';
+
+    if (tag == 'FORM' && event == 'submit') {
+      el.querySelectorAll('button').forEach(markSubmitter);
+      el.querySelectorAll('input[type="submit"]').forEach(markSubmitter);
+    }
+
     return el.addEventListener(event, function(e) {
       if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey || (e.button || 0) != 0)
         return;
