@@ -800,6 +800,7 @@
     case 'load':    tsTrigger(el); break;
     case 'visible': visible.observe(el); break;
     case 'closeby': closeby.observe(el); break;
+    case 'scroll':  window.addEventListener(type, function(e) { tsTrigger(el, e); }); break;
     default:        el.addEventListener(type, function(e) { tsTrigger(e.target, e); }); break;
     }
   }
