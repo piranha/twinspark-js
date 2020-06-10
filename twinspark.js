@@ -736,18 +736,28 @@
 
   /// Triggers
 
-  function observed(entries, obs) {
-    var entry, el;
-    for (var i = 0; i < entries.length; i++) {
-      entry = entries[i];
-      if (entry.isIntersecting) {
-        (el = entry.target).tsTrigger(el);
+  function makeObserver(opts) {
+    var on = opts.on;
+    var off = opts.off;
+
+    return new IntersectionObserver(function(entries, obs) {
+      var threshold = obs.thresholds[0];
+      var entry;
+      for (var i = 0; i < entries.length; i++) {
+        entry = entries[i];
+
+        // isIntersecting is often `true` in FF even when it shouldn't be
+        if (entry.intersectionRatio > threshold) {
+          sendEvent(entry.target, on, {detail: entry});
+        } else if (entry.intersectionRatio < threshold) {
+          sendEvent(entry.target, off, {detail: entry});
+        }
       }
-    }
+    }, opts);
   }
 
-  var visible = new IntersectionObserver(observed, {rootMargin: '0px', threshold: 0.2});
-  var closeby = new IntersectionObserver(observed, {rootMargin: '100px', threshold: 0.2});
+  var visible = makeObserver({on: 'visible', off: 'invisible', rootMargin: '0px', threshold: 0.2});
+  var closeby = makeObserver({on: 'closeby', off: 'away', rootMargin: '0px', threshold: 0.2});
 
   function internalData(el) {
     var prop = 'twinspark-internal';
@@ -794,14 +804,17 @@
   function registerTrigger(el, t) {
     var type = t[0];
     var tsTrigger = makeTriggerListener(t);
-    el.tsTrigger = tsTrigger; // for IntersectionObserver
 
     switch (type) {
-    case 'load':    tsTrigger(el); break;
-    case 'visible': visible.observe(el); break;
-    case 'closeby': closeby.observe(el); break;
-    case 'scroll':  window.addEventListener(type, function(e) { tsTrigger(el, e); }); break;
-    default:        el.addEventListener(type, function(e) { tsTrigger(e.target, e); }); break;
+    case 'load':      tsTrigger(el);
+      break;
+    case 'scroll':    window.addEventListener(type, function(e) { tsTrigger(el, e); });
+      break;
+    case 'visible':   visible.observe(el);
+    case 'invisible': visible.observe(el);
+    case 'closeby':   closeby.observe(el);
+    case 'away':      closeby.observe(el);
+    default:          el.addEventListener(type, function(e) { tsTrigger(e.target, e); }); break;
     }
   }
 
