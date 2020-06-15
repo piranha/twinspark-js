@@ -806,15 +806,17 @@
     var tsTrigger = makeTriggerListener(t);
 
     switch (type) {
-    case 'load':      tsTrigger(el);
+    case 'load':         tsTrigger(el, {type: 'load'});
       break;
-    case 'scroll':    window.addEventListener(type, function(e) { tsTrigger(el, e); });
+    case 'windowScroll': window.addEventListener(type, function(e) { tsTrigger(el, e); });
       break;
-    case 'visible':   visible.observe(el);
-    case 'invisible': visible.observe(el);
-    case 'closeby':   closeby.observe(el);
-    case 'away':      closeby.observe(el);
-    default:          el.addEventListener(type, function(e) { tsTrigger(e.target, e); }); break;
+    case 'scroll':       el.addEventListener(type, function(e) { tsTrigger(el, e); });
+      break;
+    case 'visible':      visible.observe(el);
+    case 'invisible':    visible.observe(el);
+    case 'closeby':      closeby.observe(el);
+    case 'away':         closeby.observe(el);
+    default:             el.addEventListener(type, function(e) { tsTrigger(e.target, e); });
     }
   }
 
