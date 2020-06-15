@@ -758,6 +758,13 @@
 
   var visible = makeObserver({on: 'visible', off: 'invisible', rootMargin: '0px', threshold: 0.2});
   var closeby = makeObserver({on: 'closeby', off: 'away', rootMargin: '0px', threshold: 0.2});
+  var removed = new MutationObserver(function(recs) {
+    for (var rec of recs) {
+      for (var node of rec.removedNodes) {
+        sendEvent(node, 'remove', {detail: rec});
+      }
+    }
+  });
 
   function internalData(el) {
     var prop = 'twinspark-internal';
@@ -812,6 +819,7 @@
       break;
     case 'scroll':       el.addEventListener(type, function(e) { tsTrigger(el, e); });
       break;
+    case 'remove':       removed.observe(el.parentElement, {childList: true});
     case 'visible':      visible.observe(el);
     case 'invisible':    visible.observe(el);
     case 'closeby':      closeby.observe(el);

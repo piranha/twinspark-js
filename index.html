@@ -722,6 +722,37 @@
 </div>
 
 
+<h3 id="remove-event" class="mt-2">Doing something when node is removed</h3>
+<p>It is useful to do something when node is removed (especially if that's some child
+  or even non-related node triggering that removal). It's possible, but not recommended
+  to use often since performance characteristics of the code are not well
+  understood.</p>
+
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p ts-action="resurrect" ts-trigger="remove">
+      When this paragraph is removed by clicking button, it will resurrect itself.
+      <button ts-action="remove" ts-target="parent p">Remove</button>
+    </p>
+  </div>
+
+  <script>
+    twinspark.func({resurrect: function(o) {
+      var parent = o.event.detail.target;
+      parent.appendChild(o.el);
+    }});
+  </script>
+
+</div>
+
+
 <h2>Use cases</h2>
 
 <h3 id="autocomplete">Writing autocomplete</h3>
@@ -760,7 +791,7 @@
 </div>
 
 
-<h3 id="progressbar">Progress bar</h3>
+<h3 id="progressbar" class="mt-2">Progress bar</h3>
 
 <div class="card">
   <div class="card-header">
