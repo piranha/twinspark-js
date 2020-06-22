@@ -756,8 +756,10 @@
     }, opts);
   }
 
+  var closebyMargin = (window.innerHeight / 5 | 0) + 'px';
+
   var visible = makeObserver({on: 'visible', off: 'invisible', rootMargin: '0px', threshold: 0.2});
-  var closeby = makeObserver({on: 'closeby', off: 'away', rootMargin: '0px', threshold: 0.2});
+  var closeby = makeObserver({on: 'closeby', off: 'away', rootMargin: closebyMargin, threshold: 0.2});
   var removed = new MutationObserver(function(recs) {
     for (var rec of recs) {
       for (var node of rec.removedNodes) {
