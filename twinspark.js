@@ -828,7 +828,7 @@
     case 'invisible':    visible.observe(el);
     case 'closeby':      closeby.observe(el);
     case 'away':         closeby.observe(el);
-    default:             el.addEventListener(type, function(e) { tsTrigger(e.target, e); });
+    default:             el.addEventListener(type, function(e) { tsTrigger(el, e); });
     }
   }
 
