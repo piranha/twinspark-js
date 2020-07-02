@@ -418,7 +418,7 @@
     // `replace: css selector <= css selector`
     var m = header.match(/(\w+):(.+)<=(.+)/);
     if (!m)
-      return ERR('Cannot parse x-ts-swap header value', header);
+      return ERR('Cannot parse ts-swap header value', header);
     var target = qsf(document.body, m[2]);
     var reply = qsf(replyParent, m[3]);
     var strategy = m[1];
@@ -433,10 +433,10 @@
   /** @type {function(string, Array<Element>, string, Object): Array<Element>} */
   function swap(url, origins, content, headers) {
     var html = new DOMParser().parseFromString(content, 'text/html');
-    var title = headers['x-ts-title'] || html.title;
-    // either x-ts-history contains new URL or ts-req-history is truthy value,
+    var title = headers['ts-title'] || html.title;
+    // either ts-history contains new URL or ts-req-history is truthy value,
     // then take request URL as new URL
-    var pushurl = headers['x-ts-history'] || hasattr(origins[0], 'ts-req-history') && url;
+    var pushurl = headers['ts-history'] || hasattr(origins[0], 'ts-req-history') && url;
     var children = Array.from(html.body.children);
     var replyParent = html.body;
 
@@ -474,8 +474,8 @@
     swapped = swapped.concat(oobs);
 
     // swap any header requests
-    if (headers['x-ts-swap']) {
-      swapped = swapped.concat(headers['x-ts-swap'].split(',')
+    if (headers['ts-swap']) {
+      swapped = swapped.concat(headers['ts-swap'].split(',')
                                .map(header => headerSwap(header, replyParent)));
     }
 
@@ -551,7 +551,7 @@
         var headers = toObj(res.headers.entries());
 
         if (res.ok && res.redirected) {
-          headers['x-ts-history'] = res.url;
+          headers['ts-history'] = res.url;
           return swap(res.url, [document.body], res.content, headers);
         }
 
