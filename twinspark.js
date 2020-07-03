@@ -461,9 +461,14 @@
         }));
 
     // swap original elements
-    var swapped = origins.map(function (origin, i) {
-      return elementSwap(origin, origins.length > 1 ? children[i] : replyParent);
-    });
+    var swapped;
+    if (headers['ts-swap'] != 'skip') {
+      swapped = origins.map(function (origin, i) {
+        return elementSwap(origin, origins.length > 1 ? children[i] : replyParent);
+      });
+    } else {
+      swapped = [];
+    }
 
     var oobs = Array.from(replyParent.querySelectorAll('[ts-swap-push]')).map(function (reply) {
       return pushedSwap(reply);
