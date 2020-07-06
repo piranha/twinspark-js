@@ -824,7 +824,7 @@
     switch (type) {
     case 'load':         tsTrigger(el, {type: 'load'});
       break;
-    case 'windowScroll': window.addEventListener(type, function(e) { tsTrigger(el, e); });
+    case 'windowScroll': window.addEventListener('scroll', function(e) { tsTrigger(el, e); });
       break;
     case 'scroll':       el.addEventListener(type, function(e) { tsTrigger(el, e); });
       break;
