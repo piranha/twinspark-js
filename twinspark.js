@@ -418,7 +418,7 @@
     // `replace: css selector <= css selector`
     var m = header.match(/(\w+):(.+)<=(.+)/);
     if (!m)
-      return ERR('Cannot parse ts-swap header value', header);
+      return ERR('Cannot parse ts-swap-push header value', header);
     var target = qsf(document.body, m[2]);
     var reply = qsf(replyParent, m[3]);
     var strategy = m[1];
@@ -479,8 +479,8 @@
     swapped = swapped.concat(oobs);
 
     // swap any header requests
-    if (headers['ts-swap']) {
-      swapped = swapped.concat(headers['ts-swap'].split(',')
+    if (headers['ts-swap-push']) {
+      swapped = swapped.concat(headers['ts-swap-push'].split(',')
                                .map(header => headerSwap(header, replyParent)));
     }
 
