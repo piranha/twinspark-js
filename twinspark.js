@@ -621,8 +621,10 @@
   function makeReq(el, e, batch) {
     var url = ((batch ? getattr(el, 'ts-req-batch') : getattr(el, 'ts-req')) ||
                (el.tagName == 'FORM' ? getattr(el, 'action') : getattr(el, 'href')));
-    var method = getattr(el, 'ts-req-method') ||
-        (el.tagName == 'FORM' ? 'POST' : 'GET');
+    var method = (getattr(el, 'ts-req-method') ||
+                  (el.tagName == 'FORM' ?
+                   (getattr(el, 'method') || 'POST') :
+                   'GET')).toUpperCase();
 
     return {el:     el,
             event:  e,
