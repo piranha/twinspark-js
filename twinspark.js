@@ -731,7 +731,11 @@
 
   register('[ts-action]', function(el) {
     var handler = function(e) {
-      doAction(findTarget(el), e.detail || e, getattr(el, 'ts-action'));
+      if (e.detail && e.detail.type) {
+        // real event to trigger this action
+        e = e.detail;
+      }
+      doAction(findTarget(el), e, getattr(el, 'ts-action'));
     };
     if ((el.tagName == 'A' || el.tagName == 'BUTTON') && !hasattr(el, 'ts-trigger')) {
       onNative(el, handler);
