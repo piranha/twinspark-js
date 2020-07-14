@@ -67,6 +67,8 @@
     body {padding-bottom: 3em;} /* until we get footer? */
     .card-body {overflow: scroll; }
     .btn-sm {margin-bottom: .2rem; }
+    .mb-p {margin-bottom: 1.2rem; }
+    .mt-p {margin-top: 1.2rem; }
   </style>
 </head>
 <body class="container">
@@ -195,7 +197,7 @@
 </div>
 
 
-<h3 id="trigger" class="mt-2">Triggering requests</h3>
+<h3 id="trigger" class="mt-p">Triggering requests</h3>
 <p>Usually requests are triggered on natural interrupts: submit on forms and
   clicks elsewhere, but sometimes you want more, like triggering on being seen
   or hovered:</p>
@@ -224,7 +226,7 @@
 </div>
 
 
-<h3 id="before" class="mt-2">Doing stuff before/after request</h3>
+<h3 id="before" class="mt-p">Doing stuff before/after request</h3>
 <p>If you need to do some custom things around your request, you can use
   <code>ts-req-before</code> and <code>ts-req-after</code>. Those use same
   syntax as <a href="#action"><code>ts-action</code></a>, so it's pretty
@@ -261,7 +263,7 @@
 </div>
 
 
-<h3 id="data" class="mt-2">Collecting data</h3>
+<h3 id="data" class="mt-p">Collecting data</h3>
 <p>Sometimes collecting the data you need to send in templates is really
   annoying: you'll have to teach lower-level components/partials/etc some
   knowledge about higher levels. That is something TwinSpark can prevent: when
@@ -297,7 +299,7 @@
 </div>
 
 
-<h3 id="target" class="mt-2">Targeting other elements</h3>
+<h3 id="target" class="mt-p">Targeting other elements</h3>
 <p>Often you don't want to replace clicked element, but some other part of the
   page, like if you hit "Refresh" and need to update big part of the page. This
   can be done with <code>ts-target</code> attribute, which takes a CSS
@@ -328,7 +330,7 @@
 </div>
 
 
-<h3 id="parent" class="mt-2">Targeting parents</h3>
+<h3 id="parent" class="mt-p">Targeting parents</h3>
 <p>Interestingly, this seems like the most common pattern - when a button needs
   to update an element around itself. Add modifier <code>parent</code> before
   selector and <code>element.closest(selector)</code> method will be used to
@@ -361,7 +363,7 @@
 </div>
 
 
-<h3 id="history" class="mt-2">Changing URLs</h3>
+<h3 id="history" class="mt-p">Changing URLs</h3>
 <p>URLs are a fundament of the Web. Changing URLs in line with activity makes your
   app reloadable, browseable with backward/forward button and overall a good
   citizen of the Web.</p>
@@ -393,7 +395,7 @@
 </div>
 
 
-<h3 id="indicator" class="mt-2">Indicating activity</h3>
+<h3 id="indicator" class="mt-p">Indicating activity</h3>
 <p>It's really irritating when you click a link and nothing happens for some time. Luckily
   TwinSpark makes it really easy: it adds class <code>ts-active</code> to an element, enhanced with <code>ts-req</code>.</p>
 
@@ -451,7 +453,7 @@
 </div>
 
 
-<h3 id="actions" class="mt-2">Actions</h3>
+<h3 id="actions" class="mt-p">Actions</h3>
 <p>Sometimes you don't need to go to server to do something. Closing popup or
   hiding an element can be done without network round trip.</p>
 
@@ -534,7 +536,7 @@
 </div>
 
 <!--
-     <h3 id="timer" class="mt-2">Extending with external function</h3>
+     <h3 id="timer" class="mt-p">Extending with external function</h3>
      <p>In case you need to implement some weird functionality, there is an extension point to </p>
 
 
@@ -554,7 +556,7 @@
 -->
 
 
-<h3 id="visible" class="mt-2">Triggering on changed visibility</h3>
+<h3 id="visible" class="mt-p">Triggering on changed visibility</h3>
 <p>Doing something when element is almost visible makes it possible to implement lazy
   loading and various analytical events</p>
 
@@ -626,7 +628,7 @@
 </div>
 
 
-<h3 id="batch" class="mt-2">Batching requests</h3>
+<h3 id="batch" class="mt-p">Batching requests</h3>
 <p>This is a thing which is not immediately obvious, but is one of the reasons why
   TwinSpark appeared. It is an important optimization. Our use case for it was
   following: page renders for an anonymous user (for efficient caching on CDN) and
@@ -672,7 +674,7 @@
 </div>
 
 
-<h3 id="join" class="mt-2">Joining requests</h3>
+<h3 id="join" class="mt-p">Joining requests</h3>
 <p></p>
 
 
@@ -722,7 +724,7 @@
 </div>
 
 
-<h3 id="remove-event" class="mt-2">Doing something when node is removed</h3>
+<h3 id="remove-event" class="mt-p">Doing something when node is removed</h3>
 <p>It is useful to do something when node is removed (especially if that's some child
   or even non-related node triggering that removal). It's possible, but not recommended
   to use often since performance characteristics of the code are not well
@@ -791,7 +793,7 @@
 </div>
 
 
-<h3 id="progressbar" class="mt-2">Progress bar</h3>
+<h3 id="progressbar" class="mt-p">Progress bar</h3>
 
 <div class="card">
   <div class="card-header">
@@ -800,7 +802,7 @@
     <button class="btn btn-link btn-sm source">View Source</button>
   </div>
 
-  <div class="card-body">
+  <div class="card-body mb-p">
     <div>
       <h3>Start progress</h3>
       <button class="btn" ts-req="/progress" ts-req-method="post" ts-target="parent div">
@@ -853,4 +855,61 @@
       });
     })(prev(2), prev());
   </script>
+</div>
+
+
+<h3 id="filters" class="mt-p">Filters</h3>
+<p>Filtering on ecommerce sites is a complex task. On one side you want it to be crawlable
+  by Google, on the other if a user selected two filters one by one you'd like to see
+  products, filtered by both. Naïve implementation will filter only one of them if
+  a pause between clicks was short enough. It seems like the best way is form, full
+  of links (so that Google/no-js envs can still use it), which toggle checkboxes when
+  JS is enabled and auto-submit form.
+</p>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body" ts-target="child .out">
+    <form method="get" action="/filters" ts-target="inherit" ts-req>
+      <div><b>Brand</b></div>
+      <div class="filter">
+        <input type="checkbox" name="brand" value="adidas">
+        <a href="?brand=adidas" ts-action="togglecb, submit">Adidas</a>
+      </div>
+      <div class="filter">
+        <input type="checkbox" name="brand" value="nike">
+        <a href="?brand=nike" ts-action="togglecb, submit">Nike</a>
+      </div>
+      <div class="filter">
+        <input type="checkbox" name="brand" value="puma">
+        <a href="?brand=puma" ts-action="togglecb, submit">Puma</a>
+      </div>
+    </form>
+    <hr>
+    <p class="out">Selected filters: </p>
+  </div>
+
+  <script>
+    twinspark.func({
+      togglecb: function(o) {
+        var cb = o.el.parentElement.querySelector('[type="checkbox"]');
+        cb.checked = !cb.checked;
+      },
+      submit: function(o) {
+        twinspark.trigger(o.el.closest('form'), 'submit');
+      },
+    });
+    fetchMock.get('path:/filters', function(url, opts) {
+      return '<p class="out">Selected filters: ' + url + '</p>';
+    });
+  </script>
+
+  <style>
+    .filter [type="checkbox"] { display: none; }
+  </style>
 </div>
