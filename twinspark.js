@@ -351,11 +351,15 @@
       return findTarget(parent);
     }
 
-    if (sel.slice(0, 7) == 'parent ')
-      return el.closest(sel.slice(7));
-    if (sel.slice(0, 6) == 'child ')
-      return el.querySelector(sel.slice(6));
-    return document.querySelector(sel);
+    if (sel.slice(0, 7) == 'parent ') {
+      return el.closest(sel.slice(7)) ||
+        ERR('Cound not find parent with selector:', sel, 'for element', el);
+    }
+    if (sel.slice(0, 6) == 'child ') {
+      return el.querySelector(sel.slice(6)) ||
+        ERR('Cound not find child with selector:', sel, 'for element', el);
+    }
+    return document.querySelector(sel) || ERR('Could not find element with selector:', sel);
   }
 
   function findReply(target, origin, reply) {
@@ -739,10 +743,12 @@
       }
       doAction(findTarget(el), e, getattr(el, 'ts-action'));
     };
-    if ((el.tagName == 'A' || el.tagName == 'BUTTON') && !hasattr(el, 'ts-trigger')) {
+    if (hasattr(el, 'ts-trigger')) {
+      el.addEventListener('ts-trigger', handler);
+    } else if (el.tagName == 'A' || el.tagName == 'BUTTON') {
       onNative(el, handler);
     } else {
-      el.addEventListener('ts-trigger', handler);
+      ERR('No trigger for action on element', el);
     }
   });
 
