@@ -219,13 +219,40 @@
 
   /** @type {function(string, RequestInit): Promise<*> } */
   function xhr(url, opts) {
-    return fetch(url, opts || undefined)
-      .then(function(res) {
-        return res.text().then(text => {
-          res.content = text;
-          return Promise.resolve(res);
-        });
-      });
+    return new Promise(function(resolve, reject) {
+      opts || (opts = {});
+
+      var xhr = new XMLHttpRequest();
+      xhr.open(opts.method || 'GET', url, true);
+      for (var k in opts.headers) {
+        xhr.setRequestHeader(k, opts.headers[k]);
+      }
+
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState != 4) return;
+
+        var headers = {'ts-title':     xhr.getResponseHeader('ts-title'),
+                       'ts-history':   xhr.getResponseHeader('ts-history'),
+                       'ts-swap':      xhr.getResponseHeader('ts-swap'),
+                       'ts-swap-push': xhr.getResponseHeader('ts-swap-push')}
+
+        return resolve({ok:      xhr.status == 0 || (xhr.status >= 200 && xhr.status <= 299),
+                        status:  xhr.status,
+                        url:     xhr.responseURL,
+                        headers: headers,
+                        content: xhr.responseText});
+
+      }
+
+      xhr.timeout = 3000;
+      xhr.ontimeout = function() {
+        return reject({ok:    false,
+                       url:   url,
+                       error: "timeout"});
+      }
+
+      xhr.send(opts.body);
+    });
   }
 
 
@@ -547,7 +574,12 @@
       }, {})
     };
 
-    var fullurl = url + (url.indexOf('?') == -1 ? '?' : '') + (query || '');
+    var fullurl = url;
+    if (query) {
+      fullurl += url.indexOf('?') == -1 ? '?' : '&';
+      fullurl += query;
+    }
+
     var origins = batch.map(function(req) { return req.el; });
     origins.forEach(function (el) {
       el.classList.add('ts-active');
@@ -557,17 +589,16 @@
       .then(function(res) {
         origins.forEach(el => el.classList.remove('ts-active'));
 
-        var headers = toObj(res.headers.entries());
-
-        if (res.ok && res.redirected) {
-          headers['ts-history'] = res.url;
-          return swap(res.url, [document.body], res.content, headers);
+        // res.url == "" with mock-xhr
+        if (res.ok && res.url && (res.url != (location.origin + fullurl))) {
+          res.headers['ts-history'] = res.url;
+          return swap(res.url, [document.body], res.content, res.headers);
         }
 
         if (res.ok) {
           // cannot use res.url here since fetchMock will not set it to right
           // value
-          return swap(fullurl, origins, res.content, headers);
+          return swap(fullurl, origins, res.content, res.headers);
         }
 
         ERR(res.content);
@@ -575,7 +606,7 @@
       .catch(function(res) {
         origins.forEach(el => el.classList.remove('ts-active'));
 
-        ERR('Network interrupt or something', arguments);
+        ERR('Error retrieving backend response', res.error || res);
       });
   }
 

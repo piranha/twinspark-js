@@ -4,9 +4,24 @@
   <title>TwinSpark.js docs</title>
   <link rel="stylesheet" href="vendor/spectre.min.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="vendor/fetch-mock.js"></script>
+  <script src="vendor/xhr-mock.js"></script>
   <script src="twinspark.js"></script>
   <script>
+    XHRMock.setup();
+    /* XHRMock.use(function() {
+     *   console.log(arguments);
+     * }); */
+
+    XHRMock.delay = function(mock, ms) {
+      return function (req, res) {
+        var ret = typeof mock === 'function' ?
+                  mock(req, res) :
+                  res.status(mock.status || 200).body(mock.body);
+        if (ret === undefined) return ret;
+        return new Promise(resolve => setTimeout(() => resolve(ret), ms));
+      }
+    }
+
     function prev(n) {
       var el = document.currentScript.previousElementSibling;
       if (n == 2)
@@ -188,7 +203,7 @@
     <a href="/req" ts-req>Updated!</a>
   </script>
   <script>
-    fetchMock.get("/req", prev());
+    XHRMock.get("/req", {body: prev()});
     test(el => {
       click(el.$('a'));
       wait(() => wru.assert(el.$('a').innerText == 'Updated!'));
@@ -217,7 +232,7 @@
     <a href="/trigger" ts-req>Good girl! :)</a>
   </script>
   <script>
-    fetchMock.get("/trigger", prev());
+    XHRMock.get("/trigger", {body: prev()});
     test(el => {
       event('mouseenter', null, el.$('a'));
       wait(() => wru.assert(el.$('a').innerText == 'Good girl! :)'));
@@ -252,7 +267,7 @@
   </script>
   <script>
     twinspark.func({get_user: () => !!localStorage.getItem('user')});
-    fetchMock.get("/before", prev());
+    XHRMock.get("/before", {body: prev()});
     test(el => {
       click(el.$$('a')[0])
       click(el.$$('a')[1])
@@ -288,8 +303,8 @@
   </p>
 
   <script>
-    fetchMock.post("/data", function(url, opts) {
-      return '<a>' + opts.body + '</a>';
+    XHRMock.post("/data", function(req, res) {
+      return res.status(200).body('<a>' + req.body() + '</a>');
     });
     test(el => {
       click(el.$('a'));
@@ -321,7 +336,7 @@
     <span id="replace">Good catch!</span>
   </script>
   <script>
-    fetchMock.get("/target", prev());
+    XHRMock.get("/target", {body: prev()});
     test(el => {
       click(el.$('a'));
       wait(() => wru.assert(el.$('span').innerText = 'Good catch!'));
@@ -354,7 +369,7 @@
       logic with markup?</p>
   </script>
   <script>
-    fetchMock.get("/parent", prev());
+    XHRMock.get("/parent", {body: prev()});
     test(el => {
       click(el.$('a'));
       wait(() => wru.assert(el.$('p').innerText.startsWith('Did you know')));
@@ -383,7 +398,7 @@
     <span>Now check that back button works</span>
   </script>
   <script>
-    fetchMock.get("/history", prev());
+    XHRMock.get("/history", {body: prev()});
     test(el => {
       click(el.$('a'));
       wait(() => {
@@ -438,11 +453,7 @@
     <a href="/indicator" class="indicator" ts-req>Just click me</a>
   </script>
   <script>
-    (function(markup) {
-      fetchMock.get("/indicator", function() {
-        return new Promise(res => setTimeout(res, 1000, markup))
-      });
-    })(prev());
+    XHRMock.get("/indicator", XHRMock.delay({body: prev()}, 1000));
     test(el => {
       click(el.$('a'));
       wait(() => wru.assert(el.$('a').classList.contains('ts-active')));
@@ -618,7 +629,7 @@
     </span>
   </script>
   <script>
-    fetchMock.get("/children", prev());
+    XHRMock.get("/children", {body: prev()});
     test(el => {
       click(el.$('button'));
       wait(() => {
@@ -658,9 +669,8 @@
   <script>
     (function(markup) {
       var n = 1;
-      fetchMock.get("path:/batch", function(url, opts) {
-        var qs = url.split('?')[1];
-        return markup.replace(/ number/g, ' number ' + n++);
+      XHRMock.get(/^\/batch\?/, function(req, res) {
+        return res.status(200).body(markup.replace(/ number/g, ' number ' + n++));
       });
     })(prev());
     // how do I emulate "visibility" from intersection observer
@@ -714,12 +724,9 @@
     <p class="quaternary">And this one by a header.</p>
   </script>
   <script>
-    (function(markup) {
-      fetchMock.get("/join", function(url, opts) {
-        return {body: markup,
-                headers: {'x-ts-swap': 'replace: #join-example .quaternary <= .quaternary'}};
-      });
-    })(prev());
+    XHRMock.get("/join",
+             {body:    prev(),
+              headers: {'ts-swap-push': 'replace: #join-example .quaternary <= .quaternary'}});
   </script>
 </div>
 
@@ -748,7 +755,8 @@
   <script>
     twinspark.func({resurrect: function(o) {
       var parent = o.event.detail.target;
-      parent.appendChild(o.el);
+      var el = o.el;
+      setTimeout(() => parent.appendChild(o.el), 200);
     }});
   </script>
 
@@ -783,11 +791,15 @@
   </div>
 
   <script>
-    fetchMock.get('path:/autocomplete', function(url, opts) {
-      var q = new URLSearchParams(url.split('?')[1]).get('q');
+    XHRMock.get(/\/autocomplete/, function(req, res) {
+      var q = req.url().query.q;
       var now = +new Date;
-      return '<div>' + 'one two three four five six seven'.split(' ').map(
-        s => '<p>' + q + ' ' + s + ' ' + now + '</p>').join('') + '</div>';
+      return res.status(200).body('<div>' +
+                      ('one two three four five six seven'
+                        .split(' ')
+                        .map(s => '<p>' + q + ' ' + s + ' ' + now + '</p>')
+                        .join('')) +
+                      '</div>');
     });
   </script>
 </div>
@@ -842,16 +854,16 @@
     (function(progress, end) {
       var state = 0;
 
-      fetchMock.post('/progress', function(url, opts) {
+      XHRMock.post('/progress', function(req, res) {
         state = 0;
-        return progress.replace('XXX', state);
+        return res.status(200).body(progress.replace('XXX', state));
       });
 
-      fetchMock.get('path:/progress', function(url, opts) {
+      XHRMock.get('/progress', function(req, res) {
         state += Math.floor(Math.random() * 30);
         if (state >= 100)
-          return end;
-        return progress.replace('XXX', state);
+          return res.status(200).body(end);
+        return res.status(200).body(progress.replace('XXX', state));
       });
     })(prev(2), prev());
   </script>
@@ -904,8 +916,8 @@
         twinspark.trigger(o.el.closest('form'), 'submit');
       },
     });
-    fetchMock.get('path:/filters', function(url, opts) {
-      return '<p class="out">Selected filters: ' + url + '</p>';
+    XHRMock.get(/\/filters/, function(req, res) {
+      return res.status(200).body('<p class="out">Selected filters: ' + req.url() + '</p>');
     });
   </script>
 
