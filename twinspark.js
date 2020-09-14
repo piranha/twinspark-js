@@ -465,7 +465,7 @@
   function swap(url, origins, content, headers) {
     var html = new DOMParser().parseFromString(content, 'text/html');
     var title = headers['ts-title'] || html.title;
-    // either ts-history contains new URL or ts-req-history is truthy value,
+    // either ts-history contains new URL or ts-req-history attr is present,
     // then take request URL as new URL
     var pushurl = headers['ts-history'] || hasattr(origins[0], 'ts-req-history') && url;
     var children = Array.from(html.body.children);
