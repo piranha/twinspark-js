@@ -1,9 +1,8 @@
 /* jshint esversion: 6 */
 
-(function(window,document,tsname) {
-  var twinspark = {};
+(function(window, document, tsname) {
   var localStorage = window.localStorage;
-  var loc = window.location;
+  var location = window.location;
 
   /// Internal variables
 
@@ -547,7 +546,7 @@
       headers: {
         'Accept':       'text/html+partial',
         'Content-Type': data && req.method != 'GET' ? 'application/x-www-form-urlencoded' : null,
-        'TS-URL':       loc.pathname + loc.search,
+        'TS-URL':       location.pathname + location.search,
         'TS-Origin':    elid(req.el),
         'TS-Target':    elid(findTarget(req.el))
       }
@@ -894,7 +893,7 @@
 
   /// Public interface
 
-  twinspark = {
+  var twinspark = {
     onload:    onload,
     register:  register,
     activate:  activate,
