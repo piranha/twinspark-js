@@ -167,7 +167,7 @@
 
   /** @type {function(Element, {selector: string, handler: (function(Element): void)}): void} */
   function attach(el, directive) {
-    qse(el, directive.selector).forEach(directive.handler);
+    [].forEach.call(qse(el, directive.selector), directive.handler);
   }
 
   /**
@@ -676,8 +676,8 @@
       event = 'change';
 
     if (tag == 'FORM' && event == 'submit') {
-      el.querySelectorAll('button').forEach(markSubmitter);
-      el.querySelectorAll('input[type="submit"]').forEach(markSubmitter);
+      [].forEach.call(el.querySelectorAll('button'), markSubmitter);
+      [].forEach.call(el.querySelectorAll('input[type="submit"]'), markSubmitter);
     }
 
     return el.addEventListener(event, function(e) {
