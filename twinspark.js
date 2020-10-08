@@ -204,15 +204,6 @@
     }
   }
 
-  /** @type {function(Event=): void} */
-  function init(_e) {
-    activate(document.body);
-    READY = true;
-    LOG('init done');
-  }
-
-  onload(init);
-
 
   /// Ajax
 
@@ -353,13 +344,13 @@
     history.pushState(null, title, url);
   }
 
-  window.addEventListener('popstate', function(e) {
+  function onpopstate(e) {
     // NOTE: e.state is empty when fired on fragment change?
     if (e.state) {
       document.body.innerHTML = e.state.html;
       activate(document.body);
     }
-  });
+  };
 
 
   /// Fragments
@@ -890,6 +881,18 @@
     });
   });
 
+
+  /// Start up
+
+  /** @type {function(Event=): void} */
+  function init(_e) {
+    activate(document.body);
+    READY = true;
+    window.addEventListener('popstate', onpopstate);
+    LOG('init done');
+  }
+
+  onload(init);
 
   /// Public interface
 
