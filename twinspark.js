@@ -3,6 +3,11 @@
 (function(window, document, tsname) {
   var localStorage = window.localStorage;
   var location = window.location;
+  var script = document.currentScript;
+
+  /// Config
+
+  var xhrTimeout = parseInt(script && script.dataset.timeout || 3000, 10);
 
   /// Internal variables
 
@@ -234,7 +239,7 @@
 
       }
 
-      xhr.timeout = 3000;
+      xhr.timeout = xhrTimeout;
       xhr.ontimeout = function() {
         return reject({ok:    false,
                        url:   url,
