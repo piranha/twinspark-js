@@ -347,6 +347,7 @@
     // before every push replaces current data to store current state
     storeCurrentState();
     history.pushState(null, title, url);
+    sendEvent(window, 'ts-pushstate', {detail: url});
   }
 
   function onpopstate(e) {
