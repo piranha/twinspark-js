@@ -382,6 +382,10 @@
       return el.querySelector(sel.slice(6)) ||
         ERR('Cound not find child with selector:', sel, 'for element', el);
     }
+    if (sel.slice(0, 8) == 'sibling ') {
+      return el.parentElement.querySelector(sel.slice(8)) ||
+        ERR('Could not find element with selector:', sel, 'among siblings of element', el);
+    }
     return document.querySelector(sel) || ERR('Could not find element with selector:', sel);
   }
 
