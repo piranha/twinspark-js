@@ -914,6 +914,7 @@
     elcrumbs:  elcrumbs,
     target:    findTarget,
     trigger:   sendEvent,
+    action:    doAction,
     logtoggle: () => localStorage._ts_debug = (DEBUG=!DEBUG) ? 'true' : '',
     _internal: {DIRECTIVES: DIRECTIVES,
                 init: init}
