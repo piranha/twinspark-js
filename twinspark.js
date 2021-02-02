@@ -8,15 +8,18 @@
   /// Config
 
   var xhrTimeout = parseInt(script && script.dataset.timeout || 3000, 10);
+  var historyLimit = parseInt(script && script.dataset.history || 20, 10);
 
   /// Internal variables
 
+  // Indicates if `init` has happened
   var READY = false;
   /** @type {boolean} */
   var DEBUG = localStorage._ts_debug || false;
 
   /** @type Array<{selector: string, handler: (function(Element): void)}> */
   var DIRECTIVES = [];
+
   var FUNCS = {stop:        function(o) { if (o.event) o.event.stopPropagation(); },
                delay:       delay,
                remove: function() {
@@ -333,29 +336,130 @@
     return data;
   }
 
+  /// IndexedDB
+
+  var IDB = window.indexedDB ||
+      window.mozIndexedDB ||
+      window.webkitIndexedDB ||
+      window.msIndexedDB;
+  var _idb;
+
+  function tryCallback(reject, cb) {
+    return function (v) {
+      try       { cb(v); }
+      catch (e) { reject(e); }
+    }
+  }
+
+  function reqpromise(req) {
+    return new Promise(function(resolve, reject) {
+      req.onsuccess = tryCallback(reject, function() {
+        resolve(req.result);
+      });
+      req.onerror = tryCallback(reject, function() {
+        reject(req.error);
+      });
+    });
+  }
+
+  function idb() {
+    if (_idb)
+      return _idb;
+
+    var dbname = 'twinspark';
+
+    _idb = new Promise(function(resolve, reject) {
+      var req = IDB.open(dbname, 1);
+      req.onupgradeneeded = tryCallback(reject, function () {
+        var db = req.result;
+        var store = db.createObjectStore(dbname, {keyPath: 'url'});
+        store.createIndex('time', 'time');
+      });
+      req.onsuccess = tryCallback(reject, function() {
+        resolve(req.result);
+      });
+      req.onerror = tryCallback(reject, reject);
+    }).catch(ERR);
+
+    return _idb;
+  }
+
+  function idbStore(db, opts) {
+    opts = opts || {};
+    return db.transaction(db.name, opts.write && 'readwrite' || 'readonly')
+      .objectStore(db.name);
+  }
 
   /// History
 
+  function deleteOverLimit(db) {
+    reqpromise(idbStore(db).count()).then(function(count) {
+      LOG('stored', count);
+      var toremove = count - historyLimit;
+      if (toremove > 0) {
+        var req = idbStore(db, {write: true})
+            .index('time')
+            .openCursor();
+        // This API is like an abyss looking at me. `onsuccess` will be called
+        // every time you call `cursor.continue()`.
+        req.onsuccess = function(_) {
+          var cursor = req.result;
+          if (cursor) {
+            cursor.delete();
+            if (--toremove > 0) {
+              cursor.continue();
+            }
+          }
+        }
+      }
+    });
+  }
+
   function storeCurrentState() {
-    // one of those is pretty slow
-    var current = document.body.innerHTML;
-    onidle(function() { history.replaceState({html: current}, ""); },
-           {timeout: 1000});
+    var data = {url:  location.pathname + location.search,
+                html: document.body.innerHTML,
+                time: +new Date()};
+    idb().then(function(db) {
+      reqpromise(idbStore(db, {write: true})
+                 .put(data))
+        .then(function() {
+          deleteOverLimit(db);
+        });
+    });
   }
 
   function pushState(url, title) {
-    // before every push replaces current data to store current state
+    // Store HTML before "changing page", `swap` is going to change HTML after
+    // that
     storeCurrentState();
     history.pushState(null, title, url);
     sendEvent(window, 'ts-pushstate', {detail: url});
   }
 
   function onpopstate(e) {
-    // NOTE: e.state is empty when fired on fragment change?
-    if (e.state) {
-      document.body.innerHTML = e.state.html;
-      activate(document.body);
-    }
+    var url = location.pathname + location.search;
+    idb().then(function(db) {
+      return reqpromise(
+        db.transaction(db.name, 'readonly')
+          .objectStore(db.name)
+          .get(url));
+    }).then(function(data) {
+      LOG('restore', data);
+      if (data && data.html) {
+        document.body.innerHTML = data.html;
+
+        // If user came back from a real page change, we indicate this with an
+        // `initial` property. There is a race between IndexedDB loading HTML
+        // and DOMContentLoaded, so in case when first happened and second did
+        // not, `READY` is false and thus `activate` will be run later on inside
+        // `init`. Skip this not to activate everything twice.
+        if (e.initial && !READY) {
+          return;
+        }
+
+        activate(document.body)
+      }
+    });
   };
 
 
@@ -519,9 +623,6 @@
 
     swapped.forEach(activate);
     autofocus(swapped);
-
-    // store current HTML so on popstate we have somewhere to go forward to
-    storeCurrentState();
     return swapped;
   }
 
@@ -896,13 +997,24 @@
 
   /** @type {function(Event=): void} */
   function init(_e) {
+    window.addEventListener('popstate', onpopstate);
+    // Store HTML before going to other page
+    window.addEventListener('beforeunload', storeCurrentState);
     activate(document.body);
     READY = true;
-    window.addEventListener('popstate', onpopstate);
     LOG('init done');
   }
 
   onload(init);
+
+  // this is done outside of `init` since that way we can restore HTML before
+  // `DOMContentLoaded` has happened and browser will set correct scroll
+  // location automatically
+  if (window.performance &&
+      window.performance.navigation.type == window.performance.navigation.TYPE_BACK_FORWARD) {
+    // Restore HTML when user came back to page from non-pushstate destination
+    onpopstate({initial: true});
+  }
 
   /// Public interface
 

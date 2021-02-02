@@ -1,11 +1,12 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <title>TwinSpark.js docs</title>
   <link rel="stylesheet" href="vendor/spectre.min.css">
+  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="vendor/xhr-mock.js"></script>
-  <script src="twinspark.js" data-timeout="5000"></script>
+  <script src="twinspark.js" data-timeout="5000" data-history="3"></script>
   <script>
     XHRMock.setup();
     /* XHRMock.use(function() {
@@ -67,10 +68,11 @@
       });
 
       [].forEach.call(document.querySelectorAll('h3'), function(el) {
-        if (el.id) {
+        if (el.id && !el.querySelector('.anchor')) {
           var a = document.createElement('a');
           a.href = '#' + el.id;
           a.innerText = '#';
+          a.className = 'anchor';
           el.append(' ');
           el.append(a);
         }
@@ -382,6 +384,9 @@
 <p>URLs are a fundament of the Web. Changing URLs in line with activity makes your
   app reloadable, browseable with backward/forward button and overall a good
   citizen of the Web.</p>
+<p><i>NOTE:</i> twinspark is loaded with limit of 3 items in history storage (which
+uses IndexedDB), so if you click all of those links and then go back you'll see
+than it'll only restore HTML for the first 3 clicks</p>
 
 <div class="card">
   <div class="card-header">
@@ -393,12 +398,24 @@
   <p class="card-body">
     <a href="/history" ts-req ts-req-history>Let's change history!</a>
   </p>
+  <p class="card-body">
+    <a href="/history2" ts-req ts-req-history>Let's change history 2!</a>
+  </p>
+  <p class="card-body">
+    <a href="/history3" ts-req ts-req-history>Let's change history 3!</a>
+  </p>
+  <p class="card-body">
+    <a href="/history4" ts-req ts-req-history>Let's change history 4!</a>
+  </p>
 
   <script type="text/html">
     <span>Now check that back button works</span>
   </script>
   <script>
     XHRMock.get("/history", {body: prev()});
+    XHRMock.get("/history2", {body: prev()});
+    XHRMock.get("/history3", {body: prev()});
+    XHRMock.get("/history4", {body: prev()});
     test(el => {
       click(el.$('a'));
       wait(() => {
