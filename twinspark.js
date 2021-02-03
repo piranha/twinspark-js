@@ -344,21 +344,10 @@
       window.msIndexedDB;
   var _idb;
 
-  function tryCallback(reject, cb) {
-    return function (v) {
-      try       { cb(v); }
-      catch (e) { reject(e); }
-    }
-  }
-
   function reqpromise(req) {
     return new Promise(function(resolve, reject) {
-      req.onsuccess = tryCallback(reject, function() {
-        resolve(req.result);
-      });
-      req.onerror = tryCallback(reject, function() {
-        reject(req.error);
-      });
+      req.onsuccess = function() { resolve(req.result); };
+      req.onerror   = function() { reject(req.error); };
     });
   }
 
@@ -367,26 +356,19 @@
       return _idb;
 
     var dbname = 'twinspark';
+    var req = IDB.open(dbname, 1);
+    req.onupgradeneeded = function() {
+      var db = req.result;
+      var store = db.createObjectStore(dbname, {keyPath: 'url'});
+      store.createIndex('time', 'time');
+    };
 
-    _idb = new Promise(function(resolve, reject) {
-      var req = IDB.open(dbname, 1);
-      req.onupgradeneeded = tryCallback(reject, function () {
-        var db = req.result;
-        var store = db.createObjectStore(dbname, {keyPath: 'url'});
-        store.createIndex('time', 'time');
-      });
-      req.onsuccess = tryCallback(reject, function() {
-        resolve(req.result);
-      });
-      req.onerror = tryCallback(reject, reject);
-    }).catch(ERR);
-
-    return _idb;
+    return _idb = reqpromise(req);
   }
 
   function idbStore(db, opts) {
-    opts = opts || {};
-    return db.transaction(db.name, opts.write && 'readwrite' || 'readonly')
+    var rw = opts && opts.write;
+    return db.transaction(db.name, rw && 'readwrite' || 'readonly')
       .objectStore(db.name);
   }
 
