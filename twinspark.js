@@ -22,6 +22,7 @@
 
   var FUNCS = {stop:        function(o) { if (o.event) o.event.stopPropagation(); },
                delay:       delay,
+
                remove: function() {
                  var selcount = arguments.length - 1;
                  var o = arguments[selcount];
@@ -31,6 +32,13 @@
                  var sel = [].slice.call(arguments, 0, selcount);
                  findTarget(o.el, sel.join(' ')).remove();
                },
+
+               wait: function(eventname, o) {
+                 return new Promise(function(resolve) {
+                   o.el.addEventListener(eventname, resolve, {once: true});
+                 });
+               },
+
                class:       function(cls, o) { o.el.classList.add(cls); },
                "class+":    function(cls, o) { o.el.classList.add(cls); },
                "class-":    function(cls, o) { o.el.classList.remove(cls); },

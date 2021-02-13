@@ -86,6 +86,7 @@
     .btn-sm {margin-bottom: .2rem; }
     .mb-p {margin-bottom: 1.2rem; }
     .mt-p {margin-top: 1.2rem; }
+    .fade {opacity: 0; transition: opacity 0.5s ease-in-out; }
   </style>
 </head>
 <body class="container">
@@ -520,6 +521,30 @@ than it'll only restore HTML for the first 3 clicks</p>
     <p ts-target="child span">
       <span>Remove with timeout</span>
       <button class="btn" ts-action="class+ loading, delay 1s, remove" ts-target="inherit">Do it!</button>
+    </p>
+  </div>
+
+  <script>
+    test(el => {
+      click(el.$('button'));
+      wait(() => wru.assert(el.$('button')));
+      //wait(() => wru.assert(el.$('button')), 1050);
+    });
+  </script>
+</div>
+
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo of <code>wait</code> (waiting for an event to happen)</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p ts-target="child span">
+      <span>Remove after transition</span>
+      <button class="btn" ts-action="class+ fade, wait transitionend, remove" ts-target="inherit">Do it!</button>
     </p>
   </div>
 

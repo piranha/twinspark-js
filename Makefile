@@ -12,4 +12,4 @@ dist/%.adv.js: %.js
 	closure-compiler -O ADVANCED $(CCOPTS) $*.js > $@
 
 serve:
-	darkhttpd . --port 3000
+	darkhttpd . --port 3000 --addr 127.0.0.1
