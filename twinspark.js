@@ -58,6 +58,13 @@
     }
   }
 
+  var assign = Object.assign || function(tgt, src) {
+    for (var k in src) {
+      tgt[k] = src[k];
+    }
+    return tgt;
+  }
+
   function groupBy(arr, keyfn) {
     return arr.reduce(function (acc, v) {
       var key = keyfn(v);
@@ -820,7 +827,7 @@
   /// Actions
 
   function registerCommands(cmds) {
-    return Object.assign(FUNCS, cmds);
+    return assign(FUNCS, cmds);
   }
 
   function executeCommand(command, args, payload) {
@@ -845,7 +852,7 @@
     if (!spec) return;
 
     var commands = parseActionSpec(spec);
-    payload = Object.assign(payload || {}, {el: target, event: e});
+    payload = assign(payload || {}, {el: target, event: e});
 
     return commands.reduce(function(p, command) {
       return p.then(function(r) {
