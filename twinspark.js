@@ -43,7 +43,17 @@
                "class+":    function(cls, o) { o.el.classList.add(cls); },
                "class-":    function(cls, o) { o.el.classList.remove(cls); },
                "class^":    function(cls, o) { o.el.classList.toggle(cls); },
-               classtoggle: function(cls, o) { o.el.classList.toggle(cls); }};
+               classtoggle: function(cls, o) { o.el.classList.toggle(cls); },
+
+               log: function() {
+                 var cnt = arguments.length - 1;
+                 var o = arguments[cnt];
+                 var msg = [].slice.call(arguments, 0, cnt);
+                 if (o.input) {
+                   msg.push(o.input);
+                 }
+                 console.log.apply(console, msg);
+               }};
 
 
   /// Utils
@@ -59,8 +69,14 @@
   }
 
   var assign = Object.assign || function(tgt, src) {
+    if (!src) {
+      return tgt;
+    }
+
     for (var k in src) {
-      tgt[k] = src[k];
+      if (src.hasOwnProperty(k)) {
+        tgt[k] = src[k];
+      }
     }
     return tgt;
   }
@@ -529,7 +545,7 @@
     var reply = findReply(target, origin, replyParent);
     var strategy = getattr(origin, 'ts-swap') || 'replace';
 
-    origin && doAction(origin, null, getattr(origin, 'ts-req-after'));
+    origin && doAction(origin, null, getattr(origin, 'ts-req-after'), null);
     return executeSwap(strategy, target, reply);
   }
 
@@ -852,14 +868,15 @@
     if (!spec) return;
 
     var commands = parseActionSpec(spec);
-    payload = assign(payload || {}, {el: target, event: e});
+    payload = assign({el: target, event: e}, payload);
 
     return commands.reduce(function(p, command) {
-      return p.then(function(r) {
+      return p.then(function(rv) {
         // `false` indicates that action should stop
-        if (r === false)
-          return r;
-        return executeCommand(command[0], command.slice(1), payload);
+        if (rv === false)
+          return rv;
+        return executeCommand(command[0], command.slice(1),
+                              assign({input: rv}, payload));
       });
     }, Promise.resolve());
   }
@@ -870,7 +887,7 @@
         // real event to trigger this action
         e = e.detail;
       }
-      doAction(findTarget(el), e, getattr(el, 'ts-action'));
+      doAction(findTarget(el), e, getattr(el, 'ts-action'), null);
     };
     if (hasattr(el, 'ts-trigger')) {
       el.addEventListener('ts-trigger', handler);

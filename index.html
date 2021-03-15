@@ -630,10 +630,6 @@ than it'll only restore HTML for the first 3 clicks</p>
       browser viewport, and, actually, on load as well).
     </p>
   </div>
-
-  <script>
-    twinspark.func({log: function(msg, o) { console.log(msg); }});
-  </script>
 </div>
 
 <hr>
@@ -933,15 +929,15 @@ than it'll only restore HTML for the first 3 clicks</p>
       <div><b>Brand</b></div>
       <div class="filter">
         <input type="checkbox" name="brand" value="adidas">
-        <a href="?brand=adidas" ts-action="togglecb, submit">Adidas</a>
+        <a href="?brand=adidas" ts-action="togglebox, submit">Adidas</a>
       </div>
       <div class="filter">
         <input type="checkbox" name="brand" value="nike">
-        <a href="?brand=nike" ts-action="togglecb, submit">Nike</a>
+        <a href="?brand=nike" ts-action="togglebox, submit">Nike</a>
       </div>
       <div class="filter">
         <input type="checkbox" name="brand" value="puma">
-        <a href="?brand=puma" ts-action="togglecb, submit">Puma</a>
+        <a href="?brand=puma" ts-action="togglebox, submit">Puma</a>
       </div>
     </form>
     <hr>
@@ -950,9 +946,9 @@ than it'll only restore HTML for the first 3 clicks</p>
 
   <script>
     twinspark.func({
-      togglecb: function(o) {
-        var cb = o.el.parentElement.querySelector('[type="checkbox"]');
-        cb.checked = !cb.checked;
+      togglebox: function(o) {
+        var box = o.el.parentElement.querySelector('[type="checkbox"]');
+        box.checked = !box.checked;
       },
       submit: function(o) {
         twinspark.trigger(o.el.closest('form'), 'submit');
@@ -966,4 +962,31 @@ than it'll only restore HTML for the first 3 clicks</p>
   <style>
     .filter [type="checkbox"] { display: none; }
   </style>
+</div>
+
+
+<h3 id="return" class="mt-p">Check actions pipelining</h3>
+
+<p>Actions pipe their return values into next action as <code>o.value</code>, check
+  the source of the next example to see how it works.
+</p>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <button ts-action="echo interested?, log Are you">Click to log</button>
+  </div>
+
+  <script>
+    twinspark.func({
+      echo: function(msg, o) {
+        return msg;
+      }
+    });
+  </script>
 </div>
