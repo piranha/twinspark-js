@@ -20,40 +20,42 @@
   /** @type Array<{selector: string, handler: (function(Element): void)}> */
   var DIRECTIVES = [];
 
-  var FUNCS = {stop:        function(o) { if (o.event) o.event.stopPropagation(); },
-               delay:       delay,
+  var FUNCS = {
+    stop:        function(o) { if (o.event) o.event.stopPropagation(); },
+    delay:       delay,
 
-               remove: function() {
-                 var selcount = arguments.length - 1;
-                 var o = arguments[selcount];
-                 if (selcount == 0) {
-                   return o.el.remove();
-                 }
-                 var sel = [].slice.call(arguments, 0, selcount);
-                 findTarget(o.el, sel.join(' ')).remove();
-               },
+    target: function() {
+      var args = parseArgs(arguments);
+      var el = findTarget(args.o.el, args.rest.join(' '));
+      if (!el) return false; // stop executing
+      args.o.el = el
+    },
 
-               wait: function(eventname, o) {
-                 return new Promise(function(resolve) {
-                   o.el.addEventListener(eventname, resolve, {once: true});
-                 });
-               },
+    remove: function() {
+      var args = parseArgs(arguments);
+      findTarget(args.o.el, args.rest.join(' ')).remove();
+    },
 
-               class:       function(cls, o) { o.el.classList.add(cls); },
-               "class+":    function(cls, o) { o.el.classList.add(cls); },
-               "class-":    function(cls, o) { o.el.classList.remove(cls); },
-               "class^":    function(cls, o) { o.el.classList.toggle(cls); },
-               classtoggle: function(cls, o) { o.el.classList.toggle(cls); },
+    wait: function(eventname, o) {
+      return new Promise(function(resolve) {
+        o.el.addEventListener(eventname, resolve, {once: true});
+      });
+    },
 
-               log: function() {
-                 var cnt = arguments.length - 1;
-                 var o = arguments[cnt];
-                 var msg = [].slice.call(arguments, 0, cnt);
-                 if (o.input) {
-                   msg.push(o.input);
-                 }
-                 console.log.apply(console, msg);
-               }};
+    class:       function(cls, o) { o.el.classList.add(cls); },
+    "class+":    function(cls, o) { o.el.classList.add(cls); },
+    "class-":    function(cls, o) { o.el.classList.remove(cls); },
+    "class^":    function(cls, o) { o.el.classList.toggle(cls); },
+    classtoggle: function(cls, o) { o.el.classList.toggle(cls); },
+
+    log: function() {
+      var args = parseArgs(arguments);
+      if (args.o.input) {
+        args.rest.push(args.o.input);
+      }
+      console.log.apply(console, args.rest);
+    }
+  };
 
 
   /// Utils
@@ -79,7 +81,7 @@
       }
     }
     return tgt;
-  }
+  };
 
   function groupBy(arr, keyfn) {
     return arr.reduce(function (acc, v) {
@@ -114,6 +116,12 @@
     });
   }
 
+  function parseArgs(args) {
+    var i = args.length;
+    return {rest: [].slice.call(args, 0, i - 1),
+            o:    args[i - 1]};
+  }
+
 
   /// Events
   /** @type {function(Function): void} */
@@ -127,7 +135,7 @@
 
   var onidle = window.requestIdleCallback || function(x) { setTimeout(x, 100); };
 
-  /** @type {function(Element, string, Object=): void} */
+  /** @type {function((Element|Node|Window), string, Object=): void} */
   function sendEvent(el, type, opts) {
     opts || (opts = {});
     // bubbles is true by default but could be false
@@ -310,13 +318,13 @@
   }
 
   function mergeParams(p1, p2, removeEmpty) {
-    for (var x of p2) {
-      if (!x[0]) continue;
+    for (var [k, v] of p2) {
+      if (!k) continue;
 
-      if (removeEmpty && ((x[1] === null) || (x[1] === ''))) {
-        p1.delete(x[0]);
+      if (removeEmpty && ((v === null) || (v === ''))) {
+        p1.delete(k);
       } else {
-        p1.append(x[0], x[1]);
+        p1.append(k, v);
       }
     }
     return p1;
@@ -397,6 +405,7 @@
     return _idb = reqpromise(req);
   }
 
+  /** @type {function(Object, Object=): Object} */
   function idbStore(db, opts) {
     var rw = opts && opts.write;
     return db.transaction(db.name, rw && 'readwrite' || 'readonly')
@@ -478,11 +487,11 @@
 
   /// Fragments
 
-  /** @type {function(Element, string=): Element} */
-  function findTarget(el, sel) {
-    sel || (sel = getattr(el, 'ts-target'));
-    if (!sel)
+  /** @type {function(Element, string, boolean): (Element|undefined)} */
+  function _findTarget(el, sel, childrenOnly) {
+    if (!sel || !el) {
       return el;
+    }
 
     if (sel == 'inherit') {
       var parent = el.parentElement.closest('[ts-target]');
@@ -493,17 +502,39 @@
 
     if (sel.slice(0, 7) == 'parent ') {
       return el.closest(sel.slice(7)) ||
-        ERR('Cound not find parent with selector:', sel, 'for element', el);
+        ERR('Could not find parent with selector:', sel, 'for element', el);
     }
     if (sel.slice(0, 6) == 'child ') {
       return el.querySelector(sel.slice(6)) ||
-        ERR('Cound not find child with selector:', sel, 'for element', el);
+        ERR('Could not find child with selector:', sel, 'for element', el);
     }
     if (sel.slice(0, 8) == 'sibling ') {
       return el.parentElement.querySelector(sel.slice(8)) ||
         ERR('Could not find element with selector:', sel, 'among siblings of element', el);
     }
+
+    if (childrenOnly) {
+      return el.querySelector(sel) ||
+        ERR('Could not find child with selector:', sel, 'for element', el);
+    }
+
     return document.querySelector(sel) || ERR('Could not find element with selector:', sel);
+  }
+
+  /** @type {function(Element, string=): (Element|undefined)} */
+  function findTarget(el, sel) {
+    if (sel == null) {
+      sel = getattr(el, 'ts-target');
+    }
+    if (!sel) { // null, undefined, ""
+      return el;
+    }
+
+    var bits = sel.split('|').map(s => s.trim());
+    // when selector is not the first we are not going to escape to global
+    // search from document root, it's always one of modifiers (see
+    // `_findTarget`), in the least it will look for a child
+    return bits.reduce((el, sel, idx) => _findTarget(el, sel, idx > 0), el);
   }
 
   function findReply(target, origin, reply) {
@@ -545,7 +576,7 @@
     var reply = findReply(target, origin, replyParent);
     var strategy = getattr(origin, 'ts-swap') || 'replace';
 
-    origin && doAction(origin, null, getattr(origin, 'ts-req-after'), null);
+    origin && doActions(origin, null, getattr(origin, 'ts-req-after'), null);
     return executeSwap(strategy, target, reply);
   }
 
@@ -728,7 +759,7 @@
     return Promise
       .all(batch.map(function(req) {
         req.opts = makeOpts(req);
-        var action = doAction(req.el, req.event, getattr(req.el, 'ts-req-before'), {req: req});
+        var action = doActions(req.el, req.event, getattr(req.el, 'ts-req-before'), {req: req});
         if (!action) return req;
         return action.then(function(res) {
           // skip if action explicitly returned `false`
@@ -766,7 +797,7 @@
     }
   }
 
-  /** @type {function(Element, boolean): {el: Element, url: string, method: string, batch: boolean} } */
+  /** @type {function(Element, Event, boolean): {el: Element, event: Event, url: string, method: string, batch: boolean} } */
   function makeReq(el, e, batch) {
     var url = ((batch ? getattr(el, 'ts-req-batch') : getattr(el, 'ts-req')) ||
                (el.tagName == 'FORM' ? getattr(el, 'action') : getattr(el, 'href')));
@@ -842,43 +873,91 @@
 
   /// Actions
 
+  /** @typedef {{
+   *   src: string,
+   *   name: string,
+   *   args: Array<string>
+   * }}
+   */
+  var CommandDef;
+
+  /** @typedef {{
+   *   src: string,
+   *   commands: Array<CommandDef>
+   * }}
+   */
+  var ActionDef;
+
   function registerCommands(cmds) {
     return assign(FUNCS, cmds);
   }
 
   function executeCommand(command, args, payload) {
-    var cmd = ((window._ts_func && window._ts_func[command]) ||
-               FUNCS[command] ||
-               window[command]);
+    var cmd = /** @type {Function|undefined|null} */ (
+      (window._ts_func && window._ts_func[command]) ||
+        FUNCS[command] ||
+        window[command]);
 
-    if (cmd) {
-      args.push(payload);
-      return cmd.apply(payload.el, args);
+    if (!cmd) {
+      return ERR('Unknown action command', command, args);
     }
-
-    ERR('Unknown action', command, args);
+    return cmd.apply(payload.el, args.concat([payload]));
   }
 
+  /** @type {function(string): ActionDef} */
+  function parseSingleAction(line) {
+    var commands = line.split(',').map(c => {
+      var s = c.trim();
+      var bits = s.split(/\s+/);
+      return {src: s, name: bits[0], args: bits.slice(1)};
+    });
+    return {src: line, commands: commands};
+  }
+
+  /** @type {function(string): Array<ActionDef>} */
   function parseActionSpec(s) {
-    return s.split(',').map(c => c.trim().split(/\s+/));
+    return s.split(';').map(parseSingleAction);
   }
 
-  /** @type {function(Element, Event, string=, Object=): (Promise|undefined)} */
-  function doAction(target, e, spec, payload) {
-    if (!spec) return;
+  /** @type {function(ActionDef, {el: Element, e: Event}): Promise} */
+  function _doAction(action, payload) {
+    LOG('action', action.src, payload);
 
-    var commands = parseActionSpec(spec);
-    payload = assign({el: target, event: e}, payload);
+    // make a copy, since we allow modification of payload in commands
+    var opts = assign({line: action.src}, payload);
 
-    return commands.reduce(function(p, command) {
+    return action.commands.reduce(function(p, command) {
       return p.then(function(rv) {
+        LOG('COMMAND', command.src, rv, action.src);
         // `false` indicates that action should stop
         if (rv === false)
           return rv;
-        return executeCommand(command[0], command.slice(1),
-                              assign({input: rv}, payload));
+        opts.input = rv;
+        opts.src = command.src;
+        opts.argsSrc = command.src.slice(command.name.length + 1);
+        return executeCommand(command.name, command.args, opts);
       });
-    }, Promise.resolve());
+    }, Promise.resolve(null));
+  }
+
+  /** @type {function((Element|undefined), Event, string=, Object=): undefined} */
+  function doActions(target, e, spec, payload) {
+    if (!spec) return;
+
+    var actions = parseActionSpec(spec);
+    // parens make this type cast rather than type declaration
+    var mypayload = /** @type {{el: Element, e: Event}} */ (assign({el: target, event: e}, payload));
+
+    var result;
+
+    for (var action of /** @type {!Iterable} */ (actions)) {
+      if (action.commands.length) {
+        result = _doAction(action, mypayload);
+      }
+    }
+
+    // Last result is returned
+    return result;
   }
 
   register('[ts-action]', function(el) {
@@ -887,7 +966,7 @@
         // real event to trigger this action
         e = e.detail;
       }
-      doAction(findTarget(el), e, getattr(el, 'ts-action'), null);
+      doActions(findTarget(el), e, getattr(el, 'ts-action'), null);
     };
     if (hasattr(el, 'ts-trigger')) {
       el.addEventListener('ts-trigger', handler);
@@ -939,10 +1018,10 @@
   }
 
   function makeTriggerListener(t) {
-    var delay = t.indexOf('delay');
-    var spec = {changed: t.indexOf('changed') != -1,
-                once:    t.indexOf('once') != -1,
-                delay:   delay != -1 ? parseTime(t[delay + 1]) : null};
+    var delay = t.args.indexOf('delay');
+    var spec = {changed: t.args.indexOf('changed') != -1,
+                once:    t.args.indexOf('once') != -1,
+                delay:   delay != -1 ? parseTime(t.args[delay + 1]) : null};
     return function(el, e) {
       var data = internalData(el);
 
@@ -976,7 +1055,7 @@
   }
 
   function registerTrigger(el, t) {
-    var type = t[0];
+    var type = t.name;
     var tsTrigger = makeTriggerListener(t);
 
     switch (type) {
@@ -999,9 +1078,9 @@
     var spec = getattr(el, 'ts-trigger');
     if (!spec) return;
 
-    var triggers = parseActionSpec(spec);
+    var triggers = parseSingleAction(spec);
 
-    triggers.forEach(function(t) {
+    triggers.commands.forEach(function(t) {
       registerTrigger(el, t);
     });
   });
@@ -1016,7 +1095,7 @@
     window.addEventListener('beforeunload', storeCurrentState);
     activate(document.body);
     READY = true;
-    LOG('init done');
+    LOG('init done', _e);
   }
 
   onload(init);
@@ -1040,7 +1119,7 @@
     elcrumbs:  elcrumbs,
     target:    findTarget,
     trigger:   sendEvent,
-    action:    doAction,
+    action:    doActions,
     logtoggle: () => localStorage._ts_debug = (DEBUG=!DEBUG) ? 'true' : '',
     _internal: {DIRECTIVES: DIRECTIVES,
                 init: init}

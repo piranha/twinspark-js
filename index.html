@@ -542,9 +542,9 @@ than it'll only restore HTML for the first 3 clicks</p>
   </div>
 
   <div class="card-body">
-    <p ts-target="child span">
+    <p>
       <span>Remove after transition</span>
-      <button class="btn" ts-action="class+ fade, wait transitionend, remove" ts-target="inherit">Do it!</button>
+      <button class="btn" ts-action="class+ fade, wait transitionend, remove" ts-target="sibling span">Do it!</button>
     </p>
   </div>
 
@@ -577,15 +577,35 @@ than it'll only restore HTML for the first 3 clicks</p>
                     {transform: "translate3D(300px,0,0)"}],
                    {duration: 1000, iterations: 10})
     }});
-      // i don't know if it's possible
-      /*test*/(el => {
-        click(el.$('button'));
-        wait(() => {
-          console.log(getComputedStyle(el.$('button')).transform);
-          wru.assert(getComputedStyle(el.$('button')).transform != 'none')
-        }, 100);
-      });
+    // i don't know if it's possible
+    /*test*/(el => {
+      click(el.$('button'));
+      wait(() => {
+        console.log(getComputedStyle(el.$('button')).transform);
+        wru.assert(getComputedStyle(el.$('button')).transform != 'none')
+      }, 100);
+    });
   </script>
+</div>
+
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo of multiple actions</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p class="remove-me">This is going to be removed</p>
+    <p class="fade-me">And this only after transition</p>
+    <p>
+      <button class="btn"
+              ts-action="target parent p | sibling .remove-me, remove;
+                         target parent p | sibling .fade-me, class+ fade, wait transitionend, remove">
+        Double remove</button>
+    </p>
+  </div>
 </div>
 
 <!--
