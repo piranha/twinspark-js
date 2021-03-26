@@ -29,15 +29,15 @@
     delay:       delay,
 
     target: function() {
-      var args = parseArgs(arguments);
-      var el = findTarget(args.o.el, args.rest.join(' '));
+      var o = arguments[arguments.length - 1];
+      var el = findTarget(o.el, o.argsSrc);
       if (!el) return false; // stop executing
-      args.o.el = el
+      o.el = el
     },
 
     remove: function() {
-      var args = parseArgs(arguments);
-      findTarget(args.o.el, args.rest.join(' ')).remove();
+      var o = arguments[arguments.length - 1];
+      findTarget(o.el, o.argsSrc).remove();
     },
 
     wait: function(eventname, o) {
