@@ -17,7 +17,11 @@
   /** @type {boolean} */
   var DEBUG = localStorage._ts_debug || false;
 
-  /** @type Array<{selector: string, handler: (function(Element): void)}> */
+
+  /** @typedef {{selector: string, handler: (function(!Element): void)}} */
+  var Directive;
+
+  /** @type {Array<Directive>} */
   var DIRECTIVES = [];
 
   var FUNCS = {
@@ -103,6 +107,7 @@
     return [].concat.apply([], arr);
   }
 
+  /** type {function(string): number} */
   function parseTime(s) {
     s = s && s.trim();
     if (!s) return;
@@ -116,6 +121,7 @@
     });
   }
 
+  /** @type {function(Arguments): {rest: Array<*>, o: {el: Element, e: Event}}} */
   function parseArgs(args) {
     var i = args.length;
     return {rest: [].slice.call(args, 0, i - 1),
@@ -212,7 +218,7 @@
 
   /// Core
 
-  /** @type {function(Element, {selector: string, handler: (function(Element): void)}): void} */
+  /** @type {function(Element, Directive): void} */
   function attach(el, directive) {
     [].forEach.call(qse(el, directive.selector), directive.handler);
   }
@@ -220,7 +226,7 @@
   /**
    * Registers new directive.
    * @param  {string} selector Directive selector.
-   * @param  {function(Element): void} handler Directive callback.
+   * @param  {function(!Element): void} handler Directive callback.
    * @return void
    */
   function register(selector, handler) {
@@ -288,7 +294,8 @@
                        error: "timeout"});
       }
 
-      xhr.send(opts.body);
+      var body = /** @type {(ArrayBuffer|ArrayBufferView|Blob|Document|FormData|null|string|undefined)} */ (opts.body);
+      xhr.send(body);
     });
   }
 
@@ -341,16 +348,19 @@
       new URLSearchParams());
   }
 
+  /** @type {function(Element): string?}} */
   function formElementValue(el) {
-    if (!el.name) return;
+    if (!el.name)
+      return null;
 
     // only clicked submit buttons should be handled. In ideal world we would
     // look at e.submitter, but no support from Safari
-    if (el.type == 'submit' && !hasattr(el, 'ts-clicked')) return;
+    if (el.type == 'submit' && !hasattr(el, 'ts-clicked'))
+      return null;
 
     if (((el.type == 'radio') || (el.type == 'checkbox')) &&
         !el.checked) {
-      return;
+      return null;
     }
 
     return el.value;
@@ -369,7 +379,7 @@
 
     } else if ((tag == 'INPUT') || (tag == 'SELECT') || (tag == 'TEXTAREA')) {
       if (res = formElementValue(el))
-        data.append(el.name, res);
+        data.append(el.name, /** @type {string} */ (res));
     }
 
     return data;
@@ -980,6 +990,7 @@
 
   /// Triggers
 
+  /** @type {function({on: string, off: string, rootMargin: string, threshold: number}): IntersectionObserver} */
   function makeObserver(opts) {
     var on = opts.on;
     var off = opts.off;
@@ -1012,13 +1023,16 @@
     }
   });
 
+  /** @type {function(Element): {once: (boolean|undefined), delay: (number|undefined)}} */
   function internalData(el) {
     var prop = 'twinspark-internal';
     return el[prop] || (el[prop] = {});
   }
 
+  /** @type {function(CommandDef): (function(Element, (Event|{type: string})): undefined)}*/
   function makeTriggerListener(t) {
     var delay = t.args.indexOf('delay');
+    /** @type {{changed: boolean, once: boolean, delay: (number|null)}} */
     var spec = {changed: t.args.indexOf('changed') != -1,
                 once:    t.args.indexOf('once') != -1,
                 delay:   delay != -1 ? parseTime(t.args[delay + 1]) : null};
@@ -1054,6 +1068,7 @@
     };
   }
 
+  /** @type {function(!Element, CommandDef): undefined} */
   function registerTrigger(el, t) {
     var type = t.name;
     var tsTrigger = makeTriggerListener(t);
