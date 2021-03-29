@@ -955,7 +955,8 @@
         // `false` indicates that action should stop
         if (rv === false)
           return rv;
-        opts.input = rv;
+        if (rv !== undefined)
+          opts.input = rv;
         opts.src = command.src;
         opts.argsSrc = command.src.slice(command.name.length + 1);
         return executeCommand(command.name, command.args, opts);
