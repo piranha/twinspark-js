@@ -2,6 +2,8 @@ CCOPTS = --language_out ECMASCRIPT5 #--jscomp_warning=reportUnknownTypes
 
 min: dist/twinspark.min.js
 adv: dist/twinspark.adv.js
+type: CCOPTS = --language_out ECMASCRIPT5 --jscomp_warning=reportUnknownTypes
+type: dist/twinspark.adv.js
 
 dist/%.min.js: %.js
 	@mkdir -p $(@D)

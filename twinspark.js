@@ -24,6 +24,7 @@
   /** @type {Array<Directive>} */
   var DIRECTIVES = [];
 
+  /** @const {!Object<string, Function>} */
   var FUNCS = {
     stop:        function(o) { if (o.event) o.event.stopPropagation(); },
     delay:       delay,
@@ -74,6 +75,7 @@
     }
   }
 
+  /** @type{function(!Object, (Object|null|undefined)): !Object} */
   var assign = Object.assign || function(tgt, src) {
     if (!src) {
       return tgt;
@@ -107,11 +109,13 @@
     return [].concat.apply([], arr);
   }
 
-  /** type {function(string): number} */
+  /** @type {function(string): (number|undefined)} */
   function parseTime(s) {
     s = s && s.trim();
-    if (!s) return;
-    if (s.match(/\d+s/)) return parseFloat(s) * 1000;
+    if (!s)
+      return;
+    if (s.match(/\d+s/))
+      return parseFloat(s) * 1000;
     return parseFloat(s);
   }
 
@@ -845,7 +849,7 @@
       [].forEach.call(el.querySelectorAll('input[type="submit"]'), markSubmitter);
     }
 
-    return el.addEventListener(event, function(e) {
+    return el.addEventListener(event, function(/** @type {!Event} */ e) {
       if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey || (e.button || 0) != 0)
         return;
 
@@ -898,8 +902,17 @@
    */
   var ActionDef;
 
-  function registerCommands(cmds) {
-    return assign(FUNCS, cmds);
+  /**
+   * Either call it with object of name to function, or with a name and a
+   * function.
+   * @type {function((Object|string), Function=): Object} */
+  function registerCommands(cmdsOrName, maybeFunc) {
+    if (typeof cmdsOrName == 'object') {
+      return assign(FUNCS, cmdsOrName);
+    } else if (maybeFunc) {
+      FUNCS[cmdsOrName] = maybeFunc;
+    }
+    return FUNCS;
   }
 
   function executeCommand(command, args, payload) {
@@ -929,7 +942,7 @@
     return s.split(';').map(parseSingleAction);
   }
 
-  /** @type {function(ActionDef, {el: Element, e: Event}): Promise} */
+  /** @type {function(ActionDef, {el: Element, e: Event}): !Promise} */
   function _doAction(action, payload) {
     LOG('action', action.src, payload);
 
@@ -950,7 +963,7 @@
     }, Promise.resolve(null));
   }
 
-  /** @type {function((Element|undefined), Event, string=, Object=): undefined} */
+  /** @type {function((Element|undefined), Event, string=, Object=): (Promise|undefined)} */
   function doActions(target, e, spec, payload) {
     if (!spec) return;
 
@@ -971,7 +984,7 @@
   }
 
   register('[ts-action]', function(el) {
-    var handler = function(e) {
+    var handler = function(/** @type {!Event} */ e) {
       if (e.detail && e.detail.type) {
         // real event to trigger this action
         e = e.detail;
@@ -1029,10 +1042,10 @@
     return el[prop] || (el[prop] = {});
   }
 
-  /** @type {function(CommandDef): (function(Element, (Event|{type: string})): undefined)}*/
+  /** @type {function(CommandDef): (function(!Element, (Event|{type: string})): undefined)}*/
   function makeTriggerListener(t) {
     var delay = t.args.indexOf('delay');
-    /** @type {{changed: boolean, once: boolean, delay: (number|null)}} */
+    /** @type {{changed: boolean, once: boolean, delay: (number|null|undefined)}} */
     var spec = {changed: t.args.indexOf('changed') != -1,
                 once:    t.args.indexOf('once') != -1,
                 delay:   delay != -1 ? parseTime(t.args[delay + 1]) : null};
