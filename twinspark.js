@@ -162,7 +162,7 @@
 
   var onidle = window.requestIdleCallback || function(x) { setTimeout(x, 100); };
 
-  /** @type {function((Element|Node|Window), string, Object=): void} */
+  /** @type {function((Element|Node|Window), string, Object=): !Event} */
   function sendEvent(el, type, opts) {
     opts || (opts = {});
     // bubbles is true by default but could be false
@@ -172,6 +172,7 @@
                                        detail: opts.detail});
     LOG(el, type, opts.detail);
     el.dispatchEvent(event);
+    return event;
   }
 
 
@@ -607,7 +608,10 @@
     var reply = findReply(target, origin, replyParent);
     var strategy = getattr(origin, 'ts-swap') || 'replace';
 
-    origin && doActions(origin, null, getattr(origin, 'ts-req-after'), null);
+    if (origin) {
+      var e = sendEvent(origin, 'ts-req-after');
+      doActions(origin, e, getattr(origin, 'ts-req-after'), null);
+    }
     return executeSwap(strategy, target, reply);
   }
 
@@ -790,11 +794,18 @@
     return Promise
       .all(batch.map(function(req) {
         req.opts = makeOpts(req);
-        var action = doActions(req.el, req.event, getattr(req.el, 'ts-req-before'), {req: req});
-        if (!action) return req;
+
+        var e = sendEvent(req.el, 'ts-req-before', {req: req});
+        if (e.defaultPrevented)
+          return null;
+
+        var action = doActions(req.el, e, getattr(req.el, 'ts-req-before'), {req: req});
+        if (!action)
+          return req;
+
         return action.then(function(res) {
-          // skip if action explicitly returned `false`
-          return res === false ? null : req;
+          // skip making request if event was prevented
+          return e.defaultPrevented ? null : req;
         });
       }))
       .then(function(res) {
