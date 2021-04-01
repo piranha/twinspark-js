@@ -126,6 +126,16 @@
     return [].concat.apply([], arr);
   }
 
+  function el2str(el) {
+    return el.outerHTML.match(/<.+?>/)[0];
+  }
+
+  function extraerr(msg, data) {
+    var err = Error(msg);
+    err.extra = data;
+    return err;
+  }
+
   /** @type {function(string): (number|undefined)} */
   function parseTime(s) {
     s = s && s.trim();
@@ -370,7 +380,7 @@
       new URLSearchParams());
   }
 
-  /** @type {function(Element): string?}} */
+  /** @type {function(Element): string?} */
   function formElementValue(el) {
     if (!el.name)
       return null;
@@ -520,37 +530,49 @@
   /// Fragments
 
   /** @type {function(Element, string, boolean): (Element|undefined)} */
-  function _findTarget(el, sel, childrenOnly) {
+  function _findSingleTarget(el, sel, childrenOnly) {
     if (!sel || !el) {
       return el;
     }
 
     if (sel == 'inherit') {
       var parent = el.parentElement.closest('[ts-target]');
-      if (!parent)
-        ERR('Could not find parent for target', el);
       return findTarget(parent);
     }
 
     if (sel.slice(0, 7) == 'parent ') {
-      return el.closest(sel.slice(7)) ||
-        ERR('Could not find parent with selector:', sel, 'for element', el);
+      return el.closest(sel.slice(7));
     }
+
     if (sel.slice(0, 6) == 'child ') {
-      return el.querySelector(sel.slice(6)) ||
-        ERR('Could not find child with selector:', sel, 'for element', el);
+      return el.querySelector(sel.slice(6));
     }
+
     if (sel.slice(0, 8) == 'sibling ') {
-      return el.parentElement.querySelector(sel.slice(8)) ||
-        ERR('Could not find element with selector:', sel, 'among siblings of element', el);
+      return el.parentElement.querySelector(sel.slice(8));
     }
 
     if (childrenOnly) {
-      return el.querySelector(sel) ||
-        ERR('Could not find child with selector:', sel, 'for element', el);
+      return el.querySelector(sel);
     }
 
-    return document.querySelector(sel) || ERR('Could not find element with selector:', sel);
+    return document.querySelector(sel);
+  }
+
+  function findSingleTarget(el, sel, childrenOnly) {
+    var res = _findSingleTarget(el, sel, childrenOnly);
+    if (res)
+      return res;
+
+    var elstr = el2str(el);
+    var msg = "Could not find element with selector '" + sel + "' for element " + elstr;
+    if (childrenOnly)
+      msg += ' among children';
+
+    throw extraerr(msg, {
+      element: elstr,
+      selector: sel
+    });
   }
 
   /** @type {function(Element, string=): (Element|undefined)} */
@@ -565,8 +587,8 @@
     var bits = sel.split('|').map(s => s.trim());
     // when selector is not the first we are not going to escape to global
     // search from document root, it's always one of modifiers (see
-    // `_findTarget`), in the least it will look for a child
-    return bits.reduce((el, sel, idx) => _findTarget(el, sel, idx > 0), el);
+    // `_findSingleTarget`), in the least it will look for a child
+    return bits.reduce((el, sel, idx) => findSingleTarget(el, sel, idx > 0), el);
   }
 
   function findReply(target, origin, reply) {
@@ -598,7 +620,7 @@
     case 'append':      target.append.apply(target, reply);            break;
     case 'beforebegin': target.parentNode.insertBefore(reply, target); break;
     case 'afterend':    target.parentNode.insertBefore(reply, target.nextSibling); break;
-    default:            ERR('unknown swap strategy', strategy);        return;
+    default:            throw Error('Unknown swap strategy ' + strategy);          return;
     }
     return reply;
   }
@@ -621,7 +643,7 @@
       sel = '#' + reply.id;
     }
     if (!sel) {
-      ERR('cannot find target for server-pushed swap', reply);
+      return ERR('cannot find target for server-pushed swap', reply);
     }
     var target = qsf(document.body, sel);
     var strategy = getattr(reply, 'ts-swap') || 'replace';
@@ -781,7 +803,7 @@
           return swap(fullurl, origins, res.content, res.headers);
         }
 
-        ERR(res.content);
+        ERR('Something wrong with response', res.content);
       })
       .catch(function(res) {
         origins.forEach(el => el.classList.remove('ts-active'));
@@ -950,8 +972,9 @@
         window[command]);
 
     if (!cmd) {
-      return ERR('Unknown action command', command, args);
+      throw Error('Unknown action command: ' + payload.src);
     }
+
     return cmd.apply(payload.el, args.concat([payload]));
   }
 
@@ -985,9 +1008,18 @@
           return rv;
         if (rv !== undefined)
           opts.input = rv;
+
+        opts.command = command.name;
         opts.src = command.src;
         opts.argsSrc = command.src.slice(command.name.length + 1);
+
         return executeCommand(command.name, command.args, opts);
+      }).catch(function(err) {
+        throw assign(err, {extra: {
+          command: command.src,
+          action: action.src,
+          element: el2str(opts.el)
+        }});
       });
     }, Promise.resolve(null));
   }
@@ -1174,11 +1206,15 @@
     activate:  activate,
     func:      registerCommands,
     elcrumbs:  elcrumbs,
+    data:      collectData,
     target:    findTarget,
     trigger:   sendEvent,
     action:    doActions,
+    exec:      executeCommand,
     logtoggle: () => localStorage._ts_debug = (DEBUG=!DEBUG) ? 'true' : '',
+    setERR:    (errhandler) => ERR = errhandler,
     _internal: {DIRECTIVES: DIRECTIVES,
+                FUNCS: FUNCS,
                 init: init}
   };
 
