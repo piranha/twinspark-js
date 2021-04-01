@@ -27,7 +27,24 @@
   /** @const {!Object<string, Function>} */
   var FUNCS = {
     stop:        function(o) { if (o.event) o.event.stopPropagation(); },
+    prevent:     function(o) { if (o.event) o.event.preventDefault(); },
     delay:       delay,
+
+    not: function(funcname) {
+      var args = [].slice.call(arguments, 1, arguments.length - 1);
+      var o = assign({}, arguments[arguments.length - 1]);
+      assign(o, {src: o.argsSrc,
+                 argsSrc: o.argsSrc.slice(funcname.length + 1)});
+
+      var rv = executeCommand(funcname, args, o);
+
+      // this means previous command does not return truthy/falsy value, we
+      // ignore that
+      if (rv === null || rv === undefined) {
+        return rv;
+      }
+      return !rv;
+    },
 
     target: function() {
       var o = arguments[arguments.length - 1];
