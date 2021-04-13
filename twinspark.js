@@ -136,6 +136,13 @@
     return err;
   }
 
+  function memoize(orig) {
+    var cache = null;
+    return function() {
+      return cache || (cache = orig());
+    };
+  }
+
   /** @type {function(string): (number|undefined)} */
   function parseTime(s) {
     s = s && s.trim();
@@ -1085,16 +1092,31 @@
     }, opts);
   }
 
-  var closebyMargin = (window.innerHeight / 5 | 0) + 'px';
+  var visibleObs = memoize(function() {
+    return makeObserver({on: 'visible',
+                         off: 'invisible',
+                         rootMargin: '0px',
+                         threshold: 0.2});
+  });
 
-  var visible = makeObserver({on: 'visible', off: 'invisible', rootMargin: '0px', threshold: 0.2});
-  var closeby = makeObserver({on: 'closeby', off: 'away', rootMargin: closebyMargin, threshold: 0.2});
-  var removed = new MutationObserver(function(recs) {
-    for (var rec of recs) {
-      for (var node of rec.removedNodes) {
-        sendEvent(node, 'remove', {detail: rec});
+  var closebyObs = memoize(function() {
+    // triggers style recalculation:
+    // https://gist.github.com/paulirish/5d52fb081b3570c81e3a
+    var margin = (window.innerHeight / 5 | 0) + 'px';
+    return makeObserver({on: 'closeby',
+                         off: 'away',
+                         rootMargin: margin,
+                         threshold: 0.2});
+  });
+
+  var removedObs = memoize(function() {
+    return new MutationObserver(function(recs) {
+      for (var rec of recs) {
+        for (var node of rec.removedNodes) {
+          sendEvent(node, 'remove', {detail: rec});
+        }
       }
-    }
+    });
   });
 
   /** @type {function(Element): {once: (boolean|undefined), delay: (number|undefined)}} */
@@ -1154,11 +1176,11 @@
       break;
     case 'scroll':       el.addEventListener(type, function(e) { tsTrigger(el, e); });
       break;
-    case 'remove':       removed.observe(el.parentElement, {childList: true});
-    case 'visible':      visible.observe(el);
-    case 'invisible':    visible.observe(el);
-    case 'closeby':      closeby.observe(el);
-    case 'away':         closeby.observe(el);
+    case 'remove':       removedObs().observe(el.parentElement, {childList: true});
+    case 'visible':      visibleObs().observe(el);
+    case 'invisible':    visibleObs().observe(el);
+    case 'closeby':      closebyObs().observe(el);
+    case 'away':         closebyObs().observe(el);
     default:             el.addEventListener(type, function(e) { tsTrigger(el, e); });
     }
   }
