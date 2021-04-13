@@ -262,14 +262,13 @@
 
   <p class="card-body">
     <a href="/before" ts-req ts-req-before="delay 300">This will work with delay</a><br>
-    <a href="/before" ts-req ts-req-before="get_user">This is prevented</a>
+    <a href="/before" ts-req ts-req-before="prevent">This is prevented</a>
   </p>
 
   <script type="text/html">
     <a href="/before" ts-req>Did you see it?</a>
   </script>
   <script>
-    twinspark.func({get_user: () => !!localStorage.getItem('user')});
     XHRMock.get("/before", {body: prev()});
     test(el => {
       click(el.$$('a')[0])
