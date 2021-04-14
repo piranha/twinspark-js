@@ -364,6 +364,8 @@
   }
 
   function mergeParams(p1, p2, removeEmpty) {
+    // iterator loop here since p2 could be either an array or an
+    // URLSearchParams instance
     for (var [k, v] of p2) {
       if (!k) continue;
 
@@ -1036,12 +1038,12 @@
     if (!spec) return;
 
     var actions = parseActionSpec(spec);
-    // parens make this type cast rather than type declaration
+    // parens indicate type cast rather than type declaration
     var mypayload = /** @type {{el: Element, e: Event}} */ (assign({el: target, event: e}, payload));
 
     var result;
-
-    for (var action of /** @type {!Iterable} */ (actions)) {
+    for (var i = 0; i < actions.length; i++) {
+      var action = actions[i];
       if (action.commands.length) {
         result = _doAction(action, mypayload);
       }
@@ -1111,8 +1113,10 @@
 
   var removedObs = memoize(function() {
     return new MutationObserver(function(recs) {
-      for (var rec of recs) {
-        for (var node of rec.removedNodes) {
+      for (var i = 0; i < recs.length; i++) {
+        var rec = recs[i];
+        for (var j = 0; j < rec.removedNodes.length; j++) {
+          var node = rec.removedNodes[j];
           sendEvent(node, 'remove', {detail: rec});
         }
       }
