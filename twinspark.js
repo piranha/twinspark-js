@@ -798,7 +798,7 @@
 
     return xhr(fullurl, opts)
       .then(function(res) {
-        origins.forEach(el => el.classList.remove('ts-active'));
+        onidle(() => origins.forEach(el => el.classList.remove('ts-active')));
 
         // res.url == "" with mock-xhr
         if (res.ok && res.url && (res.url != (location.origin + fullurl))) {
@@ -815,7 +815,7 @@
         ERR('Something wrong with response', res.content);
       })
       .catch(function(res) {
-        origins.forEach(el => el.classList.remove('ts-active'));
+        onidle(() => origins.forEach(el => el.classList.remove('ts-active')));
 
         ERR('Error retrieving backend response', res.error || res);
       });
