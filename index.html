@@ -1007,5 +1007,18 @@ than it'll only restore HTML for the first 3 clicks</p>
         return msg;
       }
     });
+
+    test(el => {
+      wru.assert('simple parsing',
+                 twinspark.parseAction('just a test')[0].commands[0].name == 'just')
+      wru.assert('a few actions',
+                 twinspark.parseAction('command 1, command 2; action 2').length == 2)
+      wru.assert('parses string completely',
+                 twinspark.parseAction('this "is a string"')[0].commands[0].args[0] != 'is')
+      wru.assert('ignores punctuation in strings',
+                 twinspark.parseAction('you "want, this;", right?')[0].commands[0].args[0] == 'want, this;')
+      wru.assert('check quoting escape',
+                 twinspark.parseAction('this "is \\"a string"')[0].commands[0].args[0] == 'is "a string')
+    });
   </script>
 </div>

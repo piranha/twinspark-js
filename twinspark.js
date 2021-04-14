@@ -33,8 +33,7 @@
     not: function(funcname) {
       var args = [].slice.call(arguments, 1, arguments.length - 1);
       var o = assign({}, arguments[arguments.length - 1]);
-      assign(o, {src: o.argsSrc,
-                 argsSrc: o.argsSrc.slice(funcname.length + 1)});
+      o.src = o.src.slice(o.command.length + 1);
 
       var rv = executeCommand(funcname, args, o);
 
@@ -46,16 +45,18 @@
       return !rv;
     },
 
-    target: function() {
-      var o = arguments[arguments.length - 1];
-      var el = findTarget(o.el, o.argsSrc);
+    target: function(sel, o) {
+      var el = findTarget(o.el, sel);
       if (!el) return false; // stop executing
       o.el = el
     },
 
-    remove: function() {
-      var o = arguments[arguments.length - 1];
-      findTarget(o.el, o.argsSrc).remove();
+    remove: function(sel, o) {
+      if (o) {
+        findTarget(o.el, sel).remove();
+      } else {
+        return sel.el.remove();
+      }
     },
 
     wait: function(eventname, o) {
@@ -987,20 +988,108 @@
     return cmd.apply(payload.el, args.concat([payload]));
   }
 
-  /** @type {function(string): ActionDef} */
-  function parseSingleAction(line) {
-    var commands = line.split(',').map(c => {
-      var s = c.trim();
-      var bits = s.split(/\s+/);
-      return {src: s, name: bits[0], args: bits.slice(1)};
-    });
-    return {src: line, commands: commands};
+  /** @type {function(string): Array<ActionDef>}
+   *
+   *  Parses strings of the form:
+   *
+   *      cmd1 arg1, cmd2 arg2 'some, \'stuff'; cmd3 arg3
+   *
+   *  To an array of objects:
+   *
+   *      [{src: "cmd1 arg1, cmd2 arg",
+   *        commands: [{src: "cmd1 arg1", name: "cmd1", args: ["arg1"]},
+   *                   {src: "cmd2 arg2 'some, stuff'", name: "cmd2",
+   *                    args: ["arg2", "some, 'stuff"]}]},
+   *       {src: "cmd3 arg3",
+   *        commands: [{src: "cmd3 arg3", name: "cmd3", args: ["arg3"]}]}]
+   *
+   *  Understands quoting of strings and escaping quotes
+   */
+  function parseActionSpec(s) {
+    var actions = [];
+    var action = [];
+    var command = [];
+    var current = '';
+    var command_start = 0, action_start = 0, i = 0;
+    var quote = null;
+
+    function parseValue(s) {
+      var c = s[0];
+      if (c == '"' || c == "'") {
+        return s.slice(1, s.length - 1);
+      }
+      return s;
+    }
+
+    function consume() {
+      var token = current.trim();
+      if (token.length) {
+        command.push(parseValue(token));
+      }
+      current = '';
+    }
+
+    function consumeCommand() {
+      if (!command.length)
+        return;
+
+      action.push({src:   s.slice(command_start, i).trim(),
+                   name:  command[0],
+                   args:  command.slice(1)});
+      command = [];
+      command_start = i + 1;
+    }
+
+    function consumeAction() {
+      if (!action.length)
+        return;
+
+      actions.push({src: s.slice(action_start, i).trim(),
+                    commands: action});
+      action = [];
+      action_start = i + 1;
+    }
+
+    for (i = 0; i < s.length; i++) {
+      var c = s[i];
+
+      if (quote) {
+        if (c == '\\') {
+          i++;
+          current += s[i];
+        } else if (c == quote) {
+          current += c;
+          quote = null;
+        } else {
+          current += c;
+        }
+      } else {
+        if ((c == "'") || (c == '"')) {
+          quote = c;
+        } else if (c == " ") {
+          consume();
+          continue;
+        } else if (c == ",") {
+          consume();
+          consumeCommand();
+          continue;
+        } else if (c == ";") {
+          consume();
+          consumeCommand();
+          consumeAction();
+          continue;
+        }
+
+        current += c;
+      }
+    }
+
+    consume();
+    consumeCommand();
+    consumeAction();
+    return actions;
   }
 
-  /** @type {function(string): Array<ActionDef>} */
-  function parseActionSpec(s) {
-    return s.split(';').map(parseSingleAction);
-  }
 
   /** @type {function(ActionDef, {el: Element, e: Event}): !Promise} */
   function _doAction(action, payload) {
@@ -1020,7 +1109,6 @@
 
         opts.command = command.name;
         opts.src = command.src;
-        opts.argsSrc = command.src.slice(command.name.length + 1);
 
         return executeCommand(command.name, command.args, opts);
       }).catch(function(err) {
@@ -1193,7 +1281,7 @@
     var spec = getattr(el, 'ts-trigger');
     if (!spec) return;
 
-    var triggers = parseSingleAction(spec);
+    var triggers = parseActionSpec(spec)[0];
 
     triggers.commands.forEach(function(t) {
       registerTrigger(el, t);
@@ -1227,21 +1315,22 @@
   /// Public interface
 
   var twinspark = {
-    onload:    onload,
-    register:  register,
-    activate:  activate,
-    func:      registerCommands,
-    elcrumbs:  elcrumbs,
-    data:      collectData,
-    target:    findTarget,
-    trigger:   sendEvent,
-    action:    doActions,
-    exec:      executeCommand,
-    logtoggle: () => localStorage._ts_debug = (DEBUG=!DEBUG) ? 'true' : '',
-    setERR:    (errhandler) => ERR = errhandler,
-    _internal: {DIRECTIVES: DIRECTIVES,
-                FUNCS: FUNCS,
-                init: init}
+    onload:      onload,
+    register:    register,
+    activate:    activate,
+    func:        registerCommands,
+    elcrumbs:    elcrumbs,
+    data:        collectData,
+    target:      findTarget,
+    trigger:     sendEvent,
+    parseAction: parseActionSpec,
+    action:      doActions,
+    exec:        executeCommand,
+    logtoggle:   () => localStorage._ts_debug = (DEBUG=!DEBUG) ? 'true' : '',
+    setERR:      (errhandler) => ERR = errhandler,
+    _internal:   {DIRECTIVES: DIRECTIVES,
+                  FUNCS: FUNCS,
+                  init: init}
   };
 
   window[tsname] = twinspark;
