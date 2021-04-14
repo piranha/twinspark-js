@@ -629,7 +629,7 @@
     case 'append':      target.append.apply(target, reply);            break;
     case 'beforebegin': target.parentNode.insertBefore(reply, target); break;
     case 'afterend':    target.parentNode.insertBefore(reply, target.nextSibling); break;
-    default:            throw Error('Unknown swap strategy ' + strategy);          return;
+    default:            throw Error('Unknown swap strategy ' + strategy);
     }
     return reply;
   }
