@@ -1022,3 +1022,35 @@ than it'll only restore HTML for the first 3 clicks</p>
     });
   </script>
 </div>
+
+
+<h3 id="script" class="mt-p">Returning <code>script</code> elements in
+  responses</h3>
+
+<p>Setting <code>innerHTML</code> to a value which contains <code>script</code>
+  element does not execute JavaScript inside that element. TwinSpark handles
+  that for you, check it out.</p>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <a href="/script" ts-req>Update me with a script</a>
+  </p>
+
+  <script type="text/html">
+    <span><script>document.currentScript.parentElement.innerHTML = 'Double change!';</script></span>
+  </script>
+
+  <script>
+    XHRMock.get("/script", {body: prev()});
+    test(el => {
+      click(el.$('a'));
+      wait(() => wru.assert(el.$('span').innerText == 'Double change!'));
+    });
+  </script>
+</div>

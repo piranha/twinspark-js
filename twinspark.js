@@ -672,6 +672,29 @@
     return executeSwap(strategy, target, [reply]);
   }
 
+  function replaceScript(el) {
+    var parent = el.parentNode;
+    var newel = document.createElement(el.nodeName);
+
+    for (var j = 0; j < el.attributes.length; j++) {
+      var attr = el.attributes[j];
+      newel.setAttribute(attr, el.getAttribute(attr));
+    }
+
+    newel.appendChild(document.createTextNode(el.innerHTML));
+    parent.replaceChild(newel, el);
+  }
+
+  function processScripts(el) {
+    var scripts = el.querySelectorAll('script');
+    for (var i = 0; i < scripts.length; i++) {
+      var old = scripts[0];
+      if (!old.type || old.type == 'text/javascript') {
+        replaceScript(old);
+      }
+    }
+  }
+
   // Terminology:
   // `origin` - an element where request started from, a link or a button
   // `target` - where the incoming HTML will end up
@@ -732,6 +755,7 @@
 
     swapped = flat(swapped).filter(x => x);
 
+    swapped.forEach(processScripts);
     swapped.forEach(activate);
     autofocus(swapped);
     return swapped;
