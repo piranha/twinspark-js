@@ -1288,9 +1288,9 @@
     switch (type) {
     case 'load':         tsTrigger(el, {type: 'load'});
       break;
-    case 'windowScroll': window.addEventListener('scroll', function(e) { tsTrigger(el, e); });
+    case 'windowScroll': window.addEventListener('scroll', function(e) { tsTrigger(el, e); }, {passive: true});
       break;
-    case 'scroll':       el.addEventListener(type, function(e) { tsTrigger(el, e); });
+    case 'scroll':       el.addEventListener('scroll', function(e) { tsTrigger(el, e); }, {passive: true});
       break;
     case 'remove':       removedObs().observe(el.parentElement, {childList: true});
     case 'visible':      visibleObs().observe(el);
