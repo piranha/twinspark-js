@@ -842,7 +842,7 @@
       .catch(function(res) {
         onidle(() => origins.forEach(el => el.classList.remove('ts-active')));
 
-        ERR('Error retrieving backend response', res.error || res);
+        ERR('Error retrieving backend response', fullurl, res.error || res);
       });
   }
 
