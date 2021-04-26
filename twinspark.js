@@ -677,8 +677,8 @@
     var newel = document.createElement(el.nodeName);
 
     for (var j = 0; j < el.attributes.length; j++) {
-      var attr = el.attributes[j];
-      newel.setAttribute(attr, el.getAttribute(attr));
+      var attr = el.attributes[j].name;
+      setattr(newel , attr, getattr(el ,attr));
     }
 
     newel.appendChild(document.createTextNode(el.innerHTML));
@@ -688,7 +688,7 @@
   function processScripts(el) {
     var scripts = el.querySelectorAll('script');
     for (var i = 0; i < scripts.length; i++) {
-      var old = scripts[0];
+      var old = scripts[i];
       if (!old.type || old.type == 'text/javascript') {
         replaceScript(old);
       }
