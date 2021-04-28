@@ -49,30 +49,41 @@
       return '<pre><code>' + escape(trim(s)) +'</code></pre>';
     }
 
+    function makeel(tag, attrs, content) {
+      var el = document.createElement(tag);
+      el.innerHTML = content;
+      for (var k in attrs) {
+        el.setAttribute(k, attrs[k]);
+      }
+      return el;
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
-      [].forEach.call(document.querySelectorAll('.card'), function(el) {
-        var example = el.querySelector('.card-body');
+      [].forEach.call(document.querySelectorAll('.card'), function(card) {
+        var example = card.querySelector('.card-body');
         example.initial = example.innerHTML;
 
-        el.querySelector('.reset').addEventListener('click', function(e) {
+        card.querySelector('.reset').addEventListener('click', function(e) {
           example.innerHTML = example.initial;
-          twinspark._internal.init();
+          twinspark.activate(example);
         });
 
-        el.querySelector('.source').addEventListener('click', function(e) {
-          var sources = example.parentElement.querySelectorAll('script');
-          sources = Array.from(sources).map(el => el.outerHTML);
-          sources.unshift(example.initial);
-          example.innerHTML = sources.map(codewrap).join('<hr>');
+        card.querySelector('.source').addEventListener('click', function(e) {
+          var sources = card.querySelectorAll('script');
+          var html = '<h5>Example HTML</h5>' + codewrap(example.initial);
+          for (var i = 0; i < sources.length; i++) {
+            var el = sources[i];
+            var title = el.getAttribute('type') == 'text/html' ? 'Server response' : 'Tests/support scripts';
+            html += '<hr><h5>' + title + '</h5>';
+            html += codewrap(el.innerHTML);
+          }
+          example.innerHTML = html;
         });
       });
 
       [].forEach.call(document.querySelectorAll('h3'), function(el) {
         if (el.id && !el.querySelector('.anchor')) {
-          var a = document.createElement('a');
-          a.href = '#' + el.id;
-          a.innerText = '#';
-          a.className = 'anchor';
+          var a = makeel('a', {href: '#' + el.id, className: 'anchor'}, '#');
           el.append(' ');
           el.append(a);
         }
@@ -81,7 +92,8 @@
 
   </script>
   <style>
-    body {padding-bottom: 3em;} /* until we get footer? */
+    body {padding-bottom: 3em; } /* until we get footer? */
+    pre code {display: inline-block; } /* or else padding is broken for blocks */
     .card-body {overflow: scroll; }
     .btn-sm {margin-bottom: .2rem; }
     .mb-p {margin-bottom: 1.2rem; }
@@ -199,14 +211,14 @@
   </div>
 
   <p class="card-body">
-    <a href="/req" ts-req>Update me</a>
+    <a href="/fragment" ts-req>Update me</a>
   </p>
 
   <script type="text/html">
-    <a href="/req" ts-req>Updated!</a>
+    <a href="/fragment" ts-req>Updated!</a>
   </script>
   <script>
-    XHRMock.get("/req", {body: prev()});
+    XHRMock.get("/fragment", {body: prev()});
     test(el => {
       click(el.$('a'));
       wait(() => wru.assert(el.$('a').innerText == 'Updated!'));
@@ -232,13 +244,13 @@
   </p>
 
   <script type="text/html">
-    <a href="/trigger" ts-req>Good girl! :)</a>
+    <a href="/trigger" ts-req>Zehr gut! :)</a>
   </script>
   <script>
     XHRMock.get("/trigger", {body: prev()});
     test(el => {
       event('mouseenter', null, el.$('a'));
-      wait(() => wru.assert(el.$('a').innerText == 'Good girl! :)'));
+      wait(() => wru.assert(el.$('a').innerText == 'Zehr gut! :)'));
     });
   </script>
 </div>
@@ -299,18 +311,18 @@
 
   <p class="card-body">
     <span ts-data="a=1&b=2&c=3">
-      <!-- this will override 'c' value -->
+      <!-- empty c removes previous values of c and then adds 5 -->
       <a href="/data" ts-data="b=4&c&c=5" ts-req ts-req-method="POST">So. Much. Data.</a>
     </span>
   </p>
 
   <script>
     XHRMock.post("/data", function(req, res) {
-      return res.status(200).body('<a>' + req.body() + '</a>');
+      return res.status(200).body('<span>' + req.body() + '</span>');
     });
     test(el => {
       click(el.$('a'));
-      wait(() => wru.assert(el.$('a').innerText == 'a=1&b=2&b=4&c=5'));
+      wait(() => wru.assert(el.$('span').innerText == 'a=1&b=2&b=4&c=5'));
     });
   </script>
 </div>
@@ -335,7 +347,7 @@
   </p>
 
   <script type="text/html">
-    <span id="replace">Good catch!</span>
+    <span id="#replace" class="text-success">Good catch!</span>
   </script>
   <script>
     XHRMock.get("/target", {body: prev()});
@@ -352,6 +364,13 @@
   to update an element around itself. Add modifier <code>parent</code> before
   selector and <code>element.closest(selector)</code> method will be used to
   find a parent. This will help a lot to minimize amount of ids.</p>
+
+<p>There are a few other selector modifiers - please read sources of the function
+  <code>_findSingleTarget</code> until we get proper documentation. They are here
+  because regular CSS selectors start at the top of the document, but in case of
+  TwinSpark you're starting from a concrete element. DOM has various APIs to do
+  that, which TwinSpark maps to modifiers: <code>inherit</code>,
+  <code>parent</code>, <code>child</code>, <code>sibling</code>.</p>
 
 <div class="card">
   <div class="card-header">
