@@ -1189,12 +1189,11 @@
   function makeObserver(opts) {
     var on = opts.on;
     var off = opts.off;
+    var threshold = opts.threshold;
 
     return new IntersectionObserver(function(entries, obs) {
-      var threshold = obs.thresholds[0];
-      var entry;
       for (var i = 0; i < entries.length; i++) {
-        entry = entries[i];
+        var entry = entries[i];
 
         // isIntersecting is often `true` in FF even when it shouldn't be
         if (entry.intersectionRatio > threshold) {
