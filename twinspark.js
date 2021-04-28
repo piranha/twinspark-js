@@ -1329,7 +1329,7 @@
   // this is done outside of `init` since that way we can restore HTML before
   // `DOMContentLoaded` has happened and browser will set correct scroll
   // location automatically
-  if (window.performance &&
+  if (window.performance && window.performance.navigation &&
       window.performance.navigation.type == window.performance.navigation.TYPE_BACK_FORWARD) {
     // Restore HTML when user came back to page from non-pushstate destination
     onpopstate({initial: true});
