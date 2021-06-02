@@ -504,6 +504,21 @@ than it'll only restore HTML for the first 3 clicks</p>
 <p>Sometimes you don't need to go to server to do something. Closing popup or
   hiding an element can be done without network round trip.</p>
 
+<p>Default actions (those are defined in TwinSpark without you doing anything):</p>
+<ul>
+  <li><code>stop</code>: stops propagation of an event which triggered this action pipeline</li>
+  <li><code>prevent</code>: prevents default reaction of an event which triggered this action pipeline</li>
+  <li><code>delay [Ns]</code>: delays execution of an action pipeline by N seconds</li>
+  <li><code>target ['selector']</code>: selects another element (based on current one, so you can use all selector modifiers)</li>
+  <li><code>remove</code>: removes target element (current one by default)</li>
+  <li><code>wait [event-name]</code>: waits for an event to happen on a target element</li>
+  <li><code>class+ [class-name]</code>: adds a class to a target element</li>
+  <li><code>class- [class-name]</code>: removes a class from a target element</li>
+  <li><code>class^ [class-name]</code>: toggles a class on a target element</li>
+  <li><code>not [command-name arg1 arg2]</code>: negates return value of a given command</li>
+  <li><code>log [what ever you want]</code>: logs whatever you pass it, along with an input value if any</li>
+</ul>
+
 
 <div class="card">
   <div class="card-header">
