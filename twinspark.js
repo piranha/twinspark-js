@@ -342,10 +342,25 @@
 
   /// Data collection
 
+  function mergeParams(p1, p2, removeEmpty) {
+    // iterator loop here since p2 could be either an array or an
+    // FormData instance
+    for (var [k, v] of p2) {
+      if (!k) continue;
+
+      if (removeEmpty && ((v === null) || (v === ''))) {
+        p1.delete(k);
+      } else {
+        p1.append(k, v);
+      }
+    }
+    return p1;
+  }
+
   /**
    * Parse either query string or JSON object.
    * @param {string} v String to be parsed.
-   * @return URLSearchParams|Array<Array<string,*>>|null
+   * @return FormData|Array<Array<string,*>>|null
    */
   function parseData(v) {
     if (v == "") return null;
@@ -360,34 +375,19 @@
         return arr;
       }
     } else {
-      return new URLSearchParams(v);
+      return mergeParams(new FormData, new URLSearchParams(v));
     }
-  }
-
-  function mergeParams(p1, p2, removeEmpty) {
-    // iterator loop here since p2 could be either an array or an
-    // URLSearchParams instance
-    for (var [k, v] of p2) {
-      if (!k) continue;
-
-      if (removeEmpty && ((v === null) || (v === ''))) {
-        p1.delete(k);
-      } else {
-        p1.append(k, v);
-      }
-    }
-    return p1;
   }
 
   /**
-   * @type {function(Element, string): URLSearchParams}
+   * @type {function(Element, string): FormData}
    * @suppress {reportUnknownTypes}
    */
   function eldata(el, attr) {
     // reduceRight because deepest element is the first one
     return elcrumbs(el, attr).reduceRight(
       (acc, v) => mergeParams(acc, parseData(v), true),
-      new URLSearchParams());
+      new FormData());
   }
 
   /** @type {function(Element): string?} */
@@ -414,13 +414,9 @@
     var res;
 
     if (tag == 'FORM') {
-      [].forEach.call(el.elements, (el) => {
-        if (res = formElementValue(el))
-          data.append(el.name, res);
-      });
-
+      return mergeParams(data, new FormData(el));
     } else if ((tag == 'INPUT') || (tag == 'SELECT') || (tag == 'TEXTAREA')) {
-      if (res = formElementValue(el))
+      if ((res = formElementValue(el)))
         data.append(el.name, /** @type {string} */ (res));
     }
 
@@ -783,7 +779,6 @@
       data:    data,
       headers: {
         'Accept':       'text/html+partial',
-        'Content-Type': data && req.method != 'GET' ? 'application/x-www-form-urlencoded' : null,
         'TS-URL':       location.pathname + location.search,
         'TS-Origin':    elid(req.el),
         'TS-Target':    elid(findTarget(req.el))
@@ -798,9 +793,9 @@
     var method = batch[0].method;
     var data = batch.reduce(function(acc, req) {
       return mergeParams(acc, req.opts.data, false);
-    }, new URLSearchParams()).toString();
+    }, new FormData());
 
-    var query = method == 'GET' ? data : null;
+    var query = method == 'GET' ? new URLSearchParams(data).toString() : null;
     var body = method != 'GET' ? data : null;
 
     var opts = {

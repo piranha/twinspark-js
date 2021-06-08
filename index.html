@@ -318,12 +318,12 @@
 
   <script>
     XHRMock.post("/data", function(req, res) {
-      return res.status(200).body('<span>' + req.body() + '</span>');
+      return res.status(200).body('<span>' + new URLSearchParams(req.body()).toString() + '</span>');
     });
-    test(el => {
-      click(el.$('a'));
-      wait(() => wru.assert(el.$('span').innerText == 'a=1&b=2&b=4&c=5'));
-    });
+   test(el => {
+     click(el.$('a'));
+     wait(() => wru.assert(el.$('span').innerText == 'a=1&b=2&b=4&c=5'));
+   });
   </script>
 </div>
 
