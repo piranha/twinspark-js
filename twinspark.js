@@ -1243,9 +1243,13 @@
       }
 
       if (spec.once) {
+        // removeMe(); // how do we do this in common case?
         if (data.once) {
+          // NOTE: this just skips execution, no real listener removal happens
           return;
         }
+        // this ideally triggers removal of event listener in
+        // `addRemovableListener`
         data.once = true;
       }
 
@@ -1267,6 +1271,19 @@
     };
   }
 
+  function addRemovableListener(el, type, handler, opts) {
+    function inner(e) {
+      handler(e);
+
+      var data = internalData(el);
+      // see makeTriggerListener for details
+      if (data.once) {
+        el.removeEventListener(type, inner);
+      }
+    }
+    el.addEventListener(type, inner, opts);
+  }
+
   /** @type {function(!Element, CommandDef): undefined} */
   function registerTrigger(el, t) {
     var type = t.name;
@@ -1275,15 +1292,29 @@
     switch (type) {
     case 'load':         tsTrigger(el, {type: 'load'});
       break;
-    case 'windowScroll': window.addEventListener('scroll', function(e) { tsTrigger(el, e); }, {passive: true});
+    case 'windowScroll': addRemovableListener(window, 'scroll', function(e) { tsTrigger(el, e); }, {passive: true});
       break;
-    case 'scroll':       el.addEventListener('scroll', function(e) { tsTrigger(el, e); }, {passive: true});
+    case 'scroll':       addRemovableListener(el, 'scroll', function(e) { tsTrigger(el, e); }, {passive: true});
       break;
+    case 'outside':      addRemovableListener(document, 'click', function(e) {
+      if (!el.contains(e.target)) {
+        tsTrigger(el, e);
+      }
+    });
+      break;
+
+    // NOTE: trigger modifiers do not work on observers (yet?)
     case 'remove':       removedObs().observe(el.parentElement, {childList: true});
+      break;
     case 'visible':      visibleObs().observe(el);
+      break;
     case 'invisible':    visibleObs().observe(el);
+      break;
     case 'closeby':      closebyObs().observe(el);
+      break;
     case 'away':         closebyObs().observe(el);
+      break;
+
     default:             el.addEventListener(type, function(e) { tsTrigger(el, e); });
     }
   }

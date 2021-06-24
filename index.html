@@ -130,7 +130,7 @@
 <h2>Tests</h2>
 <p>
   This document has tests embedded in examples, to run them, press:
-  <button class="btn" onclick="runTests()">Run tests</button>
+  <button class="btn" onclick="runTests(event)">Run tests</button>
 </p>
 <style>
   #wru{font-family:sans-serif;font-size:11pt}
@@ -145,14 +145,15 @@
 <script src="vendor/wru.min.js"></script>
 <script>
   var TESTS = [];
-  function test(testfn) {
+
+  function makeTest(testfn) {
     var parent = document.currentScript.closest('div');
     var example = parent.querySelector('.card-body');
     var h = parent;
     while(h && !((h = h.previousElementSibling).tagName == 'H3')) {
     }
 
-    var test = {
+    return {
       name: h && h.innerText || 'test',
       setup: () => {
         example.innerHTML = example.initial;
@@ -171,10 +172,26 @@
         twinspark.activate(example);
       }
     };
-    TESTS.push(test);
   }
 
-  function runTests() {
+  function test(testfn) {
+    TESTS.push(makeTest(testfn));
+  }
+
+  // use to limit tests to only single function, so less noise happens when you
+  // debug a test
+  function test1(testfn) {
+    var test = makeTest(testfn);
+    setTimeout(_ => { TESTS = [test] }, 100);
+  }
+
+  function runTests(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    wru.timeout = 1000;
+
     Element.prototype.$ = Element.prototype.querySelector;
     Element.prototype.$$ = Element.prototype.querySelectorAll;
     window.event = (type, attrs, el) => {
@@ -684,6 +701,51 @@ than it'll only restore HTML for the first 3 clicks</p>
     </p>
   </div>
 </div>
+
+
+<h3 id="outside" class="mt-p">Handling clicks outside of an element</h3>
+<p>Popups, modals, menus and some other elements can make use of <code>click
+  happened outside</code>. It could be done with markup and underlying element,
+  but why bother if you have straightforward trigger.</p>
+
+<p>This trigger is ideally used with modifier <code>once</code>, since you're
+  probably going to remove that modal you calling it on - using <code>once</code>
+  will clean up your listeners so you won't get memory leaks.</p>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p ts-trigger="outside once"
+       ts-action="target 'child a', text 'Outside, but just this one time'">
+      <a href="#" ts-action="text 'Inside, every time'">No clicks yet.</a>
+    </p>
+  </div>
+
+  <script>
+    test(el => {
+      var a = el.$('a');
+      wru.assert('start: ' + a.innerText, a.innerText.startsWith('No clicks'));
+      a.click();
+      wait(_ => {
+        wru.assert('click inside: ' + a.innerText, a.innerText.startsWith('Inside'));
+        el.click();
+        wait(_ => {
+          wru.assert('outside: ' + a.innerText, a.innerText.startsWith('Outside'));
+          a.click();
+          wait(_ => {
+            wru.assert('inside: ' + a.innerText, a.innerText.startsWith('Inside'));
+          });
+        });
+      });
+    });
+  </script>
+</div>
+
 
 <hr>
 
