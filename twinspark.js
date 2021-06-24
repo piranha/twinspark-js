@@ -68,6 +68,33 @@
     "class^":    function(cls, o) { o.el.classList.toggle(cls); },
     classtoggle: function(cls, o) { o.el.classList.toggle(cls); },
 
+    text: function(value, o) {
+    // if second argument is null, then first argument is opts
+      if (!o) {
+        o = value;
+        value = o.input;
+      }
+
+      o.el.innerText = value;
+      return value;
+    },
+
+    html: function(value, o) {
+    // if second argument is null, then first argument is opts
+      if (!o) {
+        o = value;
+        value = o.input;
+      }
+
+      o.el.innerHTML = value;
+      return value;
+    },
+
+    attr: function(name, value, o) {
+      o.el[name] = value;
+      return value;
+    },
+
     log: function() {
       var args = parseArgs(arguments);
       if (args.o.input) {
@@ -1363,7 +1390,8 @@
     func:        registerCommands,
     elcrumbs:    elcrumbs,
     data:        collectData,
-    target:      findTarget,
+    target:      findTarget, // DEPRECATED
+    query:       findTarget,
     trigger:     sendEvent,
     parseAction: parseActionSpec,
     action:      doActions,
