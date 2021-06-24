@@ -14,9 +14,6 @@
 
   // Indicates if `init` has happened
   var READY = false;
-  /** @type {boolean} */
-  var DEBUG = localStorage._ts_debug || false;
-
 
   /** @typedef {{selector: string, handler: (function(!Element): void)}} */
   var Directive;
@@ -86,12 +83,6 @@
   var ERR = console.error ?
       console.error.bind(console, 'TwinSpark error:') :
       console.log.bind(console, 'TwinSpark error:');
-  /** @type {function(...*): void} */
-  function LOG() {
-    if (DEBUG) {
-      console.log.apply(console, arguments);
-    }
-  }
 
   /** @type{function(!Object, (Object|null|undefined)): !Object} */
   var assign = Object.assign || function(tgt, src) {
@@ -188,7 +179,7 @@
     var event = new CustomEvent(type, {bubbles: bubbles,
                                        cancelable: true,
                                        detail: opts.detail});
-    LOG(el, type, opts.detail);
+    console.debug('EVENT', type, {el: el, detail: opts.detail});
     el.dispatchEvent(event);
     return event;
   }
@@ -464,7 +455,7 @@
 
   function deleteOverLimit(db) {
     reqpromise(idbStore(db).count()).then(function(count) {
-      LOG('stored', count);
+      console.debug('STORED', count);
       var toremove = count - historyLimit;
       if (toremove > 0) {
         var req = idbStore(db, {write: true})
@@ -514,7 +505,7 @@
           .objectStore(db.name)
           .get(url));
     }).then(function(data) {
-      LOG('restore', data);
+      console.debug('onpopstate restore', data);
       if (data && data.html) {
         document.body.innerHTML = data.html;
 
@@ -1113,14 +1104,14 @@
 
   /** @type {function(ActionDef, {el: Element, e: Event}): !Promise} */
   function _doAction(action, payload) {
-    LOG('action', action.src, payload);
+    console.debug('ACTION', action.src, payload);
 
     // make a copy, since we allow modification of payload in commands
     var opts = assign({line: action.src}, payload);
 
     return action.commands.reduce(function(p, command) {
       return p.then(function(rv) {
-        LOG('COMMAND', command.src, rv, action.src);
+        console.debug('COMMAND', command.src, {input: rv, src: action.src});
         // `false` indicates that action should stop
         if (rv === false)
           return rv;
@@ -1145,6 +1136,7 @@
   function doActions(target, e, spec, payload) {
     if (!spec) return;
 
+    console.debug('ACTIONS', {spec: spec, event: e, payload: payload});
     var actions = parseActionSpec(spec);
     // parens indicate type cast rather than type declaration
     var mypayload = /** @type {{el: Element, e: Event}} */ (assign({el: target, event: e}, payload));
@@ -1317,7 +1309,7 @@
     window.addEventListener('beforeunload', storeCurrentState);
     activate(document.body);
     READY = true;
-    LOG('init done', _e);
+    console.debug('init done', _e);
   }
 
   onload(init);
@@ -1345,7 +1337,6 @@
     parseAction: parseActionSpec,
     action:      doActions,
     exec:        executeCommand,
-    logtoggle:   () => localStorage._ts_debug = (DEBUG=!DEBUG) ? 'true' : '',
     setERR:      (errhandler) => ERR = errhandler,
     _internal:   {DIRECTIVES: DIRECTIVES,
                   FUNCS: FUNCS,
