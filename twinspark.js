@@ -1305,7 +1305,7 @@
       var data = internalData(el);
       // see makeTriggerListener for details
       if (data.once) {
-        el.removeEventListener(type, inner);
+        el.removeEventListener(type, inner, opts);
       }
     }
     el.addEventListener(type, inner, opts);
@@ -1327,7 +1327,7 @@
       if (!el.contains(e.target)) {
         tsTrigger(el, e);
       }
-    });
+    }, {capture: true});
       break;
 
     // NOTE: trigger modifiers do not work on observers (yet?)

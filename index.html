@@ -726,6 +726,10 @@ than it'll only restore HTML for the first 3 clicks</p>
        ts-action="target 'child a', text 'Outside, but just this one time'">
       <a href="#" ts-action="text 'Inside, every time'">No clicks yet.</a>
     </p>
+
+    <p>
+      <a href="#" ts-action="stop">Link to check that stopPropagation doesn't matter to <code>outside</code> clicks.</a>
+    </p>
   </div>
 
   <script>
