@@ -646,8 +646,14 @@
                         target.append.apply(target, reply);            break;
     case 'prepend':     target.prepend.apply(target, reply);           break;
     case 'append':      target.append.apply(target, reply);            break;
-    case 'beforebegin': target.parentNode.insertBefore(reply, target); break;
-    case 'afterend':    target.parentNode.insertBefore(reply, target.nextSibling); break;
+    case 'beforebegin': for (var i = 0; i < reply.length; i++) {
+      target.parentNode.insertBefore(reply[i], target);
+    }
+      break;
+    case 'afterend':    for (var i = 0; i < reply.length; i++) {
+      target.parentNode.insertBefore(reply[i], target.nextSibling);
+    }
+      break;
     default:            throw Error('Unknown swap strategy ' + strategy);
     }
     return reply;
