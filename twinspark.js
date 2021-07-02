@@ -432,9 +432,13 @@
     var res;
 
     if (tag == 'FORM') {
-      return mergeParams(data, new FormData(el));
+      data = mergeParams(data, new FormData(el));
+      var focused = document.activeElement;
+      if (focused.type == 'submit' && focused.name && focused.value) {
+        data.append(focused.name, focused.value);
+      }
     } else if ((tag == 'INPUT') || (tag == 'SELECT') || (tag == 'TEXTAREA')) {
-      if ((res = formElementValue(el)))
+      if (res = formElementValue(el))
         data.append(el.name, /** @type {string} */ (res));
     }
 
@@ -928,6 +932,9 @@
 
   function markSubmitter(el) {
     el.addEventListener('click', function(e) {
+      // focus here since macos won't focus submit buttons
+      e.target.focus();
+      // NOTE: DEPRECATED
       setattr(el, 'ts-clicked', '1');
       // form data should be handled synchronously
       onidle(function() { delattr(el, 'ts-clicked'); });
