@@ -1343,16 +1343,21 @@
     }, {capture: true});
       break;
 
-    // NOTE: trigger modifiers do not work on observers (yet?)
-    case 'remove':       removedObs().observe(el.parentElement, {childList: true});
+    case 'remove':
+      removedObs().observe(el.parentElement, {childList: true});
+      el.addEventListener(type, function(e) { tsTrigger(el, e); });
       break;
-    case 'visible':      visibleObs().observe(el);
+
+    case 'visible':
+    case 'invisible':
+      visibleObs().observe(el);
+      el.addEventListener(type, function(e) { tsTrigger(el, e); });
       break;
-    case 'invisible':    visibleObs().observe(el);
-      break;
-    case 'closeby':      closebyObs().observe(el);
-      break;
-    case 'away':         closebyObs().observe(el);
+
+    case 'closeby':
+    case 'away':
+      closebyObs().observe(el);
+      el.addEventListener(type, function(e) { tsTrigger(el, e); });
       break;
 
     default:             el.addEventListener(type, function(e) { tsTrigger(el, e); });
