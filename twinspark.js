@@ -654,6 +654,7 @@
       target.parentNode.insertBefore(reply[i], target.nextSibling);
     }
       break;
+    case 'skip': break;
     default:            throw Error('Unknown swap strategy ' + strategy);
     }
     return reply;
