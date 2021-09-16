@@ -876,7 +876,7 @@
       .all(batch.map(function(req) {
         req.opts = makeOpts(req);
 
-        var e = sendEvent(req.el, 'ts-req-before', {req: req});
+        var e = sendEvent(req.el, 'ts-req-before', {detail: {req: req}});
         if (e.defaultPrevented)
           return null;
 
