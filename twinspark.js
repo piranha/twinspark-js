@@ -735,7 +735,8 @@
     var children = Array.from(html.body.children);
     var replyParent = html.body;
 
-    if (children.length < origins.length) {
+    if (headers['ts-swap'] != 'skip'
+        && children.length < origins.length) {
       throw ('This request needs at least ' + origins.length +
              ' elements, but ' + children.length + ' were returned');
     }
