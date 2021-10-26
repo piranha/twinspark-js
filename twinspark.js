@@ -1238,13 +1238,13 @@
     return makeObserver({on: 'visible',
                          off: 'invisible',
                          rootMargin: '0px',
-                         threshold: 0.2});
+                         threshold: 0.05});
   });
 
   var closebyObs = memoize(function() {
     // triggers style recalculation:
     // https://gist.github.com/paulirish/5d52fb081b3570c81e3a
-    var margin = (window.innerHeight / 5 | 0) + 'px';
+    var margin = (window.innerHeight / 2 | 0) + 'px';
     return makeObserver({on: 'closeby',
                          off: 'away',
                          rootMargin: margin,
