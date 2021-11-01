@@ -1238,7 +1238,7 @@
     return makeObserver({on: 'visible',
                          off: 'invisible',
                          rootMargin: '0px',
-                         threshold: 0.05});
+                         threshold: 0.01});
   });
 
   var closebyObs = memoize(function() {
@@ -1248,7 +1248,7 @@
     return makeObserver({on: 'closeby',
                          off: 'away',
                          rootMargin: margin,
-                         threshold: 0.2});
+                         threshold: 0.01});
   });
 
   var removedObs = memoize(function() {
