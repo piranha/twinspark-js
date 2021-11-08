@@ -524,11 +524,16 @@
     // Store HTML before "changing page", `swap` is going to change HTML after
     // that
     storeCurrentState();
-    history.pushState(null, title, url);
+    history.pushState("history", title, url);
     sendEvent(window, 'ts-pushstate', {detail: url});
   }
 
   function onpopstate(e) {
+    // hashchange triggers onpopstate and there is nothing we can do about it
+    // https://stackoverflow.com/questions/25634422/stop-firing-popstate-on-hashchange
+    if (!e.state)
+      return;
+
     var url = location.pathname + location.search;
     idb().then(function(db) {
       return reqpromise(
@@ -545,7 +550,7 @@
         // and DOMContentLoaded, so in case when first happened and second did
         // not, `READY` is false and thus `activate` will be run later on inside
         // `init`. Skip this not to activate everything twice.
-        if (e.initial && !READY) {
+        if (e.state == "initial" && !READY) {
           return;
         }
 
@@ -1263,6 +1268,19 @@
     });
   });
 
+  var childrenObs = memoize(function() {
+    return new MutationObserver(function(recs) {
+      var empty;
+      for (var i = 0; i < recs.length; i++) {
+        if (rec.type == 'childList') {
+          emptyEvent = rec.target.childNodes.count ? 'notempty' : 'empty';
+          sendEvent(rec.target, emptyEvent, {detail: rec});
+          sendEvent(rec.target, 'childrenChange', {detail: rec});
+        }
+      }
+    });
+  });
+
   /** @type {function(Element): {once: (boolean|undefined), delay: (number|undefined)}} */
   function internalData(el) {
     var prop = 'twinspark-internal';
@@ -1349,6 +1367,13 @@
       el.addEventListener(type, function(e) { tsTrigger(el, e); });
       break;
 
+    case 'empty':
+    case 'notempty':
+    case 'childrenChange':
+      childrenObs().observe(el, {childList: true});
+      el.addEventListener(type, function(e) { tsTrigger(el, e); });
+      break;
+
     case 'visible':
     case 'invisible':
       visibleObs().observe(el);
@@ -1397,7 +1422,7 @@
   if (window.performance && window.performance.navigation &&
       window.performance.navigation.type == window.performance.navigation.TYPE_BACK_FORWARD) {
     // Restore HTML when user came back to page from non-pushstate destination
-    onpopstate({initial: true});
+    onpopstate({state: "initial"});
   }
 
   /// Public interface
