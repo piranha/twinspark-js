@@ -434,7 +434,7 @@
     if (tag == 'FORM') {
       data = mergeParams(data, new FormData(el));
       var focused = document.activeElement;
-      if (focused.type == 'submit' && focused.name && focused.value) {
+      if (focused.type == 'submit' && focused.name && focused.value && !data.has(focused.name)) {
         data.append(focused.name, focused.value);
       }
     } else if ((tag == 'INPUT') || (tag == 'SELECT') || (tag == 'TEXTAREA')) {
