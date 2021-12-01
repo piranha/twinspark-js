@@ -1349,7 +1349,7 @@
     var tsTrigger = makeTriggerListener(t);
 
     switch (type) {
-    case 'load':         tsTrigger(el, {type: 'load'});
+    case 'load':         onidle(function() { tsTrigger(el, {type: 'load'}) });
       break;
     case 'windowScroll': addRemovableListener(window, 'scroll', function(e) { tsTrigger(el, e); }, {passive: true});
       break;
