@@ -337,9 +337,12 @@
                        'ts-swap':      xhr.getResponseHeader('ts-swap'),
                        'ts-swap-push': xhr.getResponseHeader('ts-swap-push')}
 
-        return resolve({ok:      xhr.status == 0 || (xhr.status >= 200 && xhr.status <= 299),
+        return resolve({xhr:     xhr,
+                        opts:    opts,
+                        ok:      xhr.status == 0 || (xhr.status >= 200 && xhr.status <= 299),
                         status:  xhr.status,
                         url:     xhr.responseURL,
+                        reqUrl:  url,
                         headers: headers,
                         content: xhr.responseText});
 
@@ -665,14 +668,15 @@
     return reply;
   }
 
-  function elementSwap(origin, replyParent) {
+  function elementSwap(origin, replyParent, res) {
     var target = findTarget(origin);
     var reply = findReply(target, origin, replyParent);
     var strategy = getattr(origin, 'ts-swap') || 'replace';
 
     if (origin) {
-      var e = sendEvent(origin, 'ts-req-after');
-      doActions(origin, e, getattr(origin, 'ts-req-after'), null);
+      var detail = {response: res};
+      var e = sendEvent(origin, 'ts-req-after', {detail: detail});
+      doActions(origin, e, getattr(origin, 'ts-req-after'), detail);
     }
     return executeSwap(strategy, target, reply);
   }
@@ -731,12 +735,12 @@
   // `target` - where the incoming HTML will end up
   // `reply` - incoming HTML to end up in target
   /** @type {function(string, Array<Element>, string, Object): Array<Element>} */
-  function swap(url, origins, content, headers) {
+  function swap(url, origins, content, res) {
     var html = new DOMParser().parseFromString(content, 'text/html');
-    var title = headers['ts-title'] || html.title;
+    var title = res.headers['ts-title'] || html.title;
     // either ts-history contains new URL or ts-req-history attr is present,
     // then take request URL as new URL
-    var pushurl = headers['ts-history'] || hasattr(origins[0], 'ts-req-history') && url;
+    var pushurl = res.headers['ts-history'] || hasattr(origins[0], 'ts-req-history') && url;
     var children = Array.from(html.body.children);
     var replyParent = html.body;
 
@@ -762,9 +766,10 @@
 
     // swap original elements
     var swapped;
-    if (headers['ts-swap'] != 'skip') {
+    if (res.headers['ts-swap'] != 'skip') {
       swapped = origins.map(function (origin, i) {
-        return elementSwap(origin, origins.length > 1 ? children[i] : replyParent);
+        var thisParent = origins.length > 1 ? children[i] : replyParent
+        return elementSwap(origin, thisParent, res);
       });
     } else {
       swapped = [];
@@ -779,8 +784,9 @@
     swapped = swapped.concat(oobs);
 
     // swap any header requests
-    if (headers['ts-swap-push']) {
-      swapped = swapped.concat(headers['ts-swap-push'].split(',')
+    if (res.headers['ts-swap-push']) {
+      swapped = swapped.concat(res.headers['ts-swap-push']
+                               .split(',')
                                .map(header => headerSwap(header, replyParent)));
     }
 
@@ -858,13 +864,13 @@
         // res.url == "" with mock-xhr
         if (res.ok && res.url && (res.url != (location.origin + fullurl))) {
           res.headers['ts-history'] = res.url;
-          return swap(res.url, [document.body], res.content, res.headers);
+          return swap(res.url, [document.body], res.content, res);
         }
 
         if (res.ok) {
           // cannot use res.url here since fetchMock will not set it to right
           // value
-          return swap(fullurl, origins, res.content, res.headers);
+          return swap(fullurl, origins, res.content, res);
         }
 
         ERR('Something wrong with response', res.content);
@@ -881,11 +887,12 @@
       .all(batch.map(function(req) {
         req.opts = makeOpts(req);
 
-        var e = sendEvent(req.el, 'ts-req-before', {detail: {req: req}});
+        var detail = {req: req};
+        var e = sendEvent(req.el, 'ts-req-before', {detail: detail});
         if (e.defaultPrevented)
           return null;
 
-        var action = doActions(req.el, e, getattr(req.el, 'ts-req-before'), {req: req});
+        var action = doActions(req.el, e, getattr(req.el, 'ts-req-before'), detail);
         if (!action)
           return req;
 
