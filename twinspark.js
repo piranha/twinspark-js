@@ -780,7 +780,7 @@
     });
 
     // swap joiners
-    swapped = swapped.concat(joiners.map(joiner => elementSwap(joiner, html.body)));
+    swapped = swapped.concat(joiners.map(joiner => elementSwap(joiner, html.body, res)));
     swapped = swapped.concat(oobs);
 
     // swap any header requests
