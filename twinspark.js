@@ -737,6 +737,12 @@
   /** @type {function(string, Array<Element>, string, Object): Array<Element>} */
   function swap(url, origins, content, res) {
     var html = new DOMParser().parseFromString(content, 'text/html');
+
+    // when swapping, browsers treat <style> element inside of <noscript> as
+    // something worth looking at. Weirdly enough, we don't want them to be
+    // used, and to be sure let's delete all <noscript> elements.
+    html.body.querySelectorAll('noscript').forEach(x => x.remove());
+
     var title = res.headers['ts-title'] || html.title;
     // either ts-history contains new URL or ts-req-history attr is present,
     // then take request URL as new URL
