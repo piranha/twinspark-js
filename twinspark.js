@@ -1,7 +1,6 @@
 /* jshint esversion: 6 */
 
 (function(window, document, tsname) {
-  var localStorage = window.localStorage;
   var location = window.location;
   var script = document.currentScript;
 
