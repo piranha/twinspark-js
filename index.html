@@ -651,12 +651,11 @@ than it'll only restore HTML for the first 3 clicks</p>
   <div class="card-body">
     <p class="remove-me">This is going to be removed</p>
     <p class="fade-me">And this only after transition</p>
-    <p>
-      <button class="btn"
-              ts-action="target parent p | sibling .remove-me, remove;
-                         target parent p | sibling .fade-me, class+ fade, wait transitionend, remove">
-        Double remove</button>
-    </p>
+    <button class="btn" ts-action="
+      target 'sibling .remove-me', remove;
+      target 'sibling .fade-me', class+ fade, wait transitionend, remove
+    ">
+      Double remove</button>
   </div>
 </div>
 
