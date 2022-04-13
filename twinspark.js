@@ -570,6 +570,10 @@
       return el;
     }
 
+    if (sel == 'target') {
+      return el;
+    }
+
     if (sel == 'inherit') {
       var parent = el.parentElement.closest('[ts-target]');
       return findTarget(parent);
