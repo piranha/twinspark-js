@@ -205,7 +205,7 @@
     var event = new CustomEvent(type, {bubbles: bubbles,
                                        cancelable: true,
                                        detail: opts.detail});
-    console.debug('EVENT', type, {el: el, detail: opts.detail});
+    console.debug('🛎️ EVENT', type, {el: el, detail: opts.detail});
     el.dispatchEvent(event);
     return event;
   }
@@ -1169,7 +1169,8 @@
 
     return action.commands.reduce(function(p, command) {
       return p.then(function(rv) {
-        console.debug('COMMAND', command.src, {input: rv, src: action.src});
+        console.debug(rv !== false ? '🔵' : '🚫', 'COMMAND',
+                      command.src, {input: rv, src: action.src});
         // `false` indicates that action should stop
         if (rv === false)
           return rv;
