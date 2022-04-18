@@ -835,6 +835,26 @@
     };
   }
 
+  function setReqBody(opts, body) {
+    if (!body) {
+      return opts;
+    }
+
+    var issimple = (Array
+                    .from(body.entries)
+                    .every((x) => typeof x === "string"));
+    if (!issimple) {
+      opts.body = body;
+      return opts;
+    }
+
+    // convert FormData to string so we can evade multipart form
+    var simplebody = new URLSearchParams(body);
+    opts.body = simplebody.toString();
+    opts.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    return opts;
+  }
+
   function _doReqBatch(batch) {
     if (!batch.length) return;
 
@@ -849,11 +869,12 @@
 
     var opts = {
       method:  method,
-      body:    body,
       headers: batch.reduce(function(h, req) {
         return mergeHeaders(h, req.opts.headers);
       }, {})
     };
+
+    opts = setReqBody(opts, body);
 
     var fullurl = url;
     if (query) {
