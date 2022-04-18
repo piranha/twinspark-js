@@ -863,12 +863,16 @@
 
     var origins = batch.map(function(req) { return req.el; });
     origins.forEach(function (el) {
+      el.setAttribute('aria-busy', 'true');
       el.classList.add('ts-active');
     });
 
     return xhr(fullurl, opts)
       .then(function(res) {
-        onidle(() => origins.forEach(el => el.classList.remove('ts-active')));
+        onidle(() => origins.forEach(el => {
+          el.removeAttribute('aria-busy');
+          el.classList.remove('ts-active')
+        }));
 
         // res.url == "" with mock-xhr
         if (res.ok && res.url && (res.url != (location.origin + fullurl))) {
@@ -885,7 +889,10 @@
         ERR('Something wrong with response', res.content);
       })
       .catch(function(res) {
-        onidle(() => origins.forEach(el => el.classList.remove('ts-active')));
+        onidle(() => origins.forEach(el => {
+          el.removeAttribute('aria-busy');
+          el.classList.remove('ts-active')
+        }));
 
         ERR('Error retrieving backend response', fullurl, res.error || res);
       });
