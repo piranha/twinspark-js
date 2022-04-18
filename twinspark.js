@@ -835,7 +835,7 @@
     };
   }
 
-  function _doBatch(batch) {
+  function _doReqBatch(batch) {
     if (!batch.length) return;
 
     var url = batch[0].url;
@@ -898,7 +898,7 @@
       });
   }
 
-  function doBatch(batch) {
+  function doReqBatch(batch) {
     return Promise
       .all(batch.map(function(req) {
         req.opts = makeOpts(req);
@@ -920,7 +920,7 @@
       .then(function(res) {
         return res.filter(function(req) { return !!req; });
       })
-      .then(_doBatch);
+      .then(_doReqBatch);
   }
 
   // Batch Request Queue
@@ -937,7 +937,7 @@
     queue = {reqs: [], request: null};
 
     for (var k in batches) {
-      doBatch(batches[k]);
+      doReqBatch(batches[k]);
     }
   }
 
@@ -1001,7 +1001,7 @@
 
   register('[ts-req]', function(el) {
     function handler(e) {
-      doBatch([makeReq(el, e, false)]);
+      doReqBatch([makeReq(el, e, false)]);
     }
 
     if (hasattr(el, 'ts-trigger')) {
