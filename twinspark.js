@@ -330,6 +330,7 @@
 
       xhr.onreadystatechange = function() {
         if (xhr.readyState != 4) return;
+        if (xhr.status == 0) return; // timeout
 
         var headers = {'ts-title':     xhr.getResponseHeader('ts-title'),
                        'ts-history':   xhr.getResponseHeader('ts-history'),
@@ -338,7 +339,7 @@
 
         return resolve({xhr:     xhr,
                         opts:    opts,
-                        ok:      xhr.status == 0 || (xhr.status >= 200 && xhr.status <= 299),
+                        ok:      xhr.status >= 200 && xhr.status <= 299,
                         status:  xhr.status,
                         url:     xhr.responseURL,
                         reqUrl:  url,
