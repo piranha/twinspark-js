@@ -897,7 +897,7 @@
         }));
 
         // res.url == "" with mock-xhr
-        if (res.ok && res.url && (res.url != (location.origin + fullurl))) {
+        if (res.ok && res.url && (res.url != new URL(fullurl, location.href).href)) {
           res.headers['ts-history'] = res.url;
           return swap(res.url, [document.body], res.content, res);
         }
