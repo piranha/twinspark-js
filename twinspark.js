@@ -319,23 +319,24 @@
 
   /** @type {function(string, RequestInit): Promise<*> } */
   function xhr(url, opts) {
-    return new Promise(function(resolve, reject) {
-      opts || (opts = {});
+    var xhr = new XMLHttpRequest();
+    return {
+      promise: new Promise(function(resolve, reject) {
+        opts || (opts = {});
 
-      var xhr = new XMLHttpRequest();
-      xhr.open(opts.method || 'GET', url, true);
-      for (var k in opts.headers) {
-        xhr.setRequestHeader(k, opts.headers[k]);
-      }
+        xhr.open(opts.method || 'GET', url, true);
+        for (var k in opts.headers) {
+          xhr.setRequestHeader(k, opts.headers[k]);
+        }
 
-      xhr.onreadystatechange = function() {
-        if (xhr.readyState != 4) return;
-        if (xhr.status == 0) return; // timeout
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState != 4) return;
+          if (xhr.status == 0) return; // timeout
 
-        var headers = {'ts-title':     xhr.getResponseHeader('ts-title'),
-                       'ts-history':   xhr.getResponseHeader('ts-history'),
-                       'ts-swap':      xhr.getResponseHeader('ts-swap'),
-                       'ts-swap-push': xhr.getResponseHeader('ts-swap-push')}
+          var headers = {'ts-title':     xhr.getResponseHeader('ts-title'),
+                         'ts-history':   xhr.getResponseHeader('ts-history'),
+                         'ts-swap':      xhr.getResponseHeader('ts-swap'),
+                         'ts-swap-push': xhr.getResponseHeader('ts-swap-push')}
 
         return resolve({xhr:     xhr,
                         opts:    opts,
@@ -346,18 +347,20 @@
                         headers: headers,
                         content: xhr.responseText});
 
-      }
+        }
 
-      xhr.timeout = xhrTimeout;
-      xhr.ontimeout = function() {
-        return reject({ok:    false,
-                       url:   url,
-                       error: "timeout"});
-      }
+        xhr.timeout = xhrTimeout;
+        xhr.ontimeout = function() {
+          return reject({ok:    false,
+                         url:   url,
+                         error: "timeout"});
+        }
 
-      var body = /** @type {(ArrayBuffer|ArrayBufferView|Blob|Document|FormData|null|string|undefined)} */ (opts.body);
-      xhr.send(body);
-    });
+        var body = /** @type {(ArrayBuffer|ArrayBufferView|Blob|Document|FormData|null|string|undefined)} */ (opts.body);
+        xhr.send(body);
+      }),
+      xhr: xhr
+    };
   }
 
 
@@ -884,17 +887,27 @@
     }
 
     var origins = batch.map(function(req) { return req.el; });
+
+    var query = xhr(fullurl, opts);
+
     origins.forEach(function (el) {
       el.setAttribute('aria-busy', 'true');
       el.classList.add('ts-active');
+      el['ts-active-xhr'] = query.xhr;
     });
 
-    return xhr(fullurl, opts)
+    return query.promise
       .then(function(res) {
+
         onidle(() => origins.forEach(el => {
           el.removeAttribute('aria-busy');
-          el.classList.remove('ts-active')
+          el.classList.remove('ts-active');
+          delete el['ts-active-xhr'];
         }));
+
+        if (query.xhr.isAborted) {
+          return false;
+        }
 
         // res.url == "" with mock-xhr
         if (res.ok && res.url && (res.url != new URL(fullurl, location.href).href)) {
@@ -913,7 +926,8 @@
       .catch(function(res) {
         onidle(() => origins.forEach(el => {
           el.removeAttribute('aria-busy');
-          el.classList.remove('ts-active')
+          el.classList.remove('ts-active');
+          delete el['ts-active-xhr'];
         }));
 
         ERR('Error retrieving backend response', fullurl, res.error || res);

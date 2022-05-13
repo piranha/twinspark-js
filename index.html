@@ -81,7 +81,7 @@
         });
       });
 
-      [].forEach.call(document.querySelectorAll('h3'), function(el) {
+      [].forEach.call(document.querySelectorAll('h3, h4'), function(el) {
         if (el.id && !el.querySelector('.anchor')) {
           var a = makeel('a', {href: '#' + el.id, className: 'anchor'}, '#');
           el.append(' ');
@@ -1107,6 +1107,88 @@ than it'll only restore HTML for the first 3 clicks</p>
                         .join('')) +
                       '</div>');
     });
+  </script>
+</div>
+
+
+<br/>
+<h4 id="cancelling-autocomplete">Making it economical</h4>
+<p>When autocomplete triggers a time-consuming operation (e.g. full-text search),
+  the implementation above triggers numerous requests if the user types slow enough.
+  If requests finish at different durations, an older request can override the
+  latest. To avoid this, we need to abort the XHR.
+</p>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p>Every other request is slow</p>
+    <p><input type="text"
+              name="q"
+              ts-req-before="cancelCurrentXHR"
+              ts-req="/cancelling-autocomplete"
+              ts-trigger="keyup changed delay 100"
+              ts-target="#search-results-2"
+              ts-swap="inner"
+              placeholder="Search..."/></p>
+    <div id="search-results-2"></div>
+  </div>
+
+  <script>
+    function delay(mock, ms) {
+      return (req, res) => {
+        const ret =
+          typeof mock === 'function'
+            ? mock(req, res)
+            : createResponseFromObject(mock);
+        if (ret === undefined) {
+          return undefined;
+        }
+        return Promise.resolve(ret).then(val => {
+          if (val == undefined) {
+            return undefined;
+          } else {
+            return new Promise(resolve => {
+              var after = typeof ms === 'function' ? ms() : ms;
+              console.debug('Delaying', Math.round(after, 2)/1000., 'sec');
+
+              return setTimeout(() => resolve(val), after)
+            });
+          }
+        });
+      };
+    }
+
+    twinspark.func({
+      cancelCurrentXHR: function(o) {
+          const xhr = o.el['ts-active-xhr'];
+          console.log('Checking current XHR', xhr);
+          if (xhr) {
+              console.log('ABORTED!', xhr);
+              xhr.abort();
+          }
+      },
+    });
+
+    var counter = 0;
+
+    XHRMock.get(/\/cancelling-autocomplete/, delay(function(req, res) {
+      var q = ('Query ' + (counter+1) +
+               ' (' + (counter % 2 == 0 ? 'fast' : 'slow') + '): '
+               + req.url().query.q);
+      var now = +new Date;
+      return res.status(200).body('<div>' +
+                      ('one two three four five six seven'
+                        .split(' ')
+                        .map(s => '<p>' + q + ' ' + s + ' ' + now + '</p>')
+                        .join('')) +
+                      '</div>');
+    }, () => 500 + (counter++ % 2) * 2000));
   </script>
 </div>
 
