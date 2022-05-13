@@ -1130,7 +1130,7 @@ than it'll only restore HTML for the first 3 clicks</p>
     <p>Every other request is slow</p>
     <p><input type="text"
               name="q"
-              ts-req-before="cancelCurrentXHR"
+              ts-req-before="abortActiveXHR"
               ts-req="/cancelling-autocomplete"
               ts-trigger="keyup changed delay 100"
               ts-target="#search-results-2"
@@ -1141,35 +1141,22 @@ than it'll only restore HTML for the first 3 clicks</p>
 
   <script>
     function delay(mock, ms) {
-      return (req, res) => {
-        const ret =
-          typeof mock === 'function'
-            ? mock(req, res)
-            : createResponseFromObject(mock);
-        if (ret === undefined) {
-          return undefined;
-        }
-        return Promise.resolve(ret).then(val => {
-          if (val == undefined) {
-            return undefined;
-          } else {
-            return new Promise(resolve => {
-              var after = typeof ms === 'function' ? ms() : ms;
-              console.debug('Delaying', Math.round(after, 2)/1000., 'sec');
-
-              return setTimeout(() => resolve(val), after)
-            });
-          }
+      return (req, res) =>
+        Promise.resolve(mock(req, res)).then(val => {
+          return new Promise(resolve => {
+            const after = ms();
+            console.debug('⌛ Delaying', Math.round(after, 2)/1000., 'sec');
+            return setTimeout(() => resolve(val), after, true);
+          });
         });
-      };
-    }
+    };
 
     twinspark.func({
-      cancelCurrentXHR: function(o) {
+      abortActiveXHR: function(o) {
           const xhr = o.el['ts-active-xhr'];
-          console.log('Checking current XHR', xhr);
+          console.log('🔍 Looking for active XHR');
           if (xhr) {
-              console.log('ABORTED!', xhr);
+              console.log('⛔ ABORTED!', String(xhr.req.url()));
               xhr.abort();
           }
       },
@@ -1178,8 +1165,8 @@ than it'll only restore HTML for the first 3 clicks</p>
     var counter = 0;
 
     XHRMock.get(/\/cancelling-autocomplete/, delay(function(req, res) {
-      var q = ('Query ' + (counter+1) +
-               ' (' + (counter % 2 == 0 ? 'fast' : 'slow') + '): '
+      var q = ('Query ' + (counter+1)
+               + ' (' + (counter % 2 === 0 ? 'fast' : 'slow') + '): '
                + req.url().query.q);
       var now = +new Date;
       return res.status(200).body('<div>' +
