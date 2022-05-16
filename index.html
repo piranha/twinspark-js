@@ -961,6 +961,124 @@ than it'll only restore HTML for the first 3 clicks</p>
   </script>
 </div>
 
+<br/>
+<h4 id="validation-example">Dynamic form validation</h4>
+<p>Form validation is a very common task. Twinspark easily allows to implement this
+  as traditional HTML form that updates on submit. However, modern applications often
+  ask for interactive forms that validate on-the-go. One way to do this is by using
+  <code>ts-swap-push</code>.</p>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+  <div class="card-body">
+    <p>Solve this problem with odd numbers</p>
+    <form action="/validate" id="form-validate" ts-req ts-target="#global-error">
+      <div>
+        <div class="form-number-div">
+          <input name="one" value="8" type="number" placeholder="Odd"
+                 ts-trigger="change, keyup, focus"
+                 autocomplete="off"
+                 ts-target="#global-error"
+                 ts-req-before="append-data-from '#form-validate input[type=number]'"
+                 ts-req="/validate"
+                 ts-req-method="post" />
+          <div id="one-error"></div>
+        </div>
+        +
+        <div class="form-number-div">
+          <input name="two" value="" type="number" placeholder="Odd"
+                 ts-trigger="change, keyup, focus"
+                 autocomplete="off"
+                 ts-target="#global-error"
+                 ts-req-before="append-data-from '#form-validate input[type=number]'"
+                 ts-req="/validate"
+                 ts-req-method="post" />
+          <div id="two-error"></div>
+        </div>
+        = 14
+      </div>
+      <input type="submit" class="btn" value="Submit" name='submit' ts-data="submit" />
+      <div id="global-error"></div>
+    </form>
+    <br/>
+  </div>
+
+  <style>
+    #global-error, #one-error, #two-error { color: #f00; font-style:italic; }
+    .form-number-div { display:inline-block; height: 60px; vertical-align: top; }
+  </style>
+
+  <script>
+    twinspark.func({
+      'append-data-from': function(selector, o) {
+          document.querySelectorAll(selector).forEach(el => {
+              o.req.opts.data.append(el.name, el.value);
+          });
+      },
+    });
+
+    XHRMock.post(/\/validate/, function(req, res) {
+      const params = new Proxy(new URLSearchParams(req._body), {
+        get: (searchParams, prop) => searchParams.get(prop),
+      });
+
+      const one = parseInt(params.one, 10);
+      const two = parseInt(params.two, 10);
+
+      function global_div(msg) {return '<div id="global-error">' + msg + '</div>';}
+      function one_div(msg) {return '<div id="one-error" ts-swap-push="#one-error">' + msg + '</div>';}
+      function two_div(msg) {return '<div id="two-error" ts-swap-push="#two-error">' + msg + '</div>';}
+
+      var global_error = '',
+          one_error= '',
+          two_error = '';
+      var ok = true;
+
+      if (!one) {
+        global_error = 'Incorrect!';
+        one_error = 'Enter first number';
+        ok = false;
+      }
+      else if (one % 2 == 0) {
+        global_error = 'Incorrect!';
+        one_error = 'First number should be odd';
+        ok = false;
+      }
+
+      if (!two) {
+        global_error = 'Incorrect!';
+        two_error = 'Enter second number';
+        ok = false;
+      }
+      else if (two % 2 == 0) {
+        global_error = 'Incorrect!';
+        two_error = 'Second number should be odd';
+        ok = false;
+      }
+
+      if (one + two != 14) {
+        global_error = 'Incorrect! ' + one + ' + ' + two + ' = ' + (one+two) + '. Numbers should sum up to 14';
+        ok = false;
+      }
+
+      if (params.submit) {
+        if (ok) {
+          return res.status(200).body('<div></div><h5 ts-swap-push="#form-validate">Success! ' + one + ' + ' + two + ' = 14 </h5>');
+        }
+        return res.status(200).body(global_div(global_error) + one_div(one_error) + two_div(two_error));
+      }
+      // if the form is not submitted, do not evaluate the answer
+      return res.status(200).body(global_div('') + one_div(one_error) + two_div(two_error));
+
+    });
+  </script>
+
+</div>
+
 
 <h3 id="remove-event" class="mt-p">Doing something when node is removed</h3>
 <p>It is useful to do something when node is removed (especially if that's some child
