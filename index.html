@@ -3,6 +3,7 @@
 <head>
   <title>TwinSpark.js docs</title>
   <link rel="stylesheet" href="vendor/spectre.min.css">
+  <link rel="icon" href="data:;base64,=">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="vendor/xhr-mock.js"></script>
@@ -1131,7 +1132,7 @@ than it'll only restore HTML for the first 3 clicks</p>
 
   <style>
     .bar-item {
-      transition: width .5s linear;
+      transition: width .2s ease-in-out;
     }
   </style>
 
@@ -1139,7 +1140,7 @@ than it'll only restore HTML for the first 3 clicks</p>
     <div ts-req="/progress" ts-trigger="load delay 500">
       <h3>Job in progress</h3>
       <div class="bar bar-sm">
-        <div class="bar-item" role="progressbar" style="width:XXX%;"></div>
+        <div id="pb1" class="bar-item" role="progressbar" style="width:XXX%;"></div>
       </div>
     </div>
   </script>
@@ -1148,7 +1149,7 @@ than it'll only restore HTML for the first 3 clicks</p>
     <div>
       <h3>Job in progress</h3>
       <div class="bar bar-sm">
-        <div class="bar-item" role="progressbar" style="width:100%;"></div>
+        <div id="pb1" class="bar-item" role="progressbar" style="width:100%;"></div>
       </div>
       <button class="btn" ts-req="/progress" ts-req-method="post" ts-target="parent div">
         Restart job

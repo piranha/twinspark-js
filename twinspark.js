@@ -8,6 +8,8 @@
 
   var xhrTimeout = parseInt(script && script.dataset.timeout || 3000, 10);
   var historyLimit = parseInt(script && script.dataset.history || 20, 10);
+  var attrsToSettle = (script && script.dataset['attrs-to-settle'] ||
+                       'class,style,width,height').split(',');
 
   /// Internal variables
 
@@ -643,6 +645,41 @@
     return [qsf(reply, sel)];
   }
 
+
+  function cloneAttrs(from, to) {
+    for (var i = 0; i < attrsToSettle.length; i++) {
+      var attr = attrsToSettle[i];
+      if (from.hasAttribute(attr)) {
+        to.setAttribute(attr, from.getAttribute(attr));
+      } else {
+        to.removeAttribute(attr);
+      }
+    }
+  }
+
+  // if there is a node with same id in an old code and in a new code,
+  // temporarily set it attrs to what old code had (and then restore to new
+  // values)
+  function transitionAttrs(origin, replyParent, swapdata) {
+    qse(replyParent, '[id]').forEach(function(el) {
+      if (!el.id.length)
+        return;
+
+      var oldNode = origin.querySelector(el.tagName + '#' + el.id);
+      console.log('TRAN', el, oldNode);
+      if (!oldNode || oldNode == replyParent)
+        return;
+
+      var newAttrs = el.cloneNode();
+      cloneAttrs(oldNode, el);
+      swapdata.tasks.push(function() {
+        cloneAttrs(newAttrs, el);
+      });
+    });
+    return swapdata;
+  }
+
+
   function executeSwap(strategy, target, reply) {
     // terminology from
     // https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML
@@ -666,16 +703,17 @@
     return reply;
   }
 
-  function elementSwap(origin, replyParent, res) {
+  function elementSwap(origin, replyParent, swapdata) {
     var target = findTarget(origin);
     var reply = findReply(target, origin, replyParent);
     var strategy = getattr(origin, 'ts-swap') || 'replace';
 
     if (origin) {
-      var detail = {response: res};
+      var detail = {response: swapdata.response};
       var e = sendEvent(origin, 'ts-req-after', {detail: detail});
       doActions(origin, e, getattr(origin, 'ts-req-after'), detail);
     }
+    transitionAttrs(origin, replyParent, swapdata);
     return executeSwap(strategy, target, reply);
   }
 
@@ -735,6 +773,7 @@
   /** @type {function(string, Array<Element>, string, Object): Array<Element>} */
   function swap(url, origins, content, res) {
     var html = new DOMParser().parseFromString(content, 'text/html');
+    var swapdata = {response: res, tasks: []};
 
     // when swapping, browsers treat <style> element inside of <noscript> as
     // something worth looking at. We don't want them to be used, and to be sure
@@ -773,7 +812,7 @@
     if (res.headers['ts-swap'] != 'skip') {
       swapped = origins.map(function (origin, i) {
         var thisParent = origins.length > 1 ? children[i] : replyParent
-        return elementSwap(origin, thisParent, res);
+        return elementSwap(origin, thisParent, swapdata);
       });
     } else {
       swapped = [];
@@ -795,11 +834,14 @@
     }
 
     swapped = flat(swapped).filter(x => x);
-    swapped.forEach(el => {
+    swapped.forEach(function(el) {
       processScripts(el);
       activate(el);
       autofocus(el);
     });
+    setTimeout(function() {
+      swapdata.tasks.forEach(function(func) { func(); });
+    }, 1);
 
     return swapped;
   }
