@@ -277,7 +277,7 @@
 
   /** @type {function(Element, Directive): void} */
   function attach(el, directive) {
-    [].forEach.call(qse(el, directive.selector), directive.handler);
+    qse(el, directive.selector).forEach(directive.handler);
   }
 
   /**
@@ -301,16 +301,10 @@
   }
 
   /** @type {function(Array<Element>): void} */
-  function autofocus(els) {
-    if (!(Array.isArray(els))) {
-      els = [els];
-    }
-    var toFocus = els.map(el => qse(el, '[autofocus]'))
-        .filter(els => els.length)
-        .reduce((acc, els) => acc.concat(els), []);
-
-    if (toFocus.length > 0) {
-      toFocus[toFocus.length - 1].focus();
+  function autofocus(el) {
+    var toFocus = qsf(el, '[autofocus]');
+    if (toFocus) {
+      toFocus.focus();
     }
   }
 
@@ -710,7 +704,7 @@
     return executeSwap(strategy, target, [reply]);
   }
 
-  function replaceScript(el) {
+  function runScript(el) {
     var parent = el.parentNode;
     var newel = document.createElement(el.nodeName);
 
@@ -729,7 +723,7 @@
       var script = scripts[i];
       if ((!script.type || script.type == 'text/javascript') &&
          !script.dataset.tsNoload) {
-        replaceScript(script);
+        runScript(script);
       }
     }
   }
@@ -743,14 +737,11 @@
     var html = new DOMParser().parseFromString(content, 'text/html');
 
     // when swapping, browsers treat <style> element inside of <noscript> as
-    // something worth looking at. Weirdly enough, we don't want them to be
-    // used, and to be sure let's delete all <noscript> elements.
+    // something worth looking at. We don't want them to be used, and to be sure
+    // let's delete all <noscript> elements.
     html.body.querySelectorAll('noscript').forEach(x => x.remove());
 
     var title = res.headers['ts-title'] || html.title;
-    // either ts-history contains new URL or ts-req-history attr is present,
-    // then take request URL as new URL
-    var pushurl = res.headers['ts-history'] || hasattr(origins[0], 'ts-req-history') && url;
     var children = Array.from(html.body.children);
     var replyParent = html.body;
 
@@ -759,6 +750,9 @@
              ' elements, but ' + children.length + ' were returned');
     }
 
+    // either ts-history contains new URL or ts-req-history attr is present,
+    // then take request URL as new URL
+    var pushurl = res.headers['ts-history'] || hasattr(origins[0], 'ts-req-history') && url;
     if (pushurl) {
       pushState(pushurl, title);
     }
@@ -801,10 +795,12 @@
     }
 
     swapped = flat(swapped).filter(x => x);
+    swapped.forEach(el => {
+      processScripts(el);
+      activate(el);
+      autofocus(el);
+    });
 
-    swapped.forEach(processScripts);
-    swapped.forEach(activate);
-    autofocus(swapped);
     return swapped;
   }
 
