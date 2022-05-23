@@ -669,8 +669,7 @@
       if (!el.id.length)
         return;
 
-      var oldNode = origin.querySelector(el.tagName + '#' + el.id);
-      console.log('TRAN', el, oldNode);
+      var oldNode = origin.querySelector(el.tagName + "[id='" + el.id + "']");
       if (!oldNode || oldNode == replyParent)
         return;
 
