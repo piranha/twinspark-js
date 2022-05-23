@@ -6,10 +6,14 @@
 
   /// Config
 
-  var xhrTimeout = parseInt(script && script.dataset.timeout || 3000, 10);
-  var historyLimit = parseInt(script && script.dataset.history || 20, 10);
-  var attrsToSettle = (script && script.dataset['attrs-to-settle'] ||
-                       'class,style,width,height').split(',');
+  function cget(name, def) { return script && script.dataset[name] || def; }
+  function iget(name, def) { return parseInt(cget(name, def), 10); }
+
+  var xhrTimeout = iget('timeout', 3000);
+  var historyLimit = iget('history', 20);
+  var attrsToSettle = cget('attrs-to-settle',
+                           'class,style,width,height').split(',');
+  var settleDelay = iget('settle-delay', 20);
 
   /// Internal variables
 
@@ -841,7 +845,7 @@
     });
     setTimeout(function() {
       swapdata.tasks.forEach(function(func) { func(); });
-    }, 1);
+    }, settleDelay);
 
     return swapped;
   }
