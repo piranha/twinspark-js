@@ -944,14 +944,30 @@
         if (e.defaultPrevented)
           return null;
 
+        var result = req;
         var action = doActions(req.el, e, getattr(req.el, 'ts-req-before'), detail);
-        if (!action)
-          return req;
+        if (action) {
+          result = action.then(function(res) {
+            // skip making request if event was prevented
+            return e.defaultPrevented ? null : req;
+          });
+        }
 
-        return action.then(function(res) {
-          // skip making request if event was prevented
-          return e.defaultPrevented ? null : req;
-        });
+        var strategy = getattr(req.el, 'ts-req-strategy') || 'queue';
+        var activeXHR = req.el['ts-active-xhr'];
+        if (strategy === 'first' && activeXHR) {
+          // prevent duplicate request
+          return null;
+        }
+
+        if (strategy === 'last' && activeXHR) {
+          // abort active request to trigger a new one
+          activeXHR.abort();
+          delete req.el['ts-active-xhr'];
+        }
+
+        // default behavior is to `ts-req-strategy='queue'` all XHR requests
+        return result;
       }))
       .then(function(res) {
         return res.filter(function(req) { return !!req; });
