@@ -14,6 +14,7 @@
   var attrsToSettle = cget('attrs-to-settle',
                            'class,style,width,height').split(',');
   var settleDelay = iget('settle-delay', 20);
+  var enterClass    = cget('enter-class',    'ts-enter');
 
   /// Internal variables
 
@@ -670,8 +671,15 @@
         return;
 
       var oldNode = origin.querySelector(el.tagName + "[id='" + el.id + "']");
-      if (!oldNode || oldNode == replyParent)
+      if (oldNode == replyParent)
         return;
+
+      if (!oldNode) {
+        el.classList.add(enterClass);
+        return;
+      } else {
+        oldNode.classList.remove(enterClass);
+      }
 
       var newAttrs = el.cloneNode();
       cloneAttrs(oldNode, el);
