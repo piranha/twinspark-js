@@ -676,6 +676,7 @@
 
       if (!oldNode) {
         el.classList.add(enterClass);
+        sendEvent(el, 'ts-event');
         return;
       } else {
         oldNode.classList.remove(enterClass);
