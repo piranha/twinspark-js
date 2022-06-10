@@ -1547,6 +1547,8 @@
     parseAction: parseActionSpec,
     action:      doActions,
     exec:        executeCommand,
+    makeReq:     makeReq,
+    executeReqs: doReqBatch,
     setERR:      (errhandler) => ERR = errhandler,
     _internal:   {DIRECTIVES: DIRECTIVES,
                   FUNCS: FUNCS,
