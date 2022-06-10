@@ -213,6 +213,9 @@
     el.dispatchEvent(event);
     return event;
   }
+  function sendError(el, type, detail) {
+    sendEvent(el, type, merge({error: type}, detail));
+  }
 
 
   /// Attribute handling
@@ -956,6 +959,11 @@
         }
 
         ERR('Something wrong with response', res.content);
+        origins.forEach(function(el) {
+          sendError(el, 'ts-req-error', {response: res,
+                                         url: fullurl,
+                                         opts: opts});
+        });
       })
       .catch(function(res) {
         onidle(() => origins.forEach(el => {
@@ -964,6 +972,11 @@
         }));
 
         ERR('Error retrieving backend response', fullurl, res.error || res);
+        origins.forEach(function(el) {
+          sendError(el, 'ts-req-error', {response: res,
+                                         url: fullurl,
+                                         opts: opts});
+        });
       });
   }
 
