@@ -205,14 +205,11 @@
   var onidle = window.requestIdleCallback || function(x) { setTimeout(x, 100); };
 
   /** @type {function((Element|Node|Window), string, Object=): !Event} */
-  function sendEvent(el, type, opts) {
-    opts || (opts = {});
-    // bubbles is true by default but could be false
-    var bubbles = opts.hasOwnProperty('bubbles') ? opts.bubbles : true;
-    var event = new CustomEvent(type, {bubbles: bubbles,
+  function sendEvent(el, type, detail) {
+    var event = new CustomEvent(type, {bubbles: true,
                                        cancelable: true,
-                                       detail: opts.detail});
-    console.debug('🛎️ EVENT', type, {el: el, detail: opts.detail});
+                                       detail: detail});
+    console.debug('🛎️ EVENT', type, {el: el, detail: detail});
     el.dispatchEvent(event);
     return event;
   }
@@ -529,7 +526,7 @@
     // that
     storeCurrentState();
     history.pushState("history", title, url);
-    sendEvent(window, 'ts-pushstate', {detail: url});
+    sendEvent(window, 'ts-pushstate', {url: url});
   }
 
   function onpopstate(e) {
@@ -722,7 +719,7 @@
 
     if (origin) {
       var detail = {response: swapdata.response};
-      var e = sendEvent(origin, 'ts-req-after', {detail: detail});
+      var e = sendEvent(origin, 'ts-req-after', detail);
       doActions(origin, e, getattr(origin, 'ts-req-after'), detail);
     }
     transitionAttrs(origin, replyParent, swapdata);
@@ -976,7 +973,7 @@
         req.opts = makeOpts(req);
 
         var detail = {req: req};
-        var e = sendEvent(req.el, 'ts-req-before', {detail: detail});
+        var e = sendEvent(req.el, 'ts-req-before', detail);
         if (e.defaultPrevented)
           return null;
 
@@ -1297,12 +1294,13 @@
 
   register('[ts-action]', function(el) {
     var handler = function(/** @type {!Event} */ e) {
-      if (e.detail && e.detail.type) {
+      if (e.detail && e.detail.event) {
         // real event to trigger this action
-        e = e.detail;
+        e = e.detail.event;
       }
       doActions(findTarget(el), e, getattr(el, 'ts-action'), null);
     };
+
     if (hasattr(el, 'ts-trigger')) {
       el.addEventListener('ts-trigger', handler);
     } else if (el.tagName == 'A' || el.tagName == 'BUTTON') {
@@ -1327,9 +1325,9 @@
 
         // isIntersecting is often `true` in FF even when it shouldn't be
         if (entry.intersectionRatio > threshold) {
-          sendEvent(entry.target, on, {detail: entry});
+          sendEvent(entry.target, on, {entry: entry});
         } else if (entry.intersectionRatio < threshold) {
-          sendEvent(entry.target, off, {detail: entry});
+          sendEvent(entry.target, off, {entry: entry});
         }
       }
     }, opts);
@@ -1358,7 +1356,7 @@
         var rec = recs[i];
         for (var j = 0; j < rec.removedNodes.length; j++) {
           var node = rec.removedNodes[j];
-          sendEvent(node, 'remove', {detail: rec});
+          sendEvent(node, 'remove', {record: rec});
         }
       }
     });
@@ -1370,8 +1368,8 @@
       for (var i = 0; i < recs.length; i++) {
         if (rec.type == 'childList') {
           emptyEvent = rec.target.childNodes.count ? 'notempty' : 'empty';
-          sendEvent(rec.target, emptyEvent, {detail: rec});
-          sendEvent(rec.target, 'childrenChange', {detail: rec});
+          sendEvent(rec.target, emptyEvent, {record: rec});
+          sendEvent(rec.target, 'childrenChange', {record: rec});
         }
       }
     });
@@ -1394,7 +1392,7 @@
       var data = internalData(el);
 
       function executeTrigger() {
-        sendEvent(el, 'ts-trigger', {bubbles: false, detail: e});
+        sendEvent(el, 'ts-trigger', {event: e});
       }
 
       if (spec.once) {
