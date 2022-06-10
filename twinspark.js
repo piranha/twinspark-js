@@ -35,7 +35,7 @@
 
     not: function(funcname) {
       var args = [].slice.call(arguments, 1, arguments.length - 1);
-      var o = assign({}, arguments[arguments.length - 1]);
+      var o = merge({}, arguments[arguments.length - 1]);
       o.src = o.src.slice(o.command.length + 1);
 
       var rv = executeCommand(funcname, args, o);
@@ -118,7 +118,7 @@
       console.log.bind(console, 'TwinSpark error:');
 
   /** @type{function(!Object, (Object|null|undefined)): !Object} */
-  var assign = Object.assign || function(tgt, src) {
+  var merge = Object.assign || function(tgt, src) {
     if (!src) {
       return tgt;
     }
@@ -1120,7 +1120,7 @@
    * @type {function((Object|string), Function=): Object} */
   function registerCommands(cmdsOrName, maybeFunc) {
     if (typeof cmdsOrName == 'object') {
-      return assign(FUNCS, cmdsOrName);
+      return merge(FUNCS, cmdsOrName);
     } else if (maybeFunc) {
       FUNCS[cmdsOrName] = maybeFunc;
     }
@@ -1248,7 +1248,7 @@
     console.debug('ACTION', action.src, payload);
 
     // make a copy, since we allow modification of payload in commands
-    var opts = assign({line: action.src}, payload);
+    var opts = merge({line: action.src}, payload);
 
     return action.commands.reduce(function(p, command) {
       return p.then(function(rv) {
@@ -1265,7 +1265,7 @@
 
         return executeCommand(command.name, command.args, opts);
       }).catch(function(err) {
-        throw assign(err, {extra: {
+        throw merge(err, {extra: {
           command: command.src,
           action: action.src,
           element: el2str(opts.el)
@@ -1281,7 +1281,7 @@
     console.debug('ACTIONS', {spec: spec, event: e, payload: payload});
     var actions = parseActionSpec(spec);
     // parens indicate type cast rather than type declaration
-    var mypayload = /** @type {{el: Element, e: Event}} */ (assign({el: target, event: e}, payload));
+    var mypayload = /** @type {{el: Element, e: Event}} */ (merge({el: target, event: e}, payload));
 
     var result;
     for (var i = 0; i < actions.length; i++) {
