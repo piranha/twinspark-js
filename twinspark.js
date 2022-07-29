@@ -734,10 +734,10 @@
     if (!sel && reply.id) {
       sel = '#' + reply.id;
     }
-    if (!sel) {
+    var target = qsf(document.body, sel);
+    if (!target) {
       return ERR('cannot find target for server-pushed swap', reply);
     }
-    var target = qsf(document.body, sel);
     var strategy = getattr(reply, 'ts-swap') || 'replace';
     return executeSwap(strategy, target, [reply]);
   }
