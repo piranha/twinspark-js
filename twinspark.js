@@ -1,4 +1,4 @@
-/* jshint esversion: 6 */
+/* jshint -W030, -W084, esversion: 6 */
 
 (function(window, document, tsname) {
   var location = window.location;
@@ -9,12 +9,16 @@
   function cget(name, def) { return script && script.dataset[name] || def; }
   function iget(name, def) { return parseInt(cget(name, def), 10); }
 
-  var xhrTimeout = iget('timeout', 3000);
-  var historyLimit = iget('history', 20);
+  var xhrTimeout    = iget('timeout', 3000);
+  var historyLimit  = iget('history', 20);
   var attrsToSettle = cget('attrs-to-settle',
                            'class,style,width,height').split(',');
-  var settleDelay = iget('settle-delay', 20);
+  var settleDelay   = iget('settle-delay', 20);
   var enterClass    = cget('enter-class',    'ts-enter');
+  var requestClass  = cget('request-class',  'ts-request');
+  var addedClass    = cget('added-class',    'ts-added');
+  var swappingClass = cget('swap-class',     'ts-swapping');
+  var settlingClass = cget('settling-class', 'ts-settling');
 
   /// Internal variables
 
@@ -51,7 +55,7 @@
     target: function(sel, o) {
       var el = findTarget(o.el, sel);
       if (!el) return false; // stop executing
-      o.el = el
+      o.el = el;
     },
 
     remove: function(sel, o) {
@@ -337,7 +341,7 @@
           var headers = {'ts-title':     xhr.getResponseHeader('ts-title'),
                          'ts-history':   xhr.getResponseHeader('ts-history'),
                          'ts-swap':      xhr.getResponseHeader('ts-swap'),
-                         'ts-swap-push': xhr.getResponseHeader('ts-swap-push')}
+                         'ts-swap-push': xhr.getResponseHeader('ts-swap-push')};
 
         return resolve({xhr:     xhr,
                         opts:    opts,
@@ -348,14 +352,14 @@
                         headers: headers,
                         content: xhr.responseText});
 
-        }
+        };
 
         xhr.timeout = xhrTimeout;
         xhr.ontimeout = function() {
           return reject({ok:    false,
                          url:   url,
                          error: "timeout"});
-        }
+        };
 
         var body = /** @type {(ArrayBuffer|ArrayBufferView|Blob|Document|FormData|null|string|undefined)} */ (opts.body);
         xhr.send(body);
@@ -400,7 +404,7 @@
         return arr;
       }
     } else {
-      return mergeParams(new FormData, new URLSearchParams(v));
+      return mergeParams(new FormData(), new URLSearchParams(v));
     }
   }
 
@@ -479,7 +483,8 @@
       store.createIndex('time', 'time');
     };
 
-    return _idb = reqpromise(req);
+    _idb = reqpromise(req);
+    return _idb;
   }
 
   /** @type {function(Object, Object=): Object} */
@@ -509,7 +514,7 @@
               cursor.continue();
             }
           }
-        }
+        };
       }
     });
   }
@@ -561,10 +566,10 @@
           return;
         }
 
-        activate(document.body)
+        activate(document.body);
       }
     });
-  };
+  }
 
 
   /// Fragments
@@ -712,7 +717,7 @@
       target.parentNode.insertBefore(reply[i], target.nextSibling);
     }
       break;
-    case 'skip': break;
+    case 'skip':        break;
     default:            throw Error('Unknown swap strategy ' + strategy);
     }
     return reply;
@@ -1486,7 +1491,7 @@
     var tsTrigger = makeTriggerListener(t);
 
     switch (type) {
-    case 'load':         onidle(function() { tsTrigger(el, {type: 'load'}) });
+    case 'load':         onidle(function() { tsTrigger(el, {type: 'load'}); });
       break;
     case 'windowScroll': addRemovableListener(window, 'scroll', function(e) { tsTrigger(el, e); }, {passive: true});
       break;
