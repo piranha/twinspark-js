@@ -679,16 +679,15 @@
         return;
 
       var oldNode = origin.querySelector(el.tagName + "[id='" + el.id + "']");
-      if (oldNode == replyParent)
-        return;
 
       if (!oldNode) {
         el.classList.add(enterClass);
-        sendEvent(el, 'ts-event');
+        sendEvent(el, 'ts-enter');
         return;
-      } else {
-        oldNode.classList.remove(enterClass);
       }
+
+      if (oldNode == replyParent)
+        return;
 
       var newAttrs = el.cloneNode();
       cloneAttrs(oldNode, el);
@@ -737,7 +736,7 @@
     return executeSwap(strategy, target, reply);
   }
 
-  function pushedSwap(reply) {
+  function pushedSwap(reply, swapdata) {
     var sel = getattr(reply, 'ts-swap-push');
     if (!sel && reply.id) {
       sel = '#' + reply.id;
@@ -747,6 +746,7 @@
       return ERR('cannot find target for server-pushed swap', reply);
     }
     var strategy = getattr(reply, 'ts-swap') || 'replace';
+    transitionAttrs(target, reply, swapdata);
     return executeSwap(strategy, target, [reply]);
   }
 
@@ -786,35 +786,8 @@
     }
   }
 
-  // Terminology:
-  // `origin` - an element where request started from, a link or a button
-  // `target` - where the incoming HTML will end up
-  // `reply` - incoming HTML to end up in target
-  /** @type {function(string, Array<Element>, string, Object): Array<Element>} */
-  function swap(url, origins, content, res) {
-    var html = new DOMParser().parseFromString(content, 'text/html');
+  function swap(origins, replyParent, res) {
     var swapdata = {response: res, tasks: []};
-
-    // when swapping, browsers treat <style> element inside of <noscript> as
-    // something worth looking at. We don't want them to be used, and to be sure
-    // let's delete all <noscript> elements.
-    html.body.querySelectorAll('noscript').forEach(x => x.remove());
-
-    var title = res.headers['ts-title'] || html.title;
-    var children = Array.from(html.body.children);
-    var replyParent = html.body;
-
-    if (children.length < origins.length) {
-      throw ('This request needs at least ' + origins.length +
-             ' elements, but ' + children.length + ' were returned');
-    }
-
-    // either ts-history contains new URL or ts-req-history attr is present,
-    // then take request URL as new URL
-    var pushurl = res.headers['ts-history'] || hasattr(origins[0], 'ts-req-history') && url;
-    if (pushurl) {
-      pushState(pushurl, title);
-    }
 
     // `joiners` are elements which want to `join` current request by specifying
     // its ts-req-id in ts-req-join attribute. They should be found before doing
@@ -831,7 +804,7 @@
     var swapped;
     if (res.headers['ts-swap'] != 'skip') {
       swapped = origins.map(function (origin, i) {
-        var thisParent = origins.length > 1 ? children[i] : replyParent
+        var thisParent = origins.length > 1 ? children[i] : replyParent;
         return elementSwap(origin, thisParent, swapdata);
       });
     } else {
@@ -839,11 +812,11 @@
     }
 
     var oobs = Array.from(replyParent.querySelectorAll('[ts-swap-push]')).map(function (reply) {
-      return pushedSwap(reply);
+      return pushedSwap(reply, swapdata);
     });
 
     // swap joiners
-    swapped = swapped.concat(joiners.map(joiner => elementSwap(joiner, html.body, res)));
+    swapped = swapped.concat(joiners.map(joiner => elementSwap(joiner, html.body, swapdata)));
     swapped = swapped.concat(oobs);
 
     // swap any header requests
@@ -864,6 +837,37 @@
     }, settleDelay);
 
     return swapped;
+  }
+
+  // Terminology:
+  // `origin` - an element where request started from, a link or a button
+  // `target` - where the incoming HTML will end up
+  // `reply` - incoming HTML to end up in target
+  /** @type {function(string, Array<Element>, string, Object): Array<Element>} */
+  function swapResponse(url, origins, content, res) {
+    var html = new DOMParser().parseFromString(content, 'text/html');
+
+    // when swapping, browsers treat <style> element inside of <noscript> as
+    // something worth looking at. We don't want them to be used, and to be sure
+    // let's delete all <noscript> elements.
+    html.body.querySelectorAll('noscript').forEach(x => x.remove());
+
+    var title = res.headers['ts-title'] || html.title;
+    var replyParent = html.body;
+
+    if (replyParent.children.length < origins.length) {
+      throw ('This request needs at least ' + origins.length +
+             ' elements, but ' + children.length + ' were returned');
+    }
+
+    // either ts-history contains new URL or ts-req-history attr is present,
+    // then take request URL as new URL
+    var pushurl = res.headers['ts-history'] || hasattr(origins[0], 'ts-req-history') && url;
+    if (pushurl) {
+      pushState(pushurl, title);
+    }
+
+    return swap(origins, replyParent, res);
   }
 
 
@@ -967,13 +971,13 @@
         // res.url == "" with mock-xhr
         if (res.ok && res.url && (res.url != new URL(fullurl, location.href).href)) {
           res.headers['ts-history'] = res.url;
-          return swap(res.url, [document.body], res.content, res);
+          return swapResponse(res.url, [document.body], res.content, res);
         }
 
         if (res.ok) {
           // cannot use res.url here since fetchMock will not set it to right
           // value
-          return swap(fullurl, origins, res.content, res);
+          return swapResponse(fullurl, origins, res.content, res);
         }
 
         ERR('Something wrong with response', res.content);
