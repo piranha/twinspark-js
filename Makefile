@@ -7,11 +7,11 @@ type: dist/twinspark.adv.js
 
 dist/%.min.js: %.js
 	@mkdir -p $(@D)
-	closure-compiler $(CCOPTS) $^ > $@
+	google-closure-compiler $(CCOPTS) $^ > $@
 
 dist/%.adv.js: %.js
 	@mkdir -p $(@D)
-	closure-compiler -O ADVANCED $(CCOPTS) $^ > $@
+	google-closure-compiler -O ADVANCED $(CCOPTS) $^ > $@
 
 serve:
 	darkhttpd . --port 3000 --addr 127.0.0.1

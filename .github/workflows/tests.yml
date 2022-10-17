@@ -1,0 +1,13 @@
+name: TwinSpark tests
+on: [push]
+jobs:
+  types:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu' # https://github.com/marketplace/actions/setup-java-jdk#supported-distributions
+        java-version: '17'
+    - run: npm i -g google-closure-compiler
+    - run: make adv
