@@ -804,7 +804,7 @@
     var swapped;
     if (res.headers['ts-swap'] != 'skip') {
       swapped = origins.map(function (origin, i) {
-        var thisParent = origins.length > 1 ? children[i] : replyParent;
+        var thisParent = origins.length > 1 ? replyParent.children[i] : replyParent;
         return elementSwap(origin, thisParent, swapdata);
       });
     } else {
@@ -816,7 +816,7 @@
     });
 
     // swap joiners
-    swapped = swapped.concat(joiners.map(joiner => elementSwap(joiner, html.body, swapdata)));
+    swapped = swapped.concat(joiners.map(joiner => elementSwap(joiner, replyParent, swapdata)));
     swapped = swapped.concat(oobs);
 
     // swap any header requests
@@ -857,7 +857,7 @@
 
     if (replyParent.children.length < origins.length) {
       throw ('This request needs at least ' + origins.length +
-             ' elements, but ' + children.length + ' were returned');
+             ' elements, but ' + replyParent.children.length + ' were returned');
     }
 
     // either ts-history contains new URL or ts-req-history attr is present,
