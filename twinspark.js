@@ -927,7 +927,7 @@
       return mergeParams(acc, req.opts.data, false);
     }, new FormData());
 
-    var query = method == 'GET' ? new URLSearchParams(data).toString() : null;
+    var qs = method == 'GET' ? new URLSearchParams(data).toString() : null;
     var body = method != 'GET' ? data : null;
 
     var opts = {
@@ -940,9 +940,9 @@
     opts = setReqBody(opts, body);
 
     var fullurl = url;
-    if (query) {
+    if (qs) {
       fullurl += url.indexOf('?') == -1 ? '?' : '&';
-      fullurl += query;
+      fullurl += qs;
     }
 
     var origins = batch.map(function(req) { return req.el; });
