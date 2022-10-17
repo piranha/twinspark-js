@@ -1416,10 +1416,10 @@
 
   var childrenObs = memoize(function() {
     return new MutationObserver(function(recs) {
-      var empty;
       for (var i = 0; i < recs.length; i++) {
+        var rec = recs[i];
         if (rec.type == 'childList') {
-          emptyEvent = rec.target.childNodes.count ? 'notempty' : 'empty';
+          var emptyEvent = rec.target.childNodes.count ? 'notempty' : 'empty';
           sendEvent(rec.target, emptyEvent, {record: rec});
           sendEvent(rec.target, 'childrenChange', {record: rec});
         }
