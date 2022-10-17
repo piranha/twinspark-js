@@ -322,7 +322,29 @@
 
   /// Ajax
 
-  /** @type {function(string, RequestInit): Promise<*> } */
+  /** @typedef {{
+   *    ok: boolean,
+   *    status: number,
+   *    url: string,
+   *    error: string
+   * }}
+   */
+  var ResponseTimeout;
+
+  /** @typedef {{
+   *    ok: boolean,
+   *    status: number,
+   *    url: string,
+   *    reqUrl: string,
+   *    xhr: XMLHttpRequest,
+   *    opts: RequestInit,
+   *    headers: Object,
+   *    content: string,
+   * }}
+   */
+  var Response;
+
+  /** @type {function(string, RequestInit): {promise: Promise<Response|ResponseTimeout>, xhr: XMLHttpRequest} } */
   function xhr(url, opts) {
     var xhr = new XMLHttpRequest();
     return {
@@ -343,12 +365,12 @@
                          'ts-swap':      xhr.getResponseHeader('ts-swap'),
                          'ts-swap-push': xhr.getResponseHeader('ts-swap-push')};
 
-        return resolve({xhr:     xhr,
-                        opts:    opts,
-                        ok:      xhr.status >= 200 && xhr.status <= 299,
+        return resolve({ok:      xhr.status >= 200 && xhr.status <= 299,
                         status:  xhr.status,
                         url:     xhr.responseURL,
                         reqUrl:  url,
+                        xhr:     xhr,
+                        opts:    opts,
                         headers: headers,
                         content: xhr.responseText});
 
@@ -356,9 +378,10 @@
 
         xhr.timeout = xhrTimeout;
         xhr.ontimeout = function() {
-          return reject({ok:    false,
-                         url:   url,
-                         error: "timeout"});
+          return reject({ok:     false,
+                         status: 0,
+                         url:    url,
+                         error:  "timeout"});
         };
 
         var body = /** @type {(ArrayBuffer|ArrayBufferView|Blob|Document|FormData|null|string|undefined)} */ (opts.body);
@@ -371,7 +394,16 @@
 
   /// Data collection
 
+  /**
+   * Merge two sets of parameters into one
+   * @param {FormData|URLSearchParams} p1 Collection of parameters to be updated.
+   * @param {FormData|URLSearchParams|Iterable} p2 Collection of parameters to be merged in.
+   * @param {boolean=} removeEmpty Indicate if empty ('' or null) parameters from p2 should be removed.
+   * @return FormData|URLSearchParams
+   */
   function mergeParams(p1, p2, removeEmpty) {
+    if (!p2) return p1;
+
     // iterator loop here since p2 could be either an array or an
     // FormData instance
     for (var [k, v] of p2) {
@@ -843,7 +875,7 @@
   // `origin` - an element where request started from, a link or a button
   // `target` - where the incoming HTML will end up
   // `reply` - incoming HTML to end up in target
-  /** @type {function(string, Array<Element>, string, Object): Array<Element>} */
+  /** @type {function(string, Array<Element>, string, Response): Array<Element>} */
   function swapResponse(url, origins, content, res) {
     var html = new DOMParser().parseFromString(content, 'text/html');
 
@@ -924,7 +956,7 @@
     var url = batch[0].url;
     var method = batch[0].method;
     var data = batch.reduce(function(acc, req) {
-      return mergeParams(acc, req.opts.data, false);
+      return mergeParams(acc, req.opts.data);
     }, new FormData());
 
     var qs = method == 'GET' ? new URLSearchParams(data).toString() : null;
@@ -971,13 +1003,15 @@
         // res.url == "" with mock-xhr
         if (res.ok && res.url && (res.url != new URL(fullurl, location.href).href)) {
           res.headers['ts-history'] = res.url;
-          return swapResponse(res.url, [document.body], res.content, res);
+          return swapResponse(res.url, [document.body], res.content,
+                              /** @type {Response} */ (res));
         }
 
         if (res.ok) {
           // cannot use res.url here since fetchMock will not set it to right
           // value
-          return swapResponse(fullurl, origins, res.content, res);
+          return swapResponse(fullurl, origins, res.content,
+                              /** @type {Response} */ (res));
         }
 
         ERR('Something wrong with response', res.content);
