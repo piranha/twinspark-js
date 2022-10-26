@@ -1297,3 +1297,42 @@ than it'll only restore HTML for the first 3 clicks</p>
     .filter [type="checkbox"] { display: none; }
   </style>
 </div>
+
+
+<h3 id="filters" class="mt-p">Downloading content</h3>
+<p>Twinspark usually handles requests as swaps and requires the server response to
+  contain valid HTML. To download the response content instead, use the
+  <code>Content-Disposition: attachment</code> response header
+  or <code>ts-swap-strategy='download'</code>.
+</p>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p><a href="/download-disposition" ts-req>Download using <code>Content-Disposition: attachment</code></a></p>
+    <p><a href="/download-strategy" ts-req ts-swap-strategy="attachment">Download using <code>swap-strategy='download'</code></a></p>
+    <p><a href="/download-strategy" ts-req ts-swap-strategy="attachment; filename=custom-name.txt">Download using <code>swap-strategy='download'</code> with a name</a></p>
+    <p><a href="/download-disposition" ts-req ts-swap-strategy="attachment; filename=overridden.txt">Download: override server Content-Disposition header with <code>ts-swap-strategy</code></a></p>
+    <p><a href="/download-disposition" ts-req ts-swap-strategy="swap">Swap: override server Content-Disposition header and do a swap instead</a></p>
+  </div>
+
+  <script>
+    XHRMock.get(/\/download-disposition/, function(req, res) {
+      return res.header('Content-Disposition', 'attachment; filename="content.html"')
+                .header('Content-Type', 'text/plain')
+                .status(200)
+                .body('<p>This is content</p>');
+    });
+    XHRMock.get(/\/download-strategy/, function(req, res) {
+      return res.header('Content-Type', 'text/plain')
+                .status(200)
+                .body('<p>This is content</p>');
+    });
+  </script>
+
+</div>

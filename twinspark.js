@@ -889,6 +889,15 @@
     };
   }
 
+  function download(content, mimeType, filename){
+    const a = document.createElement('a') // Create "a" element
+    const blob = new Blob([content], {type: mimeType}) // Create a blob (file-like object)
+    const url = URL.createObjectURL(blob) // Create an object URL from blob
+    a.setAttribute('href', url) // Set "a" element link
+    a.setAttribute('download', filename) // Set download filename
+    a.click() // Start downloading
+  }
+
   function setReqBody(opts, body) {
     if (!body) {
       return opts;
@@ -957,6 +966,29 @@
 
         if (query.xhr.isAborted) {
           return false;
+        }
+
+        var headers = query.xhr.res.headers();
+        var disposition = headers['content-disposition'];
+
+        origins.forEach(el => {
+          var tempdispo = el.getAttribute('ts-swap-strategy');
+          if (tempdispo !== undefined) disposition = tempdispo;
+        });
+
+        if (disposition && disposition.indexOf('attachment') !== -1)
+        {
+          var filename = 'attachment';
+          var mime = headers['content-type'] || 'application/octet-stream';
+
+          var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+          var matches = filenameRegex.exec(disposition);
+          if (matches != null && matches[1]) {
+            filename = matches[1].replace(/['"]/g, '');
+          }
+
+          download(query.xhr.res.body(), mime, filename);
+          return;
         }
 
         // res.url == "" with mock-xhr
