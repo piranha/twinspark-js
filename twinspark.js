@@ -860,7 +860,10 @@
                                .map(header => headerSwap(header, replyParent)));
     }
 
-    swapped = flat(swapped).filter(x => x);
+    swapped = (flat(swapped)
+               .filter(x => x)
+               // distinct
+               .filter((x, i, self) => self.indexOf(x) == i));
     swapped.forEach(function(el) {
       processScripts(el);
       activate(el);
