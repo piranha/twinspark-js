@@ -208,9 +208,11 @@
 
   var onidle = window.requestIdleCallback || function(x) { setTimeout(x, 100); };
 
-  /** @type {function((Element|Node|Window), string, Object=): !Event} */
-  function sendEvent(el, type, detail) {
-    var event = new CustomEvent(type, {bubbles: true,
+  /** @type {function((Element|Node|Window), string, Object=, Object=): !Event} */
+  function sendEvent(el, type, detail, opts) {
+    // true if not supplied
+    var bubbles = opts && opts.hasOwnProperty('bubbles') ? opts.bubbles : true;
+    var event = new CustomEvent(type, {bubbles: bubbles,
                                        cancelable: true,
                                        detail: detail});
     console.debug('🛎️ EVENT', type, {el: el, detail: detail});
@@ -1478,7 +1480,8 @@
       var data = internalData(el);
 
       function executeTrigger() {
-        sendEvent(el, 'ts-trigger', {event: e});
+        // trigger should not bubble, it should be local to a node
+        sendEvent(el, 'ts-trigger', {event: e}, {bubbles: false});
       }
 
       if (spec.once) {
