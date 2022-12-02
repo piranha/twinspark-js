@@ -1028,6 +1028,9 @@ than it'll only restore HTML for the first 3 clicks</p>
                  twinspark.parseAction('this "is a string"')[0].commands[0].args[0] != 'is')
       wru.assert('ignores punctuation in strings',
                  twinspark.parseAction('you "want, this;", right?')[0].commands[0].args[0] == 'want, this;')
+      // NOTE: double escape since `\"` for JS in a string is the same as `"`,
+      // and there is nothing we can do. We need to provide literal backslash
+      // to the parser
       wru.assert('check quoting escape',
                  twinspark.parseAction('this "is \\"a string"')[0].commands[0].args[0] == 'is "a string')
     });
