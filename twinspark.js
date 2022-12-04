@@ -574,6 +574,11 @@
     sendEvent(window, 'ts-pushstate', {url: url});
   }
 
+  function replaceState(url) {
+    history.replaceState(null, null, url);
+    sendEvent(window, 'ts-replacestate', {detail: url});
+  }
+
   function onpopstate(e) {
     // hashchange triggers onpopstate and there is nothing we can do about it
     // https://stackoverflow.com/questions/25634422/stop-firing-popstate-on-hashchange
@@ -901,7 +906,11 @@
     // then take request URL as new URL
     var pushurl = res.headers['ts-history'] || hasattr(origins[0], 'ts-req-history') && url;
     if (pushurl) {
-      pushState(pushurl, title);
+      if (getattr(origins[0], 'ts-req-history') == 'replace') {
+        replaceState(pushurl);
+      } else {
+        pushState(pushurl, title);
+      }
     }
 
     return swap(origins, replyParent, res);
