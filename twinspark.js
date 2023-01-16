@@ -498,6 +498,8 @@
       window.msIndexedDB;
   var _idb;
 
+  var eventListenerCleaners = [];
+
   function reqpromise(req) {
     return new Promise(function(resolve, reject) {
       req.onsuccess = function() { resolve(req.result); };
@@ -594,6 +596,10 @@
     }).then(function(data) {
       console.debug('onpopstate restore', data);
       if (data && data.html) {
+        // remove stale event listeners from the previous layout
+        eventListenerCleaners.forEach(f => f());
+        eventListenerCleaners = [];
+
         document.body.innerHTML = data.html;
 
         // If user came back from a real page change, we indicate this with an
@@ -1536,6 +1542,10 @@
       }
     }
     el.addEventListener(type, inner, opts);
+
+    if (el == window || el == document) {
+      eventListenerCleaners.push(() => el.removeEventListener(type, inner, opts));
+    }
   }
 
   /** @type {function(!Element, CommandDef): undefined} */
