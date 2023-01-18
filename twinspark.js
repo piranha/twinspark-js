@@ -151,8 +151,32 @@
     return r;
   }
 
-  function flat(arr) {
-    return [].concat.apply([], arr);
+  /** @type {function(Array, Function): Array} */
+  function mapcat(arr, cb) {
+    var res = [];
+    for (var i = 0; i < arr.length; i++) {
+      res.push.apply(res, cb(arr[i], i));
+    }
+    return res;
+  }
+
+  function zip(arr1, arr2) {
+    return arr1.map((val, i) => [val, arr2[i]]);
+  }
+
+  /** @type {function(Array): Array} */
+  function distinct(arr) {
+    var seen = new Set(),
+        res = [],
+        val;
+    for (var i = 0; i < arr.length; i++) {
+      val = arr[i];
+      if (!seen.has(val)) {
+        seen.add(val);
+        res.push(val);
+      }
+    }
+    return res;
   }
 
   function el2str(el) {
@@ -345,6 +369,9 @@
    * }}
    */
   var Response;
+
+  /** @typedef {{response: Response, tasks: Array<Function>}} */
+  var SwapData;
 
   /** @type {function(string, RequestInit): {promise: Promise<Response|ResponseTimeout>, xhr: XMLHttpRequest} } */
   function xhr(url, opts) {
@@ -663,7 +690,7 @@
     });
   }
 
-  /** @type {function(Element, string=): (Element|undefined)} */
+  /** @type {function(Element, string=): Element} */
   function findTarget(el, sel) {
     if (sel == null) {
       sel = getattr(el, 'ts-target');
@@ -679,6 +706,7 @@
     return bits.reduce((el, sel, idx) => findSingleTarget(el, sel, idx > 0), el);
   }
 
+  /** @type {function(Element, Element, Element): Array<Element>} */
   function findReply(target, origin, reply) {
     var sel = getattr(origin, 'ts-req-selector');
 
@@ -737,7 +765,7 @@
     return swapdata;
   }
 
-
+  /** @type {function(string, Element, Array<Element>): Array<Element>} */
   function executeSwap(strategy, target, reply) {
     // terminology from
     // https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML
@@ -761,9 +789,11 @@
     return reply;
   }
 
+  /** @type {function(Element, Element, SwapData): Array<Element>} */
   function elementSwap(origin, replyParent, swapdata) {
     var target = findTarget(origin);
-    var reply = findReply(target, origin, replyParent);
+
+    var replies = findReply(target, origin, replyParent);
     var strategy = getattr(origin, 'ts-swap') || 'replace';
 
     if (origin) {
@@ -772,9 +802,10 @@
       doActions(origin, e, getattr(origin, 'ts-req-after'), detail);
     }
     transitionAttrs(origin, replyParent, swapdata);
-    return executeSwap(strategy, target, reply);
+    return executeSwap(strategy, target, replies);
   }
 
+  /** @type {function(Element, SwapData): Array<Element>} */
   function pushedSwap(reply, swapdata) {
     var sel = getattr(reply, 'ts-swap-push');
     if (!sel && reply.id) {
@@ -789,6 +820,7 @@
     return executeSwap(strategy, target, [reply]);
   }
 
+  /** @type {function(string, Element): Array<Element>} */
   function headerSwap(header, replyParent) {
     // `replace: css selector <= css selector`
     var m = header.match(/(\w+):(.+)<=(.+)/);
@@ -825,35 +857,35 @@
     }
   }
 
+  /** @type {function(Array<Element>, Element, Response): Array<Element>} */
   function swap(origins, replyParent, res) {
     var swapdata = {response: res, tasks: []};
 
     var swapped, viapush, viaheader;
 
     if (res.headers['ts-swap'] != 'skip') {
-      // swap original elements
-      swapped = origins.map(function (origin, i) {
-        var thisParent = origins.length > 1 ? replyParent.children[i] : replyParent;
-        return elementSwap(origin, thisParent, swapdata);
-      });
+      if (origins.length == 1) {
+        swapped = elementSwap(origins[0], replyParent, swapdata);
+      } else {
+        // batching, we need to collect references to parents before using them
+        swapped = mapcat(zip(origins, replyParent.children),
+                         ([origin, thisParent]) => {
+                           return elementSwap(origin, thisParent, swapdata);
+                         });
+      }
     }
 
-    viapush = qse(replyParent, '[ts-swap-push]').map(function (reply) {
-      return pushedSwap(reply, swapdata);
-    });
+    viapush = mapcat(qse(replyParent, '[ts-swap-push]'),
+                     reply => pushedSwap(reply, swapdata));
 
     if (res.headers['ts-swap-push']) {
       // swap any header requests
-      viaheader = swapped.concat(res.headers['ts-swap-push']
-                                 .split(',')
-                                 .map(header => headerSwap(header, replyParent)));
+      viaheader = mapcat(res.headers['ts-swap-push'].split(','),
+                         header => headerSwap(header, replyParent));
     }
 
-    swapped = swapped.concat(viapush).concat(viaheader);
-    swapped = (flat(swapped)
-               .filter(x => x)
-               // distinct
-               .filter((x, i, self) => self.indexOf(x) == i));
+    swapped = swapped.concat(viapush).concat(viaheader).filter(x => x);
+    swapped = distinct(swapped);
     swapped.forEach(function(el) {
       processScripts(el);
       activate(el);
