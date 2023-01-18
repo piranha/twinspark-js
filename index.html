@@ -981,7 +981,7 @@ than it'll only restore HTML for the first 3 clicks</p>
 
   <script>
     twinspark.func({resurrect: function(o) {
-      var parent = o.event.detail.target;
+      var parent = o.event.detail.record.target;
       var el = o.el;
       setTimeout(() => parent.appendChild(o.el), 200);
     }});
