@@ -828,43 +828,28 @@
   function swap(origins, replyParent, res) {
     var swapdata = {response: res, tasks: []};
 
-    // `joiners` are elements which want to `join` current request by specifying
-    // its ts-req-id in ts-req-join attribute. They should be found before doing
-    // any swaps.
-    var joiners = flat(
-      origins
-        .filter(origin => hasattr(origin, 'ts-req-id'))
-        .map(origin => {
-          var id = getattr(origin, 'ts-req-id');
-          return Array.from(document.querySelectorAll('[ts-req-join~="' +  id +'"]'));
-        }));
+    var swapped, viapush, viaheader;
 
-    // swap original elements
-    var swapped;
     if (res.headers['ts-swap'] != 'skip') {
+      // swap original elements
       swapped = origins.map(function (origin, i) {
         var thisParent = origins.length > 1 ? replyParent.children[i] : replyParent;
         return elementSwap(origin, thisParent, swapdata);
       });
-    } else {
-      swapped = [];
     }
 
-    var oobs = Array.from(replyParent.querySelectorAll('[ts-swap-push]')).map(function (reply) {
+    viapush = qse(replyParent, '[ts-swap-push]').map(function (reply) {
       return pushedSwap(reply, swapdata);
     });
 
-    // swap joiners
-    swapped = swapped.concat(joiners.map(joiner => elementSwap(joiner, replyParent, swapdata)));
-    swapped = swapped.concat(oobs);
-
-    // swap any header requests
     if (res.headers['ts-swap-push']) {
-      swapped = swapped.concat(res.headers['ts-swap-push']
-                               .split(',')
-                               .map(header => headerSwap(header, replyParent)));
+      // swap any header requests
+      viaheader = swapped.concat(res.headers['ts-swap-push']
+                                 .split(',')
+                                 .map(header => headerSwap(header, replyParent)));
     }
 
+    swapped = swapped.concat(viapush).concat(viaheader);
     swapped = (flat(swapped)
                .filter(x => x)
                // distinct
