@@ -1052,14 +1052,14 @@ than it'll only restore HTML for the first 3 clicks</p>
   </p>
 
   <script type="text/html">
-    <span><script>document.currentScript.parentElement.innerHTML = 'Double change!';</script></span>
+    <span>Change!<script>(el => setTimeout(() => el.innerHTML = 'Double change!', 250))(document.currentScript.parentElement)</script></span>
   </script>
 
   <script>
     XHRMock.get("/script", {body: prev()});
     test(el => {
       click(el.$('a'));
-      wait(() => wru.assert(el.$('span').innerText == 'Double change!'));
+      wait(() => wru.assert(el.$('span').innerText == 'Double change!'), 300);
     });
   </script>
 </div>
