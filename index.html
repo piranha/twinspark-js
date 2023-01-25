@@ -1295,3 +1295,99 @@ than it'll only restore HTML for the first 3 clicks</p>
     .filter [type="checkbox"] { display: none; }
   </style>
 </div>
+
+
+<!-- DEBUG, should be last -->
+
+<div style="margin-top: 50vh"></div>
+<style>
+  #debug-requests {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    padding: 0.5em;
+    width: 100vw;
+    height: 64px;
+    background-color: whitesmoke;
+    border-top: 2px solid gray;
+    transition: height .2s ease-in-out;
+  }
+  #debug-requests.show {
+    height: 45vh;
+    overflow: scroll;
+  }
+  #debug-requests ol, #debug-requests li { margin: 0; }
+  .show .show_show, .show_hide { display: none; }
+  .show .show_hide { display: inline; }
+</style>
+<div id="debug-requests">
+  Server Requests
+  <a class="show_show" href="#" ts-action="prevent, target #debug-requests, class+ show">↑ Show</a>
+  <a class="show_hide" href="#" ts-action="prevent, target #debug-requests, class- show">↓ Hide</a>
+
+  <div class="columns">
+    <div class="column col-3">
+      <ol id="debug-timeline" reversed>
+      </ol>
+    </div>
+    <div id="debug-details" class="column col-9">
+      <div class="d-hide">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function dedent(s) {
+      var lines = s.split('\n');
+      var offsets = lines.slice(1).map(line => line.search(/\S|$/));
+      var offset = Math.min.apply(Math, offsets);
+      var pat = new RegExp(`\n[\t ]{${offset}}`, 'g');
+      s = s.replace(pat, '\n');
+      return s;
+    }
+
+    function switchResponse(id) {
+      var active = window['debug-timeline'].querySelector('.active');
+      active && active.classList.remove('active');
+
+      var shown = window['debug-details'].querySelector(':scope > :not(.d-hide)');
+      shown && shown.classList.add('d-hide');
+
+      document.querySelector(`[rel="${id}"]`).classList.add('active');
+      document.getElementById(id).classList.remove('d-hide');
+    }
+
+    (() => {
+      var i = 0;
+      const origSend = XMLHttpRequest.prototype.send;
+      const origOpen = XMLHttpRequest.prototype.open;
+
+      XMLHttpRequest.prototype.send = function(body) {
+        this.requestBody = body;
+        origSend.apply(this, arguments);
+      };
+      XMLHttpRequest.prototype.open = function(method, url) {
+        this.addEventListener('load', function() {
+          var id = `debug${i++}`;
+          var response = escape(dedent((this.responseText || '').trim()));
+          window['debug-timeline'].insertAdjacentHTML(
+            'afterbegin',
+            `<li><a style="cursor:pointer" rel="${id}" onclick="switchResponse('${id}')">
+                     <code><b>${method}</b> ${url}</code>
+               </a></li>`
+          );
+          window['debug-details'].insertAdjacentHTML(
+            'afterbegin',
+            `<div id="${id}" class="d-hide">
+                 <div><code>${this.status} <b>${method}</b> ${url} (${new Date().toTimeString().split(' ')[0]})</code></div>
+                 <div><b>Body:</b> <code>${this.requestBody || ''}</code></div>
+                 <div><b>Response</b></div>
+                 <pre style="margin-top:0"><code>${response}</code></pre>
+               </div>`
+          );
+          document.querySelector(`[rel="${id}"]`).click();
+        });
+        origOpen.apply(this, arguments);
+      };
+    })();
+  </script>
+</div>
