@@ -7,6 +7,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="vendor/xhr-mock.js"></script>
+  <link rel="stylesheet" href="vendor/highlight-foundation.min.css">
+  <script src="vendor/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
   <script src="twinspark.js" data-timeout="5000" data-history="3"></script>
   <script>
     XHRMock.setup();
@@ -28,7 +31,7 @@
       var el = document.currentScript.previousElementSibling;
       if (n == 2)
         el = el.previousElementSibling;
-      return el.innerText;
+      return el.innerHTML;
     }
 
     function escape(s) {
@@ -42,12 +45,21 @@
         .replace(/'/g, "&#039;");
     }
 
-    function trim(s) {
-      return s.replace(/^\n+|\s+$/g, '')
+    function dedent(s) {
+      var lines = s.split('\n');
+      var offsets = lines.slice(1).map(line => line.search(/\S|$/));
+      var offset = Math.min.apply(Math, offsets);
+      var pat = new RegExp(`\n[\t ]{${offset}}`, 'g');
+      s = s.replace(pat, '\n');
+      return s;
+    }
+
+    function cleancode(s) {
+      return escape(dedent((s || '').trim()));
     }
 
     function codewrap(s) {
-      return '<pre><code>' + escape(trim(s)) +'</code></pre>';
+      return '<pre><code>' + cleancode(s) +'</code></pre>';
     }
 
     function makeel(tag, attrs, content) {
@@ -79,6 +91,7 @@
             html += codewrap(el.innerHTML);
           }
           example.innerHTML = html;
+          example.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
         });
       });
 
@@ -1336,15 +1349,6 @@ than it'll only restore HTML for the first 3 clicks</p>
   </div>
 
   <script>
-    function dedent(s) {
-      var lines = s.split('\n');
-      var offsets = lines.slice(1).map(line => line.search(/\S|$/));
-      var offset = Math.min.apply(Math, offsets);
-      var pat = new RegExp(`\n[\t ]{${offset}}`, 'g');
-      s = s.replace(pat, '\n');
-      return s;
-    }
-
     function switchResponse(id) {
       var active = window['debug-timeline'].querySelector('.active');
       active && active.classList.remove('active');
@@ -1368,7 +1372,6 @@ than it'll only restore HTML for the first 3 clicks</p>
       XMLHttpRequest.prototype.open = function(method, url) {
         this.addEventListener('load', function() {
           var id = `debug${i++}`;
-          var response = escape(dedent((this.responseText || '').trim()));
           window['debug-timeline'].insertAdjacentHTML(
             'afterbegin',
             `<li><a style="cursor:pointer" rel="${id}" onclick="switchResponse('${id}')">
@@ -1381,9 +1384,10 @@ than it'll only restore HTML for the first 3 clicks</p>
                  <div><code>${this.status} <b>${method}</b> ${url} (${new Date().toTimeString().split(' ')[0]})</code></div>
                  <div><b>Body:</b> <code>${this.requestBody || ''}</code></div>
                  <div><b>Response</b></div>
-                 <pre style="margin-top:0"><code>${response}</code></pre>
+                 <pre style="margin-top:0"><code>${cleancode(this.responseText)}</code></pre>
                </div>`
           );
+          hljs.highlightElement(document.querySelector(`#${id} pre code`));
           document.querySelector(`[rel="${id}"]`).click();
         });
         origOpen.apply(this, arguments);
