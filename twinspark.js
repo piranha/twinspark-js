@@ -634,7 +634,7 @@
           .objectStore(db.name)
           .get(url));
     }).then(function(data) {
-      console.debug('onpopstate restore', data);
+      console.debug('onpopstate restore', data.url, data.html.length, data.time);
       if (data && data.html) {
         document.body.innerHTML = data.html;
 
@@ -689,17 +689,15 @@
     return document.querySelector(sel);
   }
 
+  /** @type {function(!Element, !string, !boolean): !Element} */
   function findSingleTarget(el, sel, childrenOnly) {
     var res = _findSingleTarget(el, sel, childrenOnly);
     if (res)
       return res;
 
     var elstr = el2str(el);
-    var msg = "Could not find element with selector '" + sel + "' for element " + elstr;
-    if (childrenOnly)
-      msg += ' among children';
-
-    throw extraerr(msg, {
+    throw extraerr(`Could not find element with selector ${sel} for element ${elstr}` +
+                   (childrenOnly ? ' among children' : ''), {
       element: elstr,
       selector: sel
     });
@@ -707,10 +705,12 @@
 
   /** @type {function(Element, string=): Element} */
   function findTarget(el, sel) {
+    if (!el) return el;
+
     if (sel == null) {
       sel = getattr(el, 'ts-target');
     }
-    if (!sel) { // null, undefined, ""
+    if (!sel) { // undefined, ""
       return el;
     }
 
@@ -854,7 +854,7 @@
 
     for (var j = 0; j < el.attributes.length; j++) {
       var attr = el.attributes[j].name;
-      setattr(newel , attr, getattr(el ,attr));
+      setattr(newel, attr, getattr(el, attr));
     }
 
     newel.appendChild(document.createTextNode(el.innerHTML));
@@ -930,8 +930,8 @@
     var replyParent = html.body;
 
     if (replyParent.children.length < origins.length) {
-      throw ('This request needs at least ' + origins.length +
-             ' elements, but ' + replyParent.children.length + ' were returned');
+      throw (`This request needs at least ${origins.length} elements, ` +
+             `but ${replyParent.children.length} were returned`);
     }
 
     // either ts-history contains new URL or ts-req-history attr is present,
@@ -1159,6 +1159,7 @@
                    'GET')).toUpperCase();
 
     return {el:     el,
+            opts:   {},
             event:  e,
             url:    url,
             method: method,
@@ -1186,8 +1187,7 @@
       event = 'change';
 
     if (tag == 'FORM' && event == 'submit') {
-      [].forEach.call(el.querySelectorAll('button'), markSubmitter);
-      [].forEach.call(el.querySelectorAll('input[type="submit"]'), markSubmitter);
+      qse(el, 'button, input[type="submit"]').forEach(markSubmitter);
     }
 
     return el.addEventListener(event, function(/** @type {!Event} */ e) {
@@ -1507,7 +1507,7 @@
     });
   });
 
-  /** @type {function(Element): {once: (boolean|undefined), delay: (number|undefined)}} */
+  /** @type {function(!(Node|Window)): {once: (boolean|undefined), delay: (number|undefined)}} */
   function internalData(el) {
     var prop = 'twinspark-internal';
     return el[prop] || (el[prop] = {});
@@ -1557,6 +1557,7 @@
     };
   }
 
+  /** @type {function(!(Node|Window), !string, !Function, !AddEventListenerOptions=): void} */
   function addRemovableListener(el, type, handler, opts) {
     function inner(e) {
       handler(e);
@@ -1613,7 +1614,7 @@
       el.addEventListener(type, function(e) { tsTrigger(el, e); });
       break;
 
-    default:             el.addEventListener(type, function(e) { tsTrigger(el, e); });
+    default:             addRemovableListener(el, type, function(e) { tsTrigger(el, e); });
     }
   }
 
@@ -1660,7 +1661,9 @@
     activate:    activate,
     func:        registerCommands,
     elcrumbs:    elcrumbs,
+    arity:       arity,
     data:        collectData,
+    merge:       mergeParams,
     target:      findTarget, // DEPRECATED
     query:       findTarget,
     trigger:     sendEvent,
