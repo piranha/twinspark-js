@@ -602,7 +602,7 @@
   }
 
   function replaceState(url) {
-    history.replaceState(null, null, url);
+    history.replaceState(null, '', url);
     sendEvent(window, 'ts-replacestate', {detail: url});
   }
 
