@@ -54,17 +54,14 @@
 
     target: function(sel, o) {
       var el = findTarget(o.el, sel);
-      if (!el) return false; // stop executing
+      if (!el) return false; // stop executing actions pipeline
       o.el = el;
     },
 
-    remove: function(sel, o) {
-      if (o) {
-        findTarget(o.el, sel).remove();
-      } else {
-        return sel.el.remove();
-      }
-    },
+    remove: arity({
+      1: function(o) { o.el.remove(); },
+      2: function(sel, o) { findTarget(o.el, sel).remove(); }
+    }),
 
     wait: function(eventname, o) {
       return new Promise(function(resolve) {
@@ -78,32 +75,35 @@
     "class^":    function(cls, o) { o.el.classList.toggle(cls); },
     classtoggle: function(cls, o) { o.el.classList.toggle(cls); },
 
-    text: function(value, o) {
-    // if second argument is null, then first argument is opts
-      if (!o) {
-        o = value;
-        value = o.input;
+    text: arity({
+      1: function(o) {
+        o.el.innerText = o.input;
+        return o.input;
+      },
+      2: function(value, o) {
+        o.el.innerText = value;
+        return value;
       }
+    }),
 
-      o.el.innerText = value;
-      return value;
-    },
-
-    html: function(value, o) {
-    // if second argument is null, then first argument is opts
-      if (!o) {
-        o = value;
-        value = o.input;
+    html: arity({
+      1: function(o) {
+        o.el.innerHTML = o.input;
+        return o.input;
+      },
+      2: function(value, o) {
+        o.el.innerHTML = value;
+        return value;
       }
+    }),
 
-      o.el.innerHTML = value;
-      return value;
-    },
-
-    attr: function(name, value, o) {
-      o.el[name] = value;
-      return value;
-    },
+    attr: arity({
+      2: function(name, o) { return o.el[name]; },
+      3: function(name, value, o) {
+        o.el[name] = value;
+        return value;
+      }
+    }),
 
     log: function() {
       var args = parseArgs(arguments);
@@ -120,6 +120,21 @@
   var ERR = console.error ?
       console.error.bind(console, 'TwinSpark error:') :
       console.log.bind(console, 'TwinSpark error:');
+
+  /** @type{function(Object): Function} */
+  function arity(funcs) {
+    return function() {
+      var len = arguments.length;
+      var func = funcs[len];
+      if (!func) {
+        throw extraerr("No function supplied accepting " + len + " arguments", {
+          "functions": funcs,
+          "arguments": Array.from(arguments)
+        });
+      }
+      return func.apply(this, arguments);
+    }
+  }
 
   /** @type{function(!Object, (Object|null|undefined)): !Object} */
   var merge = Object.assign || function(tgt, src) {
