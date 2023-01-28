@@ -302,11 +302,11 @@
   }
 
   function elid(el) {
-    var tag = el.tagName.toLowerCase();
     if (el.id)
       return el.id;
+    var tag = el.tagName.toLowerCase();
     if (el.className)
-      return (tag + ' ' + el.className).split(' ').join('.');
+      return tag + '.' + el.className.replace(' ', '.');
     return tag;
   }
 
