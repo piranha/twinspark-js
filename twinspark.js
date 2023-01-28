@@ -264,36 +264,39 @@
 
 
   /// Attribute handling
-  /** @type {function(Element, string): boolean} */
+  /** @type {function(!Element, !string): boolean} */
   function hasattr(el, attr) {
     return el.hasAttribute(attr);
   }
 
-  /** @type {function(Element, string): string|null} */
+  /** @type {function(!Element, !string): string} */
   function getattr(el, attr) {
     return el.getAttribute(attr);
   }
 
-  /** @type {function(Element, string, string): void} */
+  /** @type {function(!Element, !string, string): void} */
   function setattr(el, attr, value) {
     return el.setAttribute(attr, value);
   }
 
+  /** @type {function(!Element, !string): void} */
   function delattr(el, attr) {
     return el.removeAttribute(attr);
   }
 
 
   /// DOM querying
+  /** @type {function(!(Element|DocumentFragment), !string): Element} */
   function qsf(el, selector) { // querySelectorFirst
-    if (el.matches(selector))
+    if (el.nodeType == 1 && el.matches(selector))
       return el;
     return el.querySelector(selector);
   }
 
+  /** @type {function(!(Element|DocumentFragment), !string): Array<Element>} */
   function qse(el, selector) { // querySelectorEvery
     var els = Array.from(el.querySelectorAll(selector));
-    if (el.matches(selector))
+    if (el.nodeType == 1 && el.matches(selector))
       els.unshift(el);
     return els;
   }
@@ -309,7 +312,7 @@
 
   /**
    * Collects all non-empty attribute values from element and its parents.
-   * @type {function(Element, string): Array<string>} */
+   * @type {function(!Element, string): Array<string>} */
   function elcrumbs(el, attr) {
     var result = [];
     var value;
@@ -327,7 +330,7 @@
 
   /// Core
 
-  /** @type {function(Element, Directive): void} */
+  /** @type {function(!Element, !Directive): void} */
   function attach(el, directive) {
     qse(el, directive.selector).forEach(directive.handler);
   }
@@ -721,30 +724,35 @@
     return bits.reduce((el, sel, idx) => findSingleTarget(el, sel, idx > 0), el);
   }
 
-  /** @type {function(Element, Element, Element): Array<Element>} */
+  /** @type {function(!Element, !Element, !Element): !(Element|DocumentFragment)} */
   function findReply(target, origin, reply) {
     var sel = getattr(origin, 'ts-req-selector');
 
     if (!sel) {
       if ((reply.tagName == 'BODY') && (target.tagName != 'BODY')) {
-        return [reply.children[0]];
+        return reply.children[0];
       }
-      return [reply];
+      return reply;
     }
 
     if (sel.slice(0, 9) == 'children ') {
       var el = qsf(reply, sel.slice(9));
-      return el && el.children && Array.from(el.children);
+      var frag = new DocumentFragment();
+      if (el && el.children) {
+        frag.append.apply(frag, el.children);
+      }
+      return frag;
     }
 
-    return [qsf(reply, sel)];
+    return qsf(reply, sel);
   }
 
 
+  /** @type {function(!Element, !Element): void} */
   function cloneAttrs(from, to) {
     for (var i = 0; i < attrsToSettle.length; i++) {
       var attr = attrsToSettle[i];
-      if (from.hasAttribute(attr)) {
+      if (hasattr(from, attr) && (getattr(from, attr) != getattr(to, attr))) {
         to.setAttribute(attr, from.getAttribute(attr));
       } else {
         to.removeAttribute(attr);
@@ -755,73 +763,71 @@
   // if there is a node with same id in an old code and in a new code,
   // temporarily set it attrs to what old code had (and then restore to new
   // values)
-  function transitionAttrs(origin, replyParent, swapdata) {
-    qse(replyParent, '[id]').forEach(function(el) {
-      if (!el.id.length)
-        return;
+  function transitionAttrs(el, origin, ctx) {
+    if (!el.id.length)
+      return;
 
-      var oldNode = origin.querySelector(el.tagName + "[id='" + el.id + "']");
+    var oldEl = origin.querySelector(el.tagName + "[id='" + el.id + "']");
 
-      if (!oldNode) {
-        el.classList.add(enterClass);
-        sendEvent(el, 'ts-enter');
-        return;
-      }
+    if (!oldEl) {
+      el.classList.add(enterClass);
+      sendEvent(el, 'ts-enter');
+      return;
+    }
 
-      if (oldNode == replyParent)
-        return;
-
-      var newAttrs = el.cloneNode();
-      cloneAttrs(oldNode, el);
-      swapdata.tasks.push(function() {
-        cloneAttrs(newAttrs, el);
-      });
+    var newAttrs = el.cloneNode();
+    cloneAttrs(oldEl, el);
+    ctx.tasks.push(function() {
+      cloneAttrs(newAttrs, oldEl);
     });
-    return swapdata;
+    return ctx;
   }
 
-  /** @type {function(string, Element, Array<Element>): Array<Element>} */
-  function executeSwap(strategy, target, reply) {
-    // terminology from
-    // https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML
+  /** @type {function(!string, !Element, !(Element|DocumentFragment), !SwapData): !(Element|DocumentFragment)} */
+  function executeSwap(strategy, target, reply, ctx) {
+    if (strategy != 'morph') {
+      qse(reply, '[id]').forEach(function(el) {
+        transitionAttrs(el, target, ctx);
+      });
+    }
+
     switch (strategy) {
-    case 'replace':     target.replaceWith.apply(target, reply);       break;
-    case 'inner':       target.innerHTML = '';
-                        target.append.apply(target, reply);            break;
-    case 'prepend':     target.prepend.apply(target, reply);           break;
-    case 'append':      target.append.apply(target, reply);            break;
-    case 'beforebegin': for (var i = 0; i < reply.length; i++) {
-      target.parentNode.insertBefore(reply[i], target);
-    }
-      break;
-    case 'afterend':    for (var i = 0; i < reply.length; i++) {
-      target.parentNode.insertBefore(reply[i], target.nextSibling);
-    }
-      break;
+    case 'replace':     target.replaceWith(reply);                     break;
+    case 'inner':       target.replaceChildren(reply);                 break;
+    case 'prepend':     target.prepend(reply);                         break;
+    case 'append':      target.append(reply);                          break;
+    case 'beforebegin': target.parentNode.insertBefore(reply, target); break;
+    case 'afterend':    target.parentNode.insertBefore(reply, target.nextSibling); break;
     case 'skip':        break;
     default:            throw Error('Unknown swap strategy ' + strategy);
     }
     return reply;
   }
 
-  /** @type {function(Element, Element, SwapData): Array<Element>} */
-  function elementSwap(origin, replyParent, swapdata) {
+  /** @type {function(!Element, !Element, !SwapData): (Element|DocumentFragment)} */
+  function elementSwap(origin, replyParent, ctx) {
     var target = findTarget(origin);
+    if (!target) {
+      throw extraerr(`Target element not found for origin ${el2str(origin)}`, {
+        origin: origin,
+        replyParent: replyParent
+      });
+    }
 
-    var replies = findReply(target, origin, replyParent);
+    var reply = findReply(target, origin, replyParent);
     var strategy = getattr(origin, 'ts-swap') || 'replace';
 
     if (origin) {
-      var detail = {response: swapdata.response};
+      var detail = {response: ctx.response};
       var e = sendEvent(origin, 'ts-req-after', detail);
       doActions(origin, e, getattr(origin, 'ts-req-after'), detail);
     }
-    transitionAttrs(origin, replyParent, swapdata);
-    return executeSwap(strategy, target, replies);
+
+    return executeSwap(strategy, target, reply, ctx);
   }
 
-  /** @type {function(Element, SwapData): Array<Element>} */
-  function pushedSwap(reply, swapdata) {
+  /** @type {function(!Element, !SwapData): (Element|DocumentFragment)} */
+  function pushedSwap(reply, ctx) {
     var sel = getattr(reply, 'ts-swap-push');
     if (!sel && reply.id) {
       sel = '#' + reply.id;
@@ -831,12 +837,11 @@
       return ERR('cannot find target for server-pushed swap', reply);
     }
     var strategy = getattr(reply, 'ts-swap') || 'replace';
-    transitionAttrs(target, reply, swapdata);
-    return executeSwap(strategy, target, [reply]);
+    return executeSwap(strategy, target, reply, ctx);
   }
 
-  /** @type {function(string, Element): Array<Element>} */
-  function headerSwap(header, replyParent) {
+  /** @type {function(!string, !Element, !SwapData): (Element|DocumentFragment)} */
+  function headerSwap(header, replyParent, ctx) {
     // `replace: css selector <= css selector`
     var m = header.match(/(\w+):(.+)<=(.+)/);
     if (!m)
@@ -845,7 +850,7 @@
     var reply = qsf(replyParent, m[3]);
     var strategy = m[1];
 
-    return executeSwap(strategy, target, [reply]);
+    return executeSwap(strategy, target, reply, ctx);
   }
 
   function runScript(el) {
@@ -872,31 +877,30 @@
     }
   }
 
-  /** @type {function(Array<Element>, Element, Response): Array<Element>} */
+  /** @type {function(Array<Element>, !Element, !Response): Array<Element>} */
   function swap(origins, replyParent, res) {
-    var swapdata = {response: res, tasks: []};
+    var ctx = {response: res, tasks: []};
 
     var swapped, viapush, viaheader;
 
     if (res.headers['ts-swap'] != 'skip') {
       if (origins.length == 1) {
-        swapped = elementSwap(origins[0], replyParent, swapdata);
+        swapped = [elementSwap(/** @type {!Element} */ (origins[0]), replyParent, ctx)];
       } else {
         // batching, we need to collect references to parents before using them
-        swapped = mapcat(zip(origins, replyParent.children),
-                         ([origin, thisParent]) => {
-                           return elementSwap(origin, thisParent, swapdata);
-                         });
+        swapped = zip(origins, replyParent.children).map(([origin, thisParent]) => {
+          return elementSwap(origin, thisParent, ctx);
+        });
       }
     }
 
     viapush = mapcat(qse(replyParent, '[ts-swap-push]'),
-                     reply => pushedSwap(reply, swapdata));
+                     reply => pushedSwap(reply, ctx));
 
     if (res.headers['ts-swap-push']) {
       // swap any header requests
       viaheader = mapcat(res.headers['ts-swap-push'].split(','),
-                         header => headerSwap(header, replyParent));
+                         header => headerSwap(header, replyParent, ctx));
     }
 
     swapped = swapped.concat(viapush).concat(viaheader).filter(x => x);
@@ -907,7 +911,7 @@
       autofocus(el);
     });
     setTimeout(function() {
-      swapdata.tasks.forEach(function(func) { func(); });
+      ctx.tasks.forEach(function(func) { func(); });
     }, settleDelay);
 
     return swapped;
@@ -981,8 +985,7 @@
       return opts;
     }
 
-    var issimple = (Array
-                    .from(body.entries)
+    var issimple = (Array.from(body.entries)
                     .every((x) => typeof x === "string"));
     if (!issimple) {
       opts.body = body;
