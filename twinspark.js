@@ -520,17 +520,23 @@
     return el.value;
   }
 
-  /** @type {function(!Element): !FormData} */
-  function collectData(el) {
+  /** @type {function(!Element, Event): !FormData} */
+  function collectData(el, e) {
     var data = eldata(el, 'ts-data');
     var tag = el.tagName;
     var res;
 
     if (tag == 'FORM') {
       data = mergeParams(data, new FormData(el));
+
       var focused = document.activeElement;
       if (focused.type == 'submit' && focused.name && focused.value && !data.has(focused.name)) {
         data.append(focused.name, focused.value);
+      } else if (e?.type == 'submit') {
+        var submit = qsf(el, '[type=submit]');
+        if (submit.name && submit.value && !data.has(submit.name)) {
+          data.append(submit.name, submit.value);
+        }
       }
     } else if ((tag == 'INPUT') || (tag == 'SELECT') || (tag == 'TEXTAREA')) {
       if (res = formElementValue(el))
@@ -794,6 +800,211 @@
     return ctx;
   }
 
+
+  /// MORPH, thanks to idiomorph and nanomorph
+  /// Core algorithm from https://github.com/bigskysoftware/idiomorph
+  var morph = (function() {
+    function syncattr(from, to, attr) {
+      var value = getattr(to, attr);
+      if (value != getattr(from, attr)) {
+        value ? setattr(from, attr, value) : delattr(from, attr);
+      }
+    }
+
+    /** @type {function(!Node, !Node): void} */
+    function syncAttrs(from, to) {
+      if (from.nodeType != 1) {
+        // text, comments
+        from.nodeValue = to.nodeValue;
+        return;
+      }
+
+      for (var attr of /** @type Element */ (to).attributes) {
+        syncattr(from, to, attr.name);
+      }
+      for (var attr of /** @type Element */ (from).attributes) {
+        syncattr(from, to, attr.name);
+      }
+
+      // sync inputs
+      if (from.tagName == 'INPUT' && from.type != 'file') {
+        // https://github.com/choojs/nanomorph/blob/master/lib/morph.js#L113
+        // The "value" attribute is special for the <input> element since it sets
+        // the initial value. Changing the "value" attribute without changing the
+        // "value" property will have no effect since it is only used to the set
+        // the initial value. Similar for the "checked" attribute, and "disabled".
+        from.value = to.value || '';
+        syncattr(from, to, 'value');
+        syncattr(from, to, 'checked');
+        syncattr(from, to, 'disabled');
+      } else if (from.tagName == 'OPTION') {
+        syncattr(from, to, 'selected');
+      } else if (from.tagName == 'TEXTAREA') {
+        syncattr(from, to, 'value');
+        // TODO what is this stuff :(
+        if (from.firstChild && from.firstChild.nodeValue != to.value) {
+          from.firstChild.nodeValue = to.value;
+        }
+      }
+    }
+
+    function intersection(setA, setB) {
+      const _intersection = new Set();
+      for (const elem of setB) {
+        if (setA.has(elem)) {
+          _intersection.add(elem);
+        }
+      }
+      return _intersection;
+    }
+
+    function idIntersection(el1, el2) {
+      var ids1 = new Set(qse(el1, '[id]').map(el => el.id));
+      var ids2 = new Set(qse(el2, '[id]').map(el => el.id));
+      return intersection(ids1, ids2);
+    }
+
+    function isSimilar(node1, node2) {
+      return (node1 &&
+              node2 &&
+              node1.nodeType == node2.nodeType &&
+              node1.tagName == node2.tagName);
+    }
+
+    /** @type {function(!Node, !Node): Element} */
+    function findIdsMatch(target, reply) {
+      if (reply.nodeType != 1)
+        return null;
+
+      var replyIds = qse(/** @type {!Element} */ (reply), '[id]')
+          .map(el => '#' + el.id)
+          .join(',');
+      if (!replyIds)
+        return null;
+
+      // Redefine variable so that Closure Compiler will stop complaining about
+      // types in `while` clause
+      var el = target;
+      do {
+        // check if any element having id like those coming in `reply`
+        if (el.nodeType == 1 && qsf(/** @type {!Element} */ (el), replyIds)) {
+          return /** @type {!Element} */ (el);
+        }
+      } while (el = el.nextSibling);
+      return null;
+    }
+
+    /** @type {function(!Node, !Node): Node} */
+    function findSoftMatch(target, reply) {
+      var el = target;
+      var nextReply = reply.nextSibling;
+      var potentialMatches = 0;
+
+      do {
+        if (isSimilar(el, reply)) {
+          return el;
+        }
+        if (isSimilar(el, nextReply)) {
+          potentialMatches++;
+          nextReply = nextReply.nextSibling;
+
+          // If there are two future soft matches, bail to allow the siblings to
+          // soft match so that we don't consume future soft matches for the sake
+          // of the current node
+          if (potentialMatches >= 2) {
+            return null;
+          }
+        }
+      } while (el = el.nextSibling);
+      return null;
+    }
+
+    function removeNodesBetween(start, end) {
+      while (start !== end) {
+        var todelete = start;
+        start = start.nextSibling;
+        todelete.remove();
+      }
+      return end;
+    }
+
+    /** @type {function(!Node, Node, !Object): Node} */
+    function morphNode(from, to, ctx) {
+      if (!to) {
+        from.remove();
+        return null;
+      } else if (!isSimilar(from, to)) {
+        from.replaceWith(to);
+        ctx.cb('node-added', to);
+        return to;
+      } else {
+        if (from.nodeType == Node.DOCUMENT_NODE) {
+          from = from.documentElement;
+          to = to.documentElement;
+        }
+
+        syncAttrs(from, to);
+        if (from.nodeType == 1 && to.nodeType == 1) {
+          morphChildren(/** @type !Element */ (from), /** @type !Element */ (to), ctx);
+        }
+        return from;
+      }
+    }
+
+    /** @type {function(!Element, !Element, !Object): void} */
+    function morphChildren(from, to, ctx) {
+      var target = from.firstChild;
+      var nextReply = to.firstChild;
+
+      while (nextReply) {
+        var reply = nextReply;
+        nextReply = reply.nextSibling;
+
+        if (!target) {
+          from.appendChild(reply);
+          ctx.cb('node-added', reply);
+          continue;
+        }
+
+        var idsMatch = findIdsMatch(target, reply);
+        if (idsMatch) {
+          target = removeNodesBetween(target, idsMatch).nextSibling;
+          morphNode(idsMatch, reply, ctx);
+          continue;
+        }
+
+        var softMatch = findSoftMatch(target, reply);
+        if (softMatch) {
+          target = removeNodesBetween(target, softMatch).nextSibling;
+          morphNode(softMatch, reply, ctx);
+          continue;
+        }
+
+        // can't morph, just insert it
+        from.insertBefore(reply, target);
+        ctx.cb('node-added', reply);
+      }
+
+      // remove leftovers
+      if (target) {
+        removeNodesBetween(target, from.lastChild).remove();
+      }
+    }
+
+    /** @typedef {{cb: (undefined|function(!string, !Node): void)}} */
+    var MorphContext;
+
+    /** @type {function(!Node, Node, MorphContext): Node} */
+    function morph(target, reply, ctx={}) {
+      ctx.cb || (ctx.cb = function () {});
+      return morphNode(target, reply, ctx);
+    }
+
+    morph.syncAttrs = syncAttrs;
+    return morph;
+  })();
+
+
   /** @type {function(string, !Element, !(Element|DocumentFragment), !SwapData): !(Element|DocumentFragment)} */
   function executeSwap(strategy, target, reply, ctx) {
     strategy || (strategy = 'replace');
@@ -805,6 +1016,11 @@
     }
 
     switch (strategy) {
+    case 'morph':       morph(target, reply, {
+      cb: (type, el) => {
+        type == 'node-added' && el.nodeType == 1 && qse(el, '[id]').forEach(elementEnters)
+      }
+    });                                                                break;
     case 'replace':     target.replaceWith(reply);                     break;
     case 'inner':       target.replaceChildren(reply);                 break;
     case 'prepend':     target.prepend(reply);                         break;
@@ -1000,7 +1216,7 @@
   }
 
   function makeOpts(req) {
-    var data = collectData(req.el);
+    var data = collectData(req.el, req.event.detail?.event ?? req.event);
     return {
       method:  req.method,
       data:    data,
@@ -1708,6 +1924,7 @@
     exec:        executeCommand,
     makeReq:     makeReq,
     executeReqs: doReqBatch,
+    morph:       morph,
     setERR:      (errhandler) => ERR = errhandler,
     _internal:   {DIRECTIVES: DIRECTIVES,
                   FUNCS: FUNCS,

@@ -932,7 +932,13 @@ than it'll only restore HTML for the first 3 clicks</p>
 
 
 <h3 id="join" class="mt-p">Joining requests</h3>
-<p></p>
+<p>Sometimes you need to update more than a single point in your DOM tree.
+  Maybe there is a basket item counter should be incremented, or a notification
+  incoming. To perform that you need to add another tag in your HTML reply and
+  indicate where it should go. There are two ways to do that: either by a
+  selector in <code>ts-swap-push</code> attribute or by a `ts-swap-push` header.
+  The latter has a form
+  <code>[replace strategy]: [selector-in-document] <= [selector-in-response]</code></p>
 
 
 <div class="card">
@@ -970,6 +976,98 @@ than it'll only restore HTML for the first 3 clicks</p>
              {body:    prev(),
               headers: {'ts-swap-push': 'replace: #join-example .tertiary <= .tertiary'}});
   </script>
+</div>
+
+<h3 id="validation-example" class="mt-p">Dynamic form validation</h4>
+<p>Form validation is a very common task. Twinspark easily allows to implement this
+  as traditional HTML form that updates on submit. However, modern applications often
+  ask for interactive forms that validate on-the-go. One way to do this is by using
+  <code>ts-swap-push</code>.</p>
+
+<div class="card">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+  <div class="card-body">
+    <p>Solve this problem with odd numbers</p>
+    <form action="/validate" id="form-validate"
+          ts-req ts-swap="morph" ts-trigger="submit" ts-action="prevent">
+      <div>
+        <div class="form-number-div">
+          <input id="one" name="one" value="8" type="number" placeholder="Odd" autocomplete="off">
+          <div class="error"></div>
+        </div>
+        +
+        <div class="form-number-div">
+          <input id="two" name="two" value="" type="number" placeholder="Odd" autocomplete="off">
+          <div class="error"></div>
+        </div>
+        = 14
+      </div>
+      <input type="submit" class="btn" value="submit" name="submit" />
+      <div class="error"></div>
+    </form>
+    <br/>
+  </div>
+
+  <style>
+    #form-validate .error { color: #f00; font-style:italic; }
+    .form-number-div { display:inline-block; height: 60px; vertical-align: top; }
+  </style>
+
+  <script>
+    (function(html) {
+      var div = document.createElement('div');
+      div.innerHTML = html;
+      var form = div.querySelector('form');
+
+      XHRMock.post(/\/validate/, function(req, res) {
+        var params = new URLSearchParams(req.body());
+        var one = parseInt(params.get('one'), 10),
+            two = parseInt(params.get('two'), 10);
+
+        var errors = {}, ok = true;
+        if (!one) {
+          errors.global = 'Incorrect!';
+          errors.one = 'Enter a number';
+          ok = false;
+        } else if (one % 2 == 0) {
+          errors.global = 'Incorrect!';
+          errors.one = 'Please enter odd number';
+          ok = false;
+        }
+
+        if (!two) {
+          errors.global = 'Incorrect!';
+          errors.two = 'Enter a number';
+          ok = false;
+        } else if (two % 2 == 0) {
+          errors.global = 'Incorrect!';
+          errors.two = 'Please enter odd number';
+          ok = false;
+        }
+
+        if (ok && (one + two != 14)) {
+          errors.global = 'Incorrect! Sum of two numbers should be equal to 14, not ' + (one + two);
+          ok = false;
+        }
+
+        form.querySelector('[name=one]').setAttribute('value', params.get('one'));
+        form.querySelector('[name=two]').setAttribute('value', params.get('two'));
+        form.querySelector('[name=one] + .error').innerText = errors.one || '';
+        form.querySelector('[name=two] + .error').innerText = errors.two || '';
+
+        if (params.get('submit')) {
+          form.querySelector(':scope > .error').innerText = errors.global || '';
+        }
+
+        return res.status(200).body(form.outerHTML);
+      })
+    })(prev(2));
+  </script>
+
 </div>
 
 
