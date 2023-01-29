@@ -13,9 +13,6 @@
   <script src="twinspark.js" data-timeout="5000" data-history="3"></script>
   <script>
     XHRMock.setup();
-    /* XHRMock.use(function() {
-     *   console.log(arguments);
-     * }); */
 
     XHRMock.delay = function(mock, ms) {
       return function (req, res) {
@@ -149,16 +146,24 @@
   <button class="btn" onclick="runTests(event)">Run tests</button>
 </p>
 <style>
-  #wru{font-family:sans-serif;font-size:11pt}
-  #wru div{cursor:default;padding:0;color:#000}
-  #wru div span,#wru div strong{display:block;padding:4px;margin:0}
-  #wru div ul{margin:0;padding-bottom:4px}
-  #wru div.pass{background:#90ee90}
-  #wru div.fail{background:tomato}
-  #wru div.error{background:#000;color:#fff}
+  #tinytest{font-family:sans-serif}
+  #tinytest ul{margin:0 0 .5rem 1rem;padding-bottom:4px}
+  #tinytest li{margin-top: .2rem;}
+  #tinytest .duration{background: #c09853;
+    padding: 2px 5px;
+    font-size: .8rem;
+    border-radius: 5px;
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.2);}
+  #tinytest .test {margin-left: 2rem;}
+  #tinytest summary{padding:4px}
+  #tinytest .test.pass summary::before {
+    content: '✓'; display: inline-block; margin-right: 5px; color: #00d6b2; }
+  #tinytest .test.fail summary::before, #tinytest .test.error summary::before {
+    content: '✖'; display: inline-block; margin-right: 5px; color: #c00; }
+  #tinytest .test.error { background: #fcf2f2; }
 </style>
-<div id="wru"></div>
-<script src="vendor/wru.min.js"></script>
+<div id="tinytest"></div>
+<script src="vendor/tinytest.js"></script>
 <script>
   var TESTS = [];
 
@@ -171,55 +176,51 @@
 
     return {
       name: h && h.innerText || 'test',
-      setup: () => {
+      func: async () => {
         example.innerHTML = example.initial;
         twinspark.activate(example);
-      },
-      test: () => {
         try {
-          testfn(example)
-        } catch (e) {
-          console.error(e);
-          throw e;
+          await testfn(example)
+        } finally {
+          example.innerHTML = example.initial;
+          twinspark.activate(example);
         }
-      },
-      teardown: () => {
-        example.innerHTML = example.initial;
-        twinspark.activate(example);
+        return 1;
       }
-    };
-  }
-
-  function test(testfn) {
-    TESTS.push(makeTest(testfn));
-  }
-
-  // use to limit tests to only single function, so less noise happens when you
-  // debug a test
-  function test1(testfn) {
-    var test = makeTest(testfn);
-    setTimeout(_ => { TESTS = [test] }, 100);
-  }
-
-  function runTests(e) {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
+      };
     }
-    wru.timeout = 1000;
 
-    Element.prototype.$ = Element.prototype.querySelector;
-    Element.prototype.$$ = Element.prototype.querySelectorAll;
-    window.event = (type, attrs, el) => {
-      var e = new Event(type);
-      if (attrs) Object.assign(e, attrs);
-      el.dispatchEvent(e);
+    function test(testfn) {
+      TESTS.push(makeTest(testfn));
     }
-    window.click = (el) => event('click', {button: 0}, el);
-    window.wait = (fn, t) => setTimeout(wru.async(fn, (t || 16) + 16), t || 16);
 
-    TESTS.forEach(t => wru.test(t));
-  }
+    // use to limit tests to only single function, so less noise happens when you
+    // debug a test
+    function test1(testfn) {
+      var test = makeTest(testfn);
+      setTimeout(_ => { TESTS = [test] }, 100);
+    }
+
+    function runTests(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      Element.prototype.$ = Element.prototype.querySelector;
+      Element.prototype.$$ = Element.prototype.querySelectorAll;
+      window.event = (type, attrs, el) => {
+        var e = new Event(type);
+        if (attrs) Object.assign(e, attrs);
+        el.dispatchEvent(e);
+      }
+      window.click = (el) => event('click', {button: 0}, el);
+      window.wait = function(func, t) {
+        return new Promise(resolve => setTimeout(() => resolve(func()), t || 16))
+      }
+
+      tt.run(TESTS);
+    }
 </script>
 <!-- END TESTS -->
 
@@ -252,10 +253,11 @@
   </script>
   <script>
     XHRMock.get("/fragment", {body: prev()});
-    test(el => {
-      click(el.$('a'));
-      wait(() => wru.assert(el.$('a').innerText == 'Updated!'));
-    });
+    test(el => tt.delay(1)
+      .then(_ => click(el.$('a')))
+      .then(_ => tt.delay(1))
+      .then(_ => tt.assert('Element Updated!',
+                           el.$('a').innerText == 'Updated!')));
   </script>
 </div>
 
@@ -283,7 +285,7 @@
     XHRMock.get("/trigger", {body: prev()});
     test(el => {
       event('mouseenter', null, el.$('a'));
-      wait(() => wru.assert(el.$('a').innerText == 'Zehr gut! :)'));
+      return wait(() => tt.assert(el.$('a').innerText == 'Zehr gut! :)'));
     });
   </script>
 </div>
@@ -318,8 +320,10 @@
     test(el => {
       click(el.$$('a')[0])
       click(el.$$('a')[1])
-      wait(() => wru.assert(el.$$('a')[0].innerText == 'Did you see it?'), 320);
-      wait(() => wru.assert(el.$$('a')[1].innerText == 'This is prevented'));
+      return wait(() => {
+        tt.assert(el.$$('a')[0].innerText == 'Did you see it?')
+        tt.assert(el.$$('a')[1].innerText == 'This is prevented')
+      }, 320);
     });
   </script>
 </div>
@@ -355,7 +359,7 @@
     });
    test(el => {
      click(el.$('a'));
-     wait(() => wru.assert(el.$('span').innerText == 'a=1&b=2&b=4&c=5'));
+     return wait(() => tt.assert(el.$('span').innerText == 'a=1&b=2&b=4&c=5'));
    });
   </script>
 </div>
@@ -386,7 +390,7 @@
     XHRMock.get("/target", {body: prev()});
     test(el => {
       click(el.$('a'));
-      wait(() => wru.assert(el.$('span').innerText = 'Good catch!'));
+      return wait(() => tt.assert(el.$('span').innerText = 'Good catch!'));
     });
   </script>
 </div>
@@ -426,7 +430,7 @@
     XHRMock.get("/parent", {body: prev()});
     test(el => {
       click(el.$('a'));
-      wait(() => wru.assert(el.$('p').innerText.startsWith('Did you know')));
+      return wait(() => tt.assert(el.$('p').innerText.startsWith('Did you know')));
     });
   </script>
 </div>
@@ -543,8 +547,8 @@ than it'll only restore HTML for the first 3 clicks</p>
     XHRMock.get("/history4", {body: prev()});
     test(el => {
       click(el.$('a'));
-      wait(() => {
-        wru.assert(location.pathname == '/history');
+      return wait(() => {
+        tt.assert(location.pathname == '/history');
         history.replaceState(null, null, '/');
       });
     });
@@ -598,9 +602,9 @@ than it'll only restore HTML for the first 3 clicks</p>
     XHRMock.get("/indicator", XHRMock.delay({body: prev()}, 1000));
     test(el => {
       click(el.$('a'));
-      wait(() => wru.assert(el.$('a').classList.contains('ts-active')));
+      return wait(() => tt.assert(el.$('a').classList.contains('ts-active')));
       // I'm too lazy to wait for so long
-      //wait(() => wru.assert(!el.$('a').classList.contains('ts-active')), 1050);
+      //wait(() => tt.assert(!el.$('a').classList.contains('ts-active')), 1050);
     });
   </script>
 </div>
@@ -643,8 +647,8 @@ than it'll only restore HTML for the first 3 clicks</p>
   <script>
     test(el => {
       click(el.$('button'));
-      wait(() => wru.assert(el.$('button') == null));
-      });
+      return wait(() => tt.assert('Removed', el.$('button') == null));
+    });
   </script>
 </div>
 
@@ -666,8 +670,8 @@ than it'll only restore HTML for the first 3 clicks</p>
   <script>
     test(el => {
       click(el.$('button'));
-      wait(() => wru.assert(el.$('button')));
-      //wait(() => wru.assert(el.$('button')), 1050);
+      return wait(() => tt.assert('Removed with timeout', el.$('button')));
+      //wait(() => tt.assert(el.$('button')), 1050);
     });
   </script>
 </div>
@@ -690,8 +694,8 @@ than it'll only restore HTML for the first 3 clicks</p>
   <script>
     test(el => {
       click(el.$('button'));
-      wait(() => wru.assert(el.$('button')));
-      //wait(() => wru.assert(el.$('button')), 1050);
+      return wait(() => tt.assert('Not removed yet', el.$('button')));
+      //wait(() => tt.assert(el.$('button')), 1050);
     });
   </script>
 </div>
@@ -719,9 +723,9 @@ than it'll only restore HTML for the first 3 clicks</p>
     // i don't know if it's possible
     /*test*/(el => {
       click(el.$('button'));
-      wait(() => {
+      return wait(() => {
         console.log(getComputedStyle(el.$('button')).transform);
-        wru.assert(getComputedStyle(el.$('button')).transform != 'none')
+        tt.assert(getComputedStyle(el.$('button')).transform != 'none')
       }, 100);
     });
   </script>
@@ -821,19 +825,17 @@ than it'll only restore HTML for the first 3 clicks</p>
   <script>
     test(el => {
       var a = el.$('a');
-      wru.assert('start: ' + a.innerText, a.innerText.startsWith('No clicks'));
-      a.click();
-      wait(_ => {
-        wru.assert('click inside: ' + a.innerText, a.innerText.startsWith('Inside'));
-        el.click();
-        wait(_ => {
-          wru.assert('outside: ' + a.innerText, a.innerText.startsWith('Outside'));
-          a.click();
-          wait(_ => {
-            wru.assert('inside: ' + a.innerText, a.innerText.startsWith('Inside'));
-          });
-        });
-      });
+      return tt.delay()
+        .then(_ => tt.assert('start: ' + a.innerText, a.innerText.startsWith('No clicks')))
+        .then(_ => a.click())
+        .then(_ => tt.delay())
+        .then(_ => tt.assert('click inside: ' + a.innerText, a.innerText.startsWith('Inside')))
+        .then(_ => el.click())
+        .then(_ => tt.delay())
+        .then(_ => tt.assert('outside: ' + a.innerText, a.innerText.startsWith('Outside')))
+        .then(_ => a.click())
+        .then(_ => tt.delay())
+        .then(_ => tt.assert('inside: ' + a.innerText, a.innerText.startsWith('Inside')))
     });
   </script>
 </div>
@@ -877,8 +879,8 @@ than it'll only restore HTML for the first 3 clicks</p>
     XHRMock.get("/children", {body: prev()});
     test(el => {
       click(el.$('button'));
-      wait(() => {
-          wru.assert(el.$$('.list span').length == 4)});
+      return wait(() => {
+          tt.assert(el.$$('.list span').length == 4)});
       });
   </script>
 </div>
@@ -922,7 +924,7 @@ than it'll only restore HTML for the first 3 clicks</p>
     /*test*/(el => {
       wait(() => {
         var spans = el.$('span').children;
-        wru.assert(spans[0].innerText.slice(10) == spans[0].innerText.slice(10));
+        tt.assert(spans[0].innerText.slice(10) == spans[0].innerText.slice(10));
       });
     })
   </script>
@@ -1028,18 +1030,18 @@ than it'll only restore HTML for the first 3 clicks</p>
     });
 
     test(el => {
-      wru.assert('simple parsing',
+      tt.assert('simple parsing',
                  twinspark.parseAction('just a test')[0].commands[0].name == 'just')
-      wru.assert('a few actions',
+      tt.assert('a few actions',
                  twinspark.parseAction('command 1, command 2; action 2').length == 2)
-      wru.assert('parses string completely',
+      tt.assert('parses string completely',
                  twinspark.parseAction('this "is a string"')[0].commands[0].args[0] != 'is')
-      wru.assert('ignores punctuation in strings',
+      tt.assert('ignores punctuation in strings',
                  twinspark.parseAction('you "want, this;", right?')[0].commands[0].args[0] == 'want, this;')
       // NOTE: double escape since `\"` for JS in a string is the same as `"`,
       // and there is nothing we can do. We need to provide literal backslash
       // to the parser
-      wru.assert('check quoting escape',
+      tt.assert('check quoting escape',
                  twinspark.parseAction('this "is \\"a string"')[0].commands[0].args[0] == 'is "a string')
     });
   </script>
@@ -1072,7 +1074,7 @@ than it'll only restore HTML for the first 3 clicks</p>
     XHRMock.get("/script", {body: prev()});
     test(el => {
       click(el.$('a'));
-      wait(() => wru.assert(el.$('span').innerText == 'Double change!'), 300);
+      return wait(() => tt.assert('Updated', el.$('span').innerText == 'Double change!'), 300);
     });
   </script>
 </div>
