@@ -289,11 +289,11 @@
   /** @type {function(!(Element|DocumentFragment), !string): Element} */
   function qsf(el, selector) { // querySelectorFirst
     if (el.nodeType == 1 && el.matches(selector))
-      return el;
+      return /** @type {Element} */ (el);
     return el.querySelector(selector);
   }
 
-  /** @type {function(!(Element|DocumentFragment), !string): Array<Element>} */
+  /** @type {function(!(Element|DocumentFragment), !string): Array<!Element>} */
   function qse(el, selector) { // querySelectorEvery
     var els = Array.from(el.querySelectorAll(selector));
     if (el.nodeType == 1 && el.matches(selector))
@@ -316,13 +316,14 @@
   function elcrumbs(el, attr) {
     var result = [];
     var value;
+    var _el = el; // this is to make Closure Compiler typing happy :(
 
     do {
-      value = getattr(el, attr);
+      value = getattr(_el, attr);
       if (value) {
         result.push(value);
       }
-    } while (el = el.parentElement);
+    } while (_el = _el.parentElement);
 
     return result;
   }
@@ -330,7 +331,10 @@
 
   /// Core
 
-  /** @type {function(!Element, !Directive): void} */
+  /**
+   * @type {function(!Element, !Directive): void}
+   * @suppress {checkTypes}
+   */
   function attach(el, directive) {
     qse(el, directive.selector).forEach(directive.handler);
   }
@@ -349,13 +353,13 @@
     }
   }
 
-  /** @type {function(Element): void} */
+  /** @type {function(!Element): void} */
   function activate(el) {
     DIRECTIVES.forEach(d => attach(el, d));
     sendEvent(el, 'ts-ready');
   }
 
-  /** @type {function(Array<Element>): void} */
+  /** @type {function(!Element): void} */
   function autofocus(el) {
     var toFocus = qsf(el, '[autofocus]');
     if (toFocus) {
@@ -488,7 +492,7 @@
   }
 
   /**
-   * @type {function(Element, string): FormData}
+   * @type {function(!Element, string): FormData}
    * @suppress {reportUnknownTypes}
    */
   function eldata(el, attr) {
@@ -516,6 +520,7 @@
     return el.value;
   }
 
+  /** @type {function(!Element): !FormData} */
   function collectData(el) {
     var data = eldata(el, 'ts-data');
     var tag = el.tagName;
@@ -724,7 +729,7 @@
     return bits.reduce((el, sel, idx) => findSingleTarget(el, sel, idx > 0), el);
   }
 
-  /** @type {function(!Element, !Element, !Element): !(Element|DocumentFragment)} */
+  /** @type {function(!Element, !Element, !Element): (Element|DocumentFragment)} */
   function findReply(target, origin, reply) {
     var sel = getattr(origin, 'ts-req-selector');
 
@@ -760,19 +765,25 @@
     }
   }
 
+  // When a new element with an id enter DOM, we indicate that with `enterClass`
+  // so that it can be animated
+  function elementEnters(el) {
+    if (!el.id) return;
+
+    el.classList.add(enterClass);
+    sendEvent(el, 'ts-enter');
+  }
+
   // if there is a node with same id in an old code and in a new code,
   // temporarily set it attrs to what old code had (and then restore to new
   // values)
   function transitionAttrs(el, origin, ctx) {
-    if (!el.id.length)
-      return;
+    if (!el.id) return;
 
     var oldEl = origin.querySelector(el.tagName + "[id='" + el.id + "']");
 
     if (!oldEl) {
-      el.classList.add(enterClass);
-      sendEvent(el, 'ts-enter');
-      return;
+      return elementEnters(el);
     }
 
     var newAttrs = el.cloneNode();
@@ -783,8 +794,10 @@
     return ctx;
   }
 
-  /** @type {function(!string, !Element, !(Element|DocumentFragment), !SwapData): !(Element|DocumentFragment)} */
+  /** @type {function(string, !Element, !(Element|DocumentFragment), !SwapData): !(Element|DocumentFragment)} */
   function executeSwap(strategy, target, reply, ctx) {
+    strategy || (strategy = 'replace');
+
     if (strategy != 'morph') {
       qse(reply, '[id]').forEach(function(el) {
         transitionAttrs(el, target, ctx);
@@ -808,15 +821,19 @@
   function elementSwap(origin, replyParent, ctx) {
     var target = findTarget(origin);
     if (!target) {
-      throw extraerr(`Target element not found for origin ${el2str(origin)}`, {
-        origin: origin,
-        replyParent: replyParent
-      });
+      throw extraerr(`Target element not found for origin ${el2str(origin)}`,
+                     {origin, replyParent});
     }
 
     var reply = findReply(target, origin, replyParent);
-    var strategy = getattr(origin, 'ts-swap') || 'replace';
+    if (!reply) {
+      var sel = getattr(origin, 'ts-req-selector');
+      throw extraerr(`Cannot find specified html in response, ` +
+                     `maybe nothing to select as ${sel}`,
+                     {sel, replyParent, origin});
+    }
 
+    var strategy = getattr(origin, 'ts-swap');
     if (origin) {
       var detail = {response: ctx.response};
       var e = sendEvent(origin, 'ts-req-after', detail);
@@ -834,9 +851,9 @@
     }
     var target = qsf(document.body, sel);
     if (!target) {
-      return ERR('cannot find target for server-pushed swap', reply);
+      throw extraerr('cannot find target for server-pushed swap', {reply});
     }
-    var strategy = getattr(reply, 'ts-swap') || 'replace';
+    var strategy = getattr(reply, 'ts-swap');
     return executeSwap(strategy, target, reply, ctx);
   }
 
@@ -844,11 +861,17 @@
   function headerSwap(header, replyParent, ctx) {
     // `replace: css selector <= css selector`
     var m = header.match(/(\w+):(.+)<=(.+)/);
-    if (!m)
-      return ERR('Cannot parse ts-swap-push header value', header);
-    var target = qsf(document.body, m[2]);
-    var reply = qsf(replyParent, m[3]);
+    if (!m) {
+        throw extraerr('Cannot parse ts-swap-push header value', {header});
+    }
+
     var strategy = m[1];
+    var target = qsf(document.body, m[2]);
+    if (!target)
+        throw extraerr('cannot find target for header swap', {sel: m[2]});
+    var reply = qsf(replyParent, m[3]);
+    if (!reply)
+        throw extraerr('cannot find target for header swap', {reply, sel: m[3]});
 
     return executeSwap(strategy, target, reply, ctx);
   }
@@ -894,13 +917,23 @@
       }
     }
 
-    viapush = mapcat(qse(replyParent, '[ts-swap-push]'),
-                     reply => pushedSwap(reply, ctx));
+    viapush = qse(replyParent, '[ts-swap-push]').map(reply => {
+      try {
+        return pushedSwap(reply, ctx);
+      } catch(e) {
+        console.error(e); // do not interrupt main line
+      }
+    });
 
     if (res.headers['ts-swap-push']) {
       // swap any header requests
-      viaheader = mapcat(res.headers['ts-swap-push'].split(','),
-                         header => headerSwap(header, replyParent, ctx));
+      viaheader = res.headers['ts-swap-push'].split(',').map(header => {
+        try {
+          return headerSwap(header, replyParent, ctx)
+        } catch(e) {
+          console.error(e); // do not interrupt main line
+        }
+      });
     }
 
     swapped = swapped.concat(viapush).concat(viaheader).filter(x => x);
@@ -921,7 +954,7 @@
   // `origin` - an element where request started from, a link or a button
   // `target` - where the incoming HTML will end up
   // `reply` - incoming HTML to end up in target
-  /** @type {function(string, Array<Element>, string, Response): Array<Element>} */
+  /** @type {function(string, Array<!Element>, string, Response): Array<!Element>} */
   function swapResponse(url, origins, content, res) {
     var html = new DOMParser().parseFromString(content, 'text/html');
 
@@ -1152,7 +1185,7 @@
     }
   }
 
-  /** @type {function(Element, Event, boolean): {el: Element, event: Event, url: string, method: string, batch: boolean} } */
+  /** @type {function(!Element, Event, boolean): {el: !Element, event: Event, url: string, method: string, batch: boolean} } */
   function makeReq(el, e, batch) {
     var url = ((batch ? getattr(el, 'ts-req-batch') : getattr(el, 'ts-req')) ||
                (el.tagName == 'FORM' ? getattr(el, 'action') : getattr(el, 'href')));
