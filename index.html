@@ -79,15 +79,18 @@
         });
 
         card.querySelector('.source').addEventListener('click', function(e) {
-          var sources = card.querySelectorAll('script');
-          var html = '<h5>Example HTML</h5>' + codewrap(example.initial);
-          for (var i = 0; i < sources.length; i++) {
-            var el = sources[i];
-            var title = el.getAttribute('type') == 'text/html' ? 'Server response' : 'Tests/support scripts';
-            html += '<hr><h5>' + title + '</h5>';
-            html += codewrap(el.innerHTML);
-          }
-          example.innerHTML = html;
+          /* var sources = card.querySelectorAll('script');
+           * var html = '<h5>Example HTML</h5>' + codewrap(example.initial);
+           * for (var i = 0; i < sources.length; i++) {
+           *   var el = sources[i];
+           *   var title = el.getAttribute('type') == 'text/html' ? 'Server response' : 'Tests/support scripts';
+           *   html += '<hr><h5>' + title + '</h5>';
+           *   html += codewrap(el.innerHTML);
+           * }
+           * example.innerHTML = html; */
+          if (example.firstElementChild.tagName == 'PRE')
+            return;
+          example.innerHTML = codewrap(example.innerHTML);
           example.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
         });
       });
@@ -106,6 +109,7 @@
     body {color: #333; }
     pre code {display: inline-block; } /* or else padding is broken for blocks */
     .card-body {overflow: auto; }
+    .card-body > pre { margin-top: 0; }
     .btn-sm {margin-bottom: .2rem; }
     .mb-p {margin-bottom: 1.2rem; }
     .mt-p {margin-top: 1.2rem; }
