@@ -103,7 +103,7 @@
 
   </script>
   <style>
-    body {padding-bottom: 3em; } /* until we get footer? */
+    body {color: #333; }
     pre code {display: inline-block; } /* or else padding is broken for blocks */
     .card-body {overflow: auto; }
     .btn-sm {margin-bottom: .2rem; }
@@ -117,22 +117,31 @@
 <div class="column col-6 col-xl-8 col-lg-10 col-md-12 col-mx-auto">
 
 <h1><a href="/">TwinSpark</a></h1>
-<ul>
-  <li><a href="https://en.wikipedia.org/wiki/TwinSpark">Dual ignition engines</a>
-    from Alfa Romeo, used from 1914 in Grand Prix cars to 2009.</li>
-  <li>Declarative enhancement for HTML: simple, composable, lean. Only 8KB .min.gz.</li>
-</ul>
+
+<p>Declarative enhancement for HTML: simple, composable, lean. Only
+  <a href="https://github.com/kasta-ua/twinspark-js/raw/master/dist/twinspark.min.js">8KB .min.gz</a>.
+  That name comes from innovative
+  <a href="https://en.wikipedia.org/wiki/TwinSpark">dual ignition engines</a>
+  from Alfa Romeo — idea is that you work on client-side fluidity from both
+  server- and client-side.</p>
 
 <p>TwinSpark was heavily influenced
-  by <a href="https://intercoolerjs.org/">Intercooler</a> and the main reasons
-  for existing are following:</p>
+  by <a href="https://intercoolerjs.org/">Intercooler</a> (predecessor of
+  <a href="https://htmx.org">htmx</a>) and was written since Intercooler's
+  extensibility wasn't accomodating enough for our needs: we needed a way to
+  integrate analytics and a "batch" request — when a lot of elements on page
+  want to query same API.</p>
+
+<p>Now it's a battle-tested technology used in a several companies. On
+  a technical side, it got some nice properties:</p>
 <ul>
-  <li>Intercooler limited (and I don't mean in a bad sense) extensibility meant
-    there is no way to implement analytics.</li>
-  <li>There is no (official) way to update more than one fragment at the same time.</li>
-  <li>As a related problem, there is no way to batch several requests into a single
-    one, and our architecture makes that pretty important.</li>
-  <li>jQuery. It is 2020 on the streets already, can we just drop that?</li>
+  <li>No attribute inheritance — this is a big one, it keeps surprises away when
+    you're developing.</li>
+  <li>Actions — a little async-transparent language to do some (limited)
+    client-side scripting.</li>
+  <li>Batching — very useful if you want to use HTTP caching effectively, while
+    maintaining some personalisation for your users.</li>
+  <li>Morphing — makes form validations and animations a breeze.</li>
 </ul>
 
 <p>See at <a href="https://github.com/kasta-ua/twinspark-js">Github</a>.</p>
