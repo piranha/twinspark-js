@@ -137,11 +137,17 @@
 <ul>
   <li>No attribute inheritance — this is a big one, it keeps surprises away when
     you're developing.</li>
-  <li>Actions — a little async-transparent language to do some (limited)
+  <li><a href="">Actions</a> — a little async-transparent language to do some (limited)
     client-side scripting.</li>
-  <li>Batching — very useful if you want to use HTTP caching effectively, while
-    maintaining some personalisation for your users.</li>
-  <li>Morphing — makes form validations and animations a breeze.</li>
+  <li><a href="#batch">Batching</a> — very useful if you want to use HTTP
+    caching effectively, while maintaining some personalisation for your
+    users.</li>
+  <li><a href="#validation">Morphing</a> — makes form validations and
+    animations a breeze. Morphing tries to "save" HTML nodes from being
+    replaced, so that focus, animations and state is kept. This is useful
+    for form validation, for videos and sounds being played and so on. To use
+    this effectively, mark important elements with
+    <code>id="[unique-id]"</code>.</li>
 </ul>
 
 <p>See at <a href="https://github.com/kasta-ua/twinspark-js">Github</a>.</p>
@@ -982,16 +988,20 @@ than it'll only restore HTML for the first 3 clicks</p>
   </script>
   <script>
     XHRMock.get("/join",
-             {body:    prev(),
-              headers: {'ts-swap-push': 'replace: #join-example .tertiary <= .tertiary'}});
+                {body:    prev(),
+                 headers: {'ts-swap-push': 'replace: #join-example .tertiary <= .tertiary'}});
   </script>
 </div>
 
-<h3 id="validation-example" class="mt-p">Dynamic form validation</h4>
-<p>Form validation is a very common task. Twinspark easily allows to implement this
-  as traditional HTML form that updates on submit. However, modern applications often
-  ask for interactive forms that validate on-the-go. One way to do this is by using
-  <code>ts-swap-push</code>.</p>
+<h3 id="validation" class="mt-p">Dynamic form validation</h3>
+<p>Form validation is a common task, and TwinSpark allows to consolidate
+  validation logic on the server. Surprisingly, it could be difficult, but
+  `ts-swap="morph"` strategy allows us to just return whole new form with errors
+  and not mess up with focus.</p>
+<p><mark>Imporant bits</mark>: input `id`s and that form submit appends
+  <code>&lt;input type="submit"&gt;</code>'s value - this way you can distinguish between
+  validation and submission. Notice how `keyup` updates form on every character
+  input and it feels natural.</p>
 
 <div class="card">
   <div class="card-header">
@@ -1002,7 +1012,7 @@ than it'll only restore HTML for the first 3 clicks</p>
   <div class="card-body">
     <p>Solve this problem with odd numbers</p>
     <form action="/validate" id="form-validate"
-          ts-req ts-swap="morph" ts-trigger="submit" ts-action="prevent">
+          ts-req ts-swap="morph" ts-trigger="submit, keyup" ts-action="prevent">
       <div>
         <div class="form-number-div">
           <input id="one" name="one" value="8" type="number" placeholder="Odd" autocomplete="off">
