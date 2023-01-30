@@ -1,6 +1,13 @@
 name: TwinSpark tests
 on: [push]
 jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: browser-actions/setup-chrome@v1
+    - run: npm i
+    - run: CHROMIUM_BIN=$(which chrome) ./headless-tests.js
   types:
     runs-on: ubuntu-latest
     steps:

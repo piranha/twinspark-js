@@ -238,8 +238,10 @@
         return new Promise(resolve => setTimeout(() => resolve(func()), t || 16))
       }
 
-      tt.run(TESTS);
+      tt.test(TESTS);
     }
+
+    window.addEventListener('run-twinspark-tests', runTests);
 </script>
 <!-- END TESTS -->
 

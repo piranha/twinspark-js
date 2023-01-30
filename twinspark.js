@@ -932,6 +932,7 @@
     function morphNode(from, to, ctx) {
       if (ctx.ignoreActive && from == document.activeElement) {
         // skip focused element
+        return from;
       } else if (!to) {
         from.remove();
         return null;

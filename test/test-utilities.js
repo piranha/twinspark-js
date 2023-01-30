@@ -54,9 +54,10 @@ function print(elt) {
 (function(window) {
   var TESTS = [];
   var setup = null;
+  var SCHEDULED = null;
 
   function describe(desc, cb) {
-    TESTS = [];
+    desc = desc.replace('idiomorph', 'twinspark.morph');
     setup = null;
     TESTS.push({
       name: `<h3 class=group>${desc}</h3>`,
@@ -79,7 +80,7 @@ function print(elt) {
       }
     });
     cb();
-    tt.run(TESTS);
+    SCHEDULED || (SCHEDULED = setTimeout(() => tt.test(TESTS), 100));
   }
 
   function beforeEach(cb) {

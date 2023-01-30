@@ -23,7 +23,6 @@
 
 window.tt = (function() {
   var EL = document.getElementById('tinytest'),
-      SUITE = [],
       RESULTS = [];
 
   function escape(s) {
@@ -50,17 +49,31 @@ window.tt = (function() {
       cls = 'error', desc = 'Exception',
       details = `<pre><code>${err.stack}</code></pre>`;
     } else if (flen) {
-      cls = 'fail', desc = `${flen / tlen} Tests Failed`;
+      cls = 'fail', desc = `${flen} / ${tlen} Tests Failed`;
     } else {
       cls = 'pass', desc = `${tlen} Tests Passed`;
     }
 
-    duration = duration > 5 ? `in <span class=duration>${duration}ms</span>` : '';
+    var dt = duration > 5 ? `in <span class=duration>${duration}ms</span>` : '';
     var t = `<div class="test ${cls}"><details>
-                 <summary>${name}: ${desc} ${duration}</summary>
+                 <summary>${name}: ${desc} ${dt}</summary>
                  <ul>${details}</ul>
                </details></div>`;
     EL.insertAdjacentHTML('beforeend', t);
+
+    if (err) {
+      console.error(`✖ ${name}: Exception ${err}`);
+    } else if (flen) {
+      console.error(`✖ ${name}: ${desc}`);
+    } else {
+      console.log(`✓ ${name}: ${desc}`);
+    }
+
+    return {name:     name,
+            success:  !(err || flen),
+            error:    err,
+            results:  results,
+            duration: duration}
   }
 
   function assert(desc, result) {
@@ -72,29 +85,30 @@ window.tt = (function() {
     return result;
   }
 
-  function test(name, func, setup) {
-    SUITE.push({name, func, setup});
-  }
-
-  async function run(tests) {
-    tests = tests || SUITE;
+  async function test(tests) {
+    tests = Array.isArray(tests) ? tests : [tests];
+    var report = [];
     for (var test of tests) {
       var start = performance.now();
       try {
         test.setup && test.setup();
         await test.func();
-        doReport(test.name, RESULTS, performance.now() - start);
+        report.push(doReport(test.name, RESULTS, performance.now() - start));
       } catch(e) {
-        doReport(test.name, RESULTS, performance.now() - start, e);
+        report.push(doReport(test.name, RESULTS, performance.now() - start, e));
         console.error(e);
       }
       RESULTS = [];
     }
+    EL.dispatchEvent(new CustomEvent('tt-done', {
+      detail: {success: report.filter(r => !r.success).length == 0,
+               report: report}}));
+    return report;
   }
 
   function delay(t) {
     return new Promise(resolve => setTimeout(resolve, t || 0, true));
   }
 
-  return {test, assert, run, delay};
+  return {test, assert, delay};
 })();
