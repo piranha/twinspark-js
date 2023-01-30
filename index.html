@@ -1046,7 +1046,7 @@ than it'll only restore HTML for the first 3 clicks</p>
       div.innerHTML = html;
       var form = div.querySelector('form');
 
-      XHRMock.post(/\/validate/, function(req, res) {
+      XHRMock.post(/\/validate/, XHRMock.delay(function(req, res) {
         var params = new URLSearchParams(req.body());
         var one = parseInt(params.get('one'), 10),
             two = parseInt(params.get('two'), 10);
@@ -1087,7 +1087,7 @@ than it'll only restore HTML for the first 3 clicks</p>
         }
 
         return res.status(200).body(form.outerHTML);
-      })
+      }, 100))
     })(prev(2));
   </script>
 

@@ -930,7 +930,9 @@
 
     /** @type {function(!Node, Node, !Object): Node} */
     function morphNode(from, to, ctx) {
-      if (!to) {
+      if (ctx.ignoreActive && from == document.activeElement) {
+        // skip focused element
+      } else if (!to) {
         from.remove();
         return null;
       } else if (!isSimilar(from, to)) {
@@ -1016,11 +1018,15 @@
     }
 
     switch (strategy) {
-    case 'morph':       morph(target, reply, {
-      cb: (type, el) => {
-        type == 'node-added' && el.nodeType == 1 && qse(el, '[id]').forEach(elementEnters)
-      }
-    });                                                                break;
+    case 'morph-all':
+    case 'morph':
+      morph(target, reply, {
+        ignoreActive: strategy == 'morph',
+        cb: (type, el) => {
+          type == 'node-added' && el.nodeType == 1 && qse(el, '[id]').forEach(elementEnters)
+        }
+      });
+      break;
     case 'replace':     target.replaceWith(reply);                     break;
     case 'inner':       target.replaceChildren(reply);                 break;
     case 'prepend':     target.prepend(reply);                         break;
