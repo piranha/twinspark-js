@@ -930,8 +930,10 @@
 
     /** @type {function(!Node, Node, !Object): Node} */
     function morphNode(from, to, ctx) {
-      if (ctx.ignoreActive && from == document.activeElement) {
-        // skip focused element
+      if (ctx.ignoreActive &&
+          from == document.activeElement &&
+          (from.tagName == 'INPUT' || from.tagName == 'TEXTAREA')) {
+        // skip focused element, if it's input
         return from;
       } else if (!to) {
         from.remove();
