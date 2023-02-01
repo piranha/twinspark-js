@@ -901,6 +901,11 @@
       var potentialMatches = 0;
 
       do {
+        // there are potential id matches, bail out of soft matching
+        if ((el.nodeType == 1 ? qse(el, '[id]').length : 0) +
+            (reply.nodeType == 1 ? qse(reply, '[id]').length : 0)) {
+          return null;
+        }
         if (isSimilar(el, reply)) {
           return el;
         }
@@ -943,11 +948,6 @@
         ctx.cb('node-added', to);
         return to;
       } else {
-        if (from.nodeType == Node.DOCUMENT_NODE) {
-          from = from.documentElement;
-          to = to.documentElement;
-        }
-
         syncAttrs(from, to);
         if (from.nodeType == 1 && to.nodeType == 1) {
           morphChildren(/** @type !Element */ (from), /** @type !Element */ (to), ctx);
@@ -1002,6 +1002,10 @@
     /** @type {function(!Node, Node, MorphContext): Node} */
     function morph(target, reply, ctx={}) {
       ctx.cb || (ctx.cb = function () {});
+      if (target && target.nodeType == Node.DOCUMENT_NODE)
+        target = target.documentElement;
+      if (reply && reply.nodeType == Node.DOCUMENT_NODE)
+        reply = reply.documentElement;
       return morphNode(target, reply, ctx);
     }
 
@@ -1020,16 +1024,18 @@
       });
     }
 
+    var mctx = {
+      ignoreActive: strategy == 'morph',
+      cb: (type, el) => {
+        if (type == 'node-added' && el.nodeType == 1) {
+          activate(el);
+          qse(el, '[id]').forEach(elementEnters);
+        }
+      }
+    }
     switch (strategy) {
     case 'morph-all':
-    case 'morph':
-      morph(target, reply, {
-        ignoreActive: strategy == 'morph',
-        cb: (type, el) => {
-          type == 'node-added' && el.nodeType == 1 && qse(el, '[id]').forEach(elementEnters)
-        }
-      });
-      break;
+    case 'morph':       morph(target, reply, mctx);                    break;
     case 'replace':     target.replaceWith(reply);                     break;
     case 'inner':       target.replaceChildren(reply);                 break;
     case 'prepend':     target.prepend(reply);                         break;
