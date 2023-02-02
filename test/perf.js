@@ -1,3 +1,5 @@
+// -*- js-indent-level: 4 -*-
+
 describe("Tests to compare perf with morphdom", function(){
 
     beforeEach(function() {
@@ -32,15 +34,21 @@ describe("Tests to compare perf with morphdom", function(){
             console.log("Content Size");
             console.log("  Start: " + start.length + " characters");
             console.log("  End  : " + end.length + " characters");
-            console.time('idiomorph timing')
-            Idiomorph.morph(startElt, endElt);
+            console.time('twinspark.morph timing')
+            for (var i = 0; i < 10; i++) {
+                endElt = make(end);
+                Idiomorph.morph(startElt, endElt);
+            }
             // startElt.outerHTML.should.equal(end);
-            console.timeEnd('idiomorph timing')
+            console.timeEnd('twinspark.morph timing')
 
             let startElt2 = make(start);
             let endElt2 = make(end);
             console.time('morphdom timing')
-            morphdom(startElt2, endElt2, {});
+            for (var i = 0; i < 10; i++) {
+                endElt = make(end);
+                morphdom(startElt2, endElt2, {});
+            }
             // wow morphdom doesn't match...
             // startElt2.outerHTML.should.equal(end);
             console.timeEnd('morphdom timing')

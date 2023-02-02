@@ -14,11 +14,8 @@
   var attrsToSettle = cget('attrs-to-settle',
                            'class,style,width,height').split(',');
   var settleDelay   = iget('settle-delay', 20);
-  var enterClass    = cget('enter-class',    'ts-enter');
-  var requestClass  = cget('request-class',  'ts-request');
-  var addedClass    = cget('added-class',    'ts-added');
-  var swappingClass = cget('swap-class',     'ts-swapping');
-  var settlingClass = cget('settling-class', 'ts-settling');
+  var enterClass    = cget('enter-class',  'ts-enter');
+  var removeClass   = cget('remove-class', 'ts-remove');
 
   /// Internal variables
 
@@ -286,15 +283,17 @@
 
 
   /// DOM querying
-  /** @type {function(!(Element|DocumentFragment), !string): Element} */
+  /** @type {function(!Node, !string): Element} */
   function qsf(el, selector) { // querySelectorFirst
     if (el.nodeType == 1 && el.matches(selector))
-      return /** @type {Element} */ (el);
-    return el.querySelector(selector);
+      return /** @type {!Element} */ (el);
+    return el.querySelector ? el.querySelector(selector) : null;
   }
 
-  /** @type {function(!(Element|DocumentFragment), !string): Array<!Element>} */
+  /** @type {function(!Node, !string): !Array<!Element>} */
   function qse(el, selector) { // querySelectorEvery
+    if (!el.querySelectorAll)
+      return [];
     var els = Array.from(el.querySelectorAll(selector));
     if (el.nodeType == 1 && el.matches(selector))
       els.unshift(el);
@@ -774,10 +773,11 @@
   // When a new element with an id enter DOM, we indicate that with `enterClass`
   // so that it can be animated
   function elementEnters(el) {
-    if (!el.id) return;
+    if (el.nodeType != 1)
+      return;
 
     el.classList.add(enterClass);
-    sendEvent(el, 'ts-enter');
+    setTimeout(() => el.classList.remove(enterClass));
   }
 
   // if there is a node with same id in an old code and in a new code,
@@ -804,6 +804,40 @@
   /// MORPH, thanks to idiomorph and nanomorph
   /// Core algorithm from https://github.com/bigskysoftware/idiomorph
   var morph = (function() {
+    /** @type {function(!Node, !Object): void} */
+    function cleanRemove(el, ctx) {
+      if (el.nodeType != 1) {
+        el.remove();
+        ctx.cb('node-remove', el);
+        return;
+      }
+      el.classList.add(removeClass);
+
+      // another approach would be to use `transitionrun`/`transitionend`
+      // events, but basic performance testing did not show a noticeable
+      // difference
+      var animations = el.getAnimations()
+          .filter(a => a instanceof window.CSSTransition);
+      if (!animations.length) {
+        return el.remove();
+      }
+
+      Promise.all(animations.map(a => a.finished))
+        .then(() => {
+          el.remove();
+          ctx.cb('node-remove', el);
+        });
+    }
+
+    /** @type {function(!Node, !Object): void} */
+    function cleanInsert(el, ctx) {
+      if (el instanceof HTMLElement) {
+        activate(el);
+        elementEnters(el);
+      }
+      ctx.cb('node-insert', el);
+    }
+
     function syncattr(from, to, attr) {
       var value = getattr(to, attr);
       if (value != getattr(from, attr)) {
@@ -876,39 +910,40 @@
       if (reply.nodeType != 1)
         return null;
 
-      var replyIds = qse(/** @type {!Element} */ (reply), '[id]')
-          .map(el => '#' + el.id)
-          .join(',');
+      var el = /** @type {!Element} */ (reply);
+      var replyIds = qse(el, '[id]').map(el => '#' + el.id).join(',');
       if (!replyIds)
         return null;
 
-      // Redefine variable so that Closure Compiler will stop complaining about
-      // types in `while` clause
-      var el = target;
+      el = /** @type {!Element} */ (target);
       do {
         // check if any element having id like those coming in `reply`
-        if (el.nodeType == 1 && qsf(/** @type {!Element} */ (el), replyIds)) {
-          return /** @type {!Element} */ (el);
+        if (qsf(el, replyIds)) {
+          return el;
         }
-      } while (el = el.nextSibling);
+      } while (el = el.nextElementSibling);
       return null;
     }
 
-    /** @type {function(!Node, !Node): Node} */
-    function findSoftMatch(target, reply) {
+    /** @type {function(!Node, !Node, Set<string>): Node} */
+    function findSoftMatch(target, reply, incomingIds) {
       var el = target;
       var nextReply = reply.nextSibling;
       var potentialMatches = 0;
 
       do {
+        var ids = qse(el, '[id]').map(el => el.id);
         // there are potential id matches, bail out of soft matching
-        if ((el.nodeType == 1 ? qse(el, '[id]').length : 0) +
-            (reply.nodeType == 1 ? qse(reply, '[id]').length : 0)) {
+        if (ids.length && intersection(incomingIds, ids).size) {
           return null;
         }
-        if (isSimilar(el, reply)) {
+
+        // check similarities only if there is no ids inside of compared
+        // elements, in other case we want a clean removal to start animations
+        if (!ids.length && !qse(reply, '[id]').length && isSimilar(el, reply)) {
           return el;
         }
+
         if (isSimilar(el, nextReply)) {
           potentialMatches++;
           nextReply = nextReply.nextSibling;
@@ -924,11 +959,11 @@
       return null;
     }
 
-    function removeNodesBetween(start, end) {
+    function removeNodesBetween(start, end, ctx) {
       while (start !== end) {
         var todelete = start;
         start = start.nextSibling;
-        todelete.remove();
+        cleanRemove(todelete, ctx);
       }
       return end;
     }
@@ -941,11 +976,16 @@
         // skip focused element, if it's input
         return from;
       } else if (!to) {
-        from.remove();
+        cleanRemove(from, ctx);
         return null;
       } else if (!isSimilar(from, to)) {
-        from.replaceWith(to);
-        ctx.cb('node-added', to);
+        if (!from.parentElement) {
+          from.replaceWith(to);
+        } else {
+          from.parentElement.insertBefore(to, from.nextSibling);
+          cleanRemove(from, ctx);
+          cleanInsert(to, ctx);
+        }
         return to;
       } else {
         syncAttrs(from, to);
@@ -961,38 +1001,44 @@
       var target = from.firstChild;
       var nextReply = to.firstChild;
 
+      var incomingIds = new Set(qse(to, '[id]').map(el => el.id));
+
       while (nextReply) {
         var reply = nextReply;
         nextReply = reply.nextSibling;
 
         if (!target) {
           from.appendChild(reply);
-          ctx.cb('node-added', reply);
+          cleanInsert(reply, ctx);
           continue;
         }
 
         var idsMatch = findIdsMatch(target, reply);
         if (idsMatch) {
-          target = removeNodesBetween(target, idsMatch).nextSibling;
+          target = removeNodesBetween(target, idsMatch, ctx).nextSibling;
           morphNode(idsMatch, reply, ctx);
           continue;
         }
 
-        var softMatch = findSoftMatch(target, reply);
+        // if (reply.className == 'page-item' && reply.innerText == '...')
+        //   debugger;
+
+        var softMatch = findSoftMatch(target, reply, incomingIds);
         if (softMatch) {
-          target = removeNodesBetween(target, softMatch).nextSibling;
+          target = removeNodesBetween(target, softMatch, ctx).nextSibling;
           morphNode(softMatch, reply, ctx);
           continue;
         }
 
         // can't morph, just insert it
         from.insertBefore(reply, target);
-        ctx.cb('node-added', reply);
+        cleanInsert(reply, ctx);
       }
 
       // remove leftovers
       if (target) {
-        removeNodesBetween(target, from.lastChild).remove();
+        target = removeNodesBetween(target, from.lastChild, ctx);
+        cleanRemove(target, ctx);
       }
     }
 
@@ -1024,15 +1070,7 @@
       });
     }
 
-    var mctx = {
-      ignoreActive: strategy == 'morph',
-      cb: (type, el) => {
-        if (type == 'node-added' && el.nodeType == 1) {
-          activate(el);
-          qse(el, '[id]').forEach(elementEnters);
-        }
-      }
-    }
+    var mctx = {ignoreActive: strategy == 'morph'}
     switch (strategy) {
     case 'morph-all':
     case 'morph':       morph(target, reply, mctx);                    break;

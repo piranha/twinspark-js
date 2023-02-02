@@ -1,19 +1,36 @@
+// -*- js-indent-level: 4 -*-
+
 describe("Tests to ensure that idiomorph merges properly", function(){
 
     beforeEach(function() {
         clearWorkArea();
     });
 
-    function testFidelity(start, end) {
+    function testFidelity(start, end, done) {
         let initial = make(start);
         let final = make(end);
         Idiomorph.morph(initial, final);
-        if (initial.outerHTML !== end) {
-            console.log("HTML after morph: " + initial.outerHTML);
-            console.log("Expected:         " + end);
+
+        function compare() {
+            if (initial.outerHTML !== end) {
+                console.log("HTML after morph: " + initial.outerHTML);
+                console.log("Expected:         " + end);
+            }
+            initial.outerHTML.should.equal(end);
         }
-        initial.outerHTML.should.equal(end);
+
+        if (done) {
+            setTimeout(() => {
+                compare();
+                done();
+            }, 2);
+            return;
+        } else {
+            compare();
+        }
     }
+
+    window.testFidelity = testFidelity;
 
     // bootstrap test
     it('morphs text correctly', function()
@@ -38,12 +55,12 @@ describe("Tests to ensure that idiomorph merges properly", function(){
 
     it('drops content', function()
     {
-        testFidelity("<div><p>A</p><p>B</p></div>", "<div></div>")
+        testFidelity("<div><p>A</p><p>B</p></div>", "<div></div>");
     });
 
-    it('adds content', function()
+    it('adds content', function(done)
     {
-        testFidelity("<div></div>", "<div><p>A</p><p>B</p></div>")
+        testFidelity("<div></div>", '<div><p class="">A</p><p class="">B</p></div>', done)
     });
 
     it('should morph a node', function()
@@ -56,17 +73,13 @@ describe("Tests to ensure that idiomorph merges properly", function(){
         testFidelity("<p>hello world</p>", "<p>hello world</p>")
     });
 
-    it('should replace a node', function()
+    it('should replace a node', function(done)
     {
-        testFidelity("<main><p>hello world</p></main>", "<main><div>hello you</div></main>")
+        testFidelity("<main><p>hello world</p></main>", '<main><div class="">hello you</div></main>', done)
     });
 
-    it('should append a node', function()
+    it('should append a node', function(done)
     {
-        testFidelity("<main></main>", "<main><p>hello you</p></main>")
+        testFidelity("<main></main>", '<main><p class="">hello you</p></main>', done)
     });
-
-
-
-
 })

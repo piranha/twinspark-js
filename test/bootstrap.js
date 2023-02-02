@@ -1,3 +1,5 @@
+// -*- js-indent-level: 4 -*-
+
 describe("Bootstrap test", function(){
 
     beforeEach(function() {
@@ -48,7 +50,7 @@ describe("Bootstrap test", function(){
         let d2 = div1.querySelector("#d2")
         let d3 = div1.querySelector("#d3")
 
-        let morphTo = '<div id="root2"><div><div id="d2">E</div></div><div><div id="d3">F</div></div><div><div id="d1">D</div></div></div>';
+        let morphTo = '<div id="root2"><div><div id="d2">E</div></div><div><div id="d3">F</div></div><div class=""><div id="d1">D</div></div></div>';
         let div2 = make(morphTo)
 
         print(div1);
@@ -62,13 +64,14 @@ describe("Bootstrap test", function(){
         d2.innerHTML.should.equal("E");
         d3.innerHTML.should.equal("F");
 
-        console.log(morphTo);
-        console.log(div1.outerHTML);
-        div1.outerHTML.should.equal(morphTo)
-
         setTimeout(()=> {
+            console.log(morphTo);
+            console.log(div1.outerHTML);
+            // in timeout, so that ts-remove/ts-enter have a chance to disappear
+            div1.outerHTML.should.equal(morphTo)
+
             console.log("idiomorph mutations : ", div1.mutations);
-            div1.mutations.attribute.should.equal(1);
+            div1.mutations.attribute.should.equal(4);
             div1.mutations.childrenAdded.should.equal(1);
             div1.mutations.childrenRemoved.should.equal(1);
             done();
