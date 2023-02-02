@@ -806,9 +806,11 @@
   var morph = (function() {
     /** @type {function(!Node, !Object): void} */
     function cleanRemove(el, ctx) {
+      // callback before anything else to have a chance to do something
+      ctx.cb('node-remove', el);
+
       if (el.nodeType != 1) {
         el.remove();
-        ctx.cb('node-remove', el);
         return;
       }
       el.classList.add(removeClass);
@@ -825,17 +827,17 @@
       Promise.all(animations.map(a => a.finished))
         .then(() => {
           el.remove();
-          ctx.cb('node-remove', el);
         });
     }
 
     /** @type {function(!Node, !Object): void} */
     function cleanInsert(el, ctx) {
+      // callback before anything so that there is a hook to change something
+      ctx.cb('node-insert', el);
       if (el instanceof HTMLElement) {
         activate(el);
         elementEnters(el);
       }
-      ctx.cb('node-insert', el);
     }
 
     function syncattr(from, to, attr) {
