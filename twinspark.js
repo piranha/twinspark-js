@@ -14,7 +14,7 @@
   var attrsToSettle = cget('attrs-to-settle',
                            'class,style,width,height').split(',');
   var settleDelay   = iget('settle-delay', 20);
-  var enterClass    = cget('enter-class',  'ts-enter');
+  var insertClass   = cget('insert-class', 'ts-insert');
   var removeClass   = cget('remove-class', 'ts-remove');
 
   /// Internal variables
@@ -770,14 +770,10 @@
     }
   }
 
-  // When a new element with an id enter DOM, we indicate that with `enterClass`
-  // so that it can be animated
-  function elementEnters(el) {
-    if (el.nodeType != 1)
-      return;
-
-    el.classList.add(enterClass);
-    setTimeout(() => el.classList.remove(enterClass));
+  /** @type {function(!Element): void} */
+  function elementInserted(el) {
+    el.classList.add(insertClass);
+    setTimeout(() => el.classList.remove(insertClass));
   }
 
   // if there is a node with same id in an old code and in a new code,
@@ -789,7 +785,7 @@
     var oldEl = origin.querySelector(el.tagName + "[id='" + el.id + "']");
 
     if (!oldEl) {
-      return elementEnters(el);
+      return elementInserted(el);
     }
 
     var newAttrs = el.cloneNode();
@@ -836,7 +832,7 @@
       ctx.cb('node-insert', el);
       if (el instanceof HTMLElement) {
         activate(el);
-        elementEnters(el);
+        elementInserted(el);
       }
     }
 
@@ -877,7 +873,8 @@
         syncattr(from, to, 'selected');
       } else if (from.tagName == 'TEXTAREA') {
         syncattr(from, to, 'value');
-        // TODO what is this stuff :(
+        // NOTE what is this stuff, is it necessary? Can't find a test case, but
+        // nanomorph is doing that.
         if (from.firstChild && from.firstChild.nodeValue != to.value) {
           from.firstChild.nodeValue = to.value;
         }
@@ -992,7 +989,10 @@
       } else {
         syncAttrs(from, to);
         if (from.nodeType == 1 && to.nodeType == 1) {
-          morphChildren(/** @type !Element */ (from), /** @type !Element */ (to), ctx);
+          morphChildren(
+            /** @type !Element */ (from),
+            /** @type !Element */ (to),
+            ctx);
         }
         return from;
       }
@@ -1021,9 +1021,6 @@
           morphNode(idsMatch, reply, ctx);
           continue;
         }
-
-        // if (reply.className == 'page-item' && reply.innerText == '...')
-        //   debugger;
 
         var softMatch = findSoftMatch(target, reply, incomingIds);
         if (softMatch) {

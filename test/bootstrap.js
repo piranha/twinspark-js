@@ -67,7 +67,7 @@ describe("Bootstrap test", function(){
         setTimeout(()=> {
             console.log(morphTo);
             console.log(div1.outerHTML);
-            // in timeout, so that ts-remove/ts-enter have a chance to disappear
+            // in timeout, so that ts-remove/ts-insert have a chance to disappear
             div1.outerHTML.should.equal(morphTo)
 
             console.log("idiomorph mutations : ", div1.mutations);
