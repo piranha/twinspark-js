@@ -16,6 +16,7 @@
   var settleDelay   = iget('settle-delay', 20);
   var insertClass   = cget('insert-class', 'ts-insert');
   var removeClass   = cget('remove-class', 'ts-remove');
+  var activeClass   = cget('active-class', 'ts-active');
 
   /// Internal variables
 
@@ -55,10 +56,10 @@
       o.el = el;
     },
 
-    remove: arity({
-      1: function(o) { o.el.remove(); },
-      2: function(sel, o) { findTarget(o.el, sel).remove(); }
-    }),
+    remove: arity(
+      function(o) { o.el.remove(); },
+      function(sel, o) { findTarget(o.el, sel).remove(); }
+    ),
 
     wait: function(eventname, o) {
       return new Promise(function(resolve) {
@@ -72,35 +73,35 @@
     "class^":    function(cls, o) { o.el.classList.toggle(cls); },
     classtoggle: function(cls, o) { o.el.classList.toggle(cls); },
 
-    text: arity({
-      1: function(o) {
+    text: arity(
+      function(o) {
         o.el.innerText = o.input;
         return o.input;
       },
-      2: function(value, o) {
+      function(value, o) {
         o.el.innerText = value;
         return value;
       }
-    }),
+    ),
 
-    html: arity({
-      1: function(o) {
+    html: arity(
+      function(o) {
         o.el.innerHTML = o.input;
         return o.input;
       },
-      2: function(value, o) {
+      function(value, o) {
         o.el.innerHTML = value;
         return value;
       }
-    }),
+    ),
 
-    attr: arity({
-      2: function(name, o) { return o.el[name]; },
-      3: function(name, value, o) {
+    attr: arity(
+      function(name, o) { return o.el[name]; },
+      function(name, value, o) {
         o.el[name] = value;
         return value;
       }
-    }),
+    ),
 
     log: function() {
       var args = parseArgs(arguments);
@@ -118,8 +119,19 @@
       console.error.bind(console, 'TwinSpark error:') :
       console.log.bind(console, 'TwinSpark error:');
 
-  /** @type{function(Object): Function} */
-  function arity(funcs) {
+  /** @type{function(...Function): Function} */
+  function arity(/* funcs*/) {
+    var funcs = [].reduce.call(arguments, (acc, func) => {
+      if (acc[func.length]) {
+        throw extraerr('Arity dispatch: duplicate function with the same number of arguments', {
+          length: func.length,
+          func: func.length,
+          duplicate: acc[func.length],
+        });
+      }
+      acc[func.length] = func;
+      return acc;
+    }, {});
     return function() {
       var len = arguments.length;
       var func = funcs[len];
@@ -1333,7 +1345,7 @@
 
     origins.forEach(function (el) {
       el.setAttribute('aria-busy', 'true');
-      el.classList.add('ts-active');
+      el.classList.add(activeClass);
       el['ts-active-xhr'] = query.xhr;
     });
 
