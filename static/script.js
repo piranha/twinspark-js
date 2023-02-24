@@ -55,7 +55,7 @@ function makeel(tag, attrs, content) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  [].forEach.call(document.querySelectorAll('.card'), function(card) {
+  [].forEach.call(document.querySelectorAll('.card.example'), function(card) {
     var example = card.querySelector('.card-body');
     example.initial = example.innerHTML;
 

@@ -11,7 +11,7 @@
   <script src="vendor/highlight.min.js"></script>
   <script>hljs.highlightAll();</script>
   <script src="twinspark.js" data-timeout="5000" data-history="3"></script>
-  <script src="script.js"></script>
+  <script src="static/script.js"></script>
   <style>
     body {color: #333; }
     pre code {display: inline-block; } /* or else padding is broken for blocks */
@@ -219,7 +219,7 @@
   with that and why it is so - read on.</p>
 
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -249,7 +249,7 @@
   clicks elsewhere, but sometimes you want more, like triggering on being seen
   or hovered:</p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -282,7 +282,7 @@
   an empty string, or a zero) - this stops that request.</p>
 
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -321,7 +321,7 @@
   into an array (like normal query string or form data). You can override that by
   specifying key with null or empty string (see demo source).</p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -353,7 +353,7 @@
   can be done with <code>ts-target</code> attribute, which takes a CSS
   selector.</p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -391,7 +391,7 @@
   that, which TwinSpark maps to modifiers: <code>inherit</code>,
   <code>parent</code>, <code>child</code>, <code>sibling</code>.</p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -425,7 +425,7 @@
   supplying a TwinSpark selector as an argument. To point directly to
   the current target element, use the <code>target</code> keyword.</p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -463,7 +463,7 @@
   way to access it is to create a twinspark extension that sets
   <code>target</code> to <code>event.target</code>:</p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -499,7 +499,7 @@
 uses IndexedDB), so if you click all of those links and then go back you'll see
 than it'll only restore HTML for the first 3 clicks</p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -542,7 +542,7 @@ than it'll only restore HTML for the first 3 clicks</p>
 <p>It's really irritating when you click a link and nothing happens for some time. Luckily
   TwinSpark makes it really easy: it adds class <code>ts-active</code> to an element, enhanced with <code>ts-req</code>.</p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -612,7 +612,7 @@ than it'll only restore HTML for the first 3 clicks</p>
 </ul>
 
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo of <code>remove</code></h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -635,7 +635,7 @@ than it'll only restore HTML for the first 3 clicks</p>
 </div>
 
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo of <code>delay</code></h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -659,7 +659,7 @@ than it'll only restore HTML for the first 3 clicks</p>
 </div>
 
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo of <code>wait</code> (waiting for an event to happen)</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -683,7 +683,7 @@ than it'll only restore HTML for the first 3 clicks</p>
 </div>
 
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo of <code>animate</code> (no Safari here)</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -714,7 +714,7 @@ than it'll only restore HTML for the first 3 clicks</p>
 </div>
 
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo of multiple actions</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -737,7 +737,7 @@ than it'll only restore HTML for the first 3 clicks</p>
      <p>In case you need to implement some weird functionality, there is an extension point to </p>
 
 
-     <div class="card">
+     <div class="card example">
      <div class="card-header">
      <h5 class="d-inline mr-2">Demo (no Safari here)</h5>
      <button class="btn btn-link btn-sm reset">Reset</button>
@@ -757,7 +757,7 @@ than it'll only restore HTML for the first 3 clicks</p>
 <p>Doing something when element is almost visible makes it possible to implement lazy
   loading and various analytical events</p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -786,7 +786,7 @@ than it'll only restore HTML for the first 3 clicks</p>
   probably going to remove that modal you calling it on - using <code>once</code>
   will clean up your listeners so you won't get memory leaks.</p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -836,7 +836,7 @@ than it'll only restore HTML for the first 3 clicks</p>
   to a parent. For this and similar use cases there is a modifier <code>children</code>
   in <code>ts-req-selector</code>.</p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -875,7 +875,7 @@ than it'll only restore HTML for the first 3 clicks</p>
   then status of wishlisted products is checked. It's a pattern we use often and
   we really wanted it to be a first-class feature.</p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -923,7 +923,7 @@ than it'll only restore HTML for the first 3 clicks</p>
   <code>[replace strategy]: [selector-in-document] <= [selector-in-response]</code></p>
 
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -970,7 +970,7 @@ than it'll only restore HTML for the first 3 clicks</p>
   validation and submission. Notice how `keyup` updates form on every character
   input and it feels natural.</p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -1064,7 +1064,7 @@ than it'll only restore HTML for the first 3 clicks</p>
   understood.</p>
 
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -1095,7 +1095,7 @@ than it'll only restore HTML for the first 3 clicks</p>
   the source of the next example to see how it works.
 </p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -1139,7 +1139,7 @@ than it'll only restore HTML for the first 3 clicks</p>
   element does not execute JavaScript inside that element. TwinSpark handles
   that for you, check it out.</p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -1176,7 +1176,7 @@ than it'll only restore HTML for the first 3 clicks</p>
   then stopped for 200 ms.
 </p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -1224,7 +1224,7 @@ than it'll only restore HTML for the first 3 clicks</p>
 </ol>
 <br/>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -1276,7 +1276,7 @@ than it'll only restore HTML for the first 3 clicks</p>
 
 <h3 id="progressbar" class="mt-p">Progress bar</h3>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
@@ -1348,7 +1348,7 @@ than it'll only restore HTML for the first 3 clicks</p>
   JS is enabled and auto-submit form.
 </p>
 
-<div class="card">
+<div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo</h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
