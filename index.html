@@ -1358,18 +1358,18 @@ than it'll only restore HTML for the first 3 clicks</p>
   <div class="card-body" ts-target="child .out">
     <form method="get" action="/filters" ts-target="inherit" ts-req>
       <div><b>Brand</b></div>
-      <div class="filter">
+      <span class="filter">
         <input type="checkbox" name="brand" value="adidas">
-        <a href="?brand=adidas" ts-action="togglebox, submit">Adidas</a>
-      </div>
-      <div class="filter">
+        <a class="btn" href="?brand=adidas" ts-action="togglebox, submit">Adidas</a>
+      </span>
+      <span class="filter">
         <input type="checkbox" name="brand" value="nike">
-        <a href="?brand=nike" ts-action="togglebox, submit">Nike</a>
-      </div>
-      <div class="filter">
+        <a class="btn" href="?brand=nike" ts-action="togglebox, submit">Nike</a>
+      </span>
+      <span class="filter">
         <input type="checkbox" name="brand" value="puma">
-        <a href="?brand=puma" ts-action="togglebox, submit">Puma</a>
-      </div>
+        <a class="btn" href="?brand=puma" ts-action="togglebox, submit">Puma</a>
+      </span>
     </form>
     <hr>
     <p class="out">Selected filters: </p>
@@ -1392,6 +1392,11 @@ than it'll only restore HTML for the first 3 clicks</p>
 
   <style>
     .filter [type="checkbox"] { display: none; }
+    .filter [type="checkbox"]:checked + a { /* copy of btn-primary */
+      background: #5755d9;
+      border-color: #4b48d6;
+      color: #fff;
+    }
   </style>
 </div>
 

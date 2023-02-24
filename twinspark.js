@@ -545,7 +545,7 @@
         data.append(focused.name, focused.value);
       } else if (e?.type == 'submit') {
         var submit = qsf(el, '[type=submit]');
-        if (submit.name && submit.value && !data.has(submit.name)) {
+        if (submit && submit.name && submit.value && !data.has(submit.name)) {
           data.append(submit.name, submit.value);
         }
       }
