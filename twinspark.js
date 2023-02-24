@@ -803,7 +803,7 @@
     var newAttrs = el.cloneNode();
     cloneAttrs(oldEl, el);
     ctx.tasks.push(function() {
-      cloneAttrs(newAttrs, oldEl);
+      cloneAttrs(newAttrs, el);
     });
     return ctx;
   }
