@@ -1299,9 +1299,9 @@ than it'll only restore HTML for the first 3 clicks</p>
   </style>
 
   <script type="text/html">
-    <div ts-req="/progress" ts-trigger="load delay 500">
+    <div ts-req="/progress?current=XXX" ts-trigger="load delay 500">
       <h3>Job in progress</h3>
-      <div class="bar bar-sm">
+      <div class="bar bar-sm mb-p">
         <div id="pb1" class="bar-item" role="progressbar" style="width:XXX%;"></div>
       </div>
     </div>
@@ -1310,7 +1310,7 @@ than it'll only restore HTML for the first 3 clicks</p>
   <script type="text/html">
     <div>
       <h3>Job in progress</h3>
-      <div class="bar bar-sm">
+      <div class="bar bar-sm mb-p">
         <div id="pb1" class="bar-item" role="progressbar" style="width:100%;"></div>
       </div>
       <button class="btn" ts-req="/progress" ts-req-method="post" ts-target="parent div">
@@ -1325,14 +1325,14 @@ than it'll only restore HTML for the first 3 clicks</p>
 
       XHRMock.post('/progress', function(req, res) {
         state = 0;
-        return res.status(200).body(progress.replace('XXX', state));
+        return res.status(200).body(progress.replace(/XXX/g, state));
       });
 
-      XHRMock.get('/progress', function(req, res) {
+      XHRMock.get(/^\/progress/, function(req, res) {
         state += Math.floor(Math.random() * 30);
         if (state >= 100)
           return res.status(200).body(end);
-        return res.status(200).body(progress.replace('XXX', state));
+        return res.status(200).body(progress.replace(/XXX/g, state));
       });
     })(prev(2), prev());
   </script>
@@ -1385,7 +1385,7 @@ than it'll only restore HTML for the first 3 clicks</p>
         twinspark.trigger(o.el.closest('form'), 'submit');
       },
     });
-    XHRMock.get(/\/filters/, function(req, res) {
+    XHRMock.get(/^\/filters/, function(req, res) {
       return res.status(200).body('<p class="out">Selected filters: ' + req.url() + '</p>');
     });
   </script>

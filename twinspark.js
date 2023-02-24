@@ -63,7 +63,7 @@
 
     wait: function(eventname, o) {
       return new Promise(function(resolve) {
-        o.el.addEventListener(eventname, resolve, {once: true});
+        listen(o.el, eventname, resolve, {once: true});
       });
     },
 
@@ -339,16 +339,19 @@
     return result;
   }
 
+  /** @type {function(!(Node|Window), string=, ?=): ?} */
+  function internalData(el, attr, def) {
+    var k = 'twinspark-internal';
+    var data = el[k] || (el[k] = {});
+    if (!attr)
+      return data;
+    if (!data.hasOwnProperty(attr) && typeof def != 'undefined')
+      data[attr] = def;
+    return data[attr];
+  }
+
 
   /// Core
-
-  /**
-   * @type {function(!Element, !Directive): void}
-   * @suppress {checkTypes}
-   */
-  function attach(el, directive) {
-    qse(el, directive.selector).forEach(directive.handler);
-  }
 
   /**
    * Registers new directive.
@@ -360,13 +363,37 @@
     var directive = {selector: selector, handler: handler};
     DIRECTIVES.push(directive);
     if (READY) {
-      attach(document.body, directive);
+      qse(document.body, directive.selector).forEach(directive.handler);
     }
   }
 
   /** @type {function(!Element): void} */
+  function deactivate(el) {
+    internalData(el, 'event-handlers', [])
+      .forEach(h => el.removeEventListener(h.type, h.func, h.opts));
+  }
+
+  /** @type {function(!(Node|Window), !string, !Function, !AddEventListenerOptions=): !(Node|Window)} */
+  function listen(el, type, func, opts) {
+    el.addEventListener(type, func, opts);
+    internalData(el, 'event-handlers', []).push({
+      type: type,
+      func: func,
+      opts: opts,
+    });
+    return el;
+  }
+
+  /** @type {function(!Element): void} */
+  function activateEl(el) {
+    deactivate(el);
+    DIRECTIVES.forEach(d => el.matches(d.selector) && d.handler(el));
+  }
+
+  /** @type {function(!Element): void} */
   function activate(el) {
-    DIRECTIVES.forEach(d => attach(el, d));
+    var selector = DIRECTIVES.map(d => d.selector).join(',');
+    qse(document.body, selector).forEach(activateEl);
     sendEvent(el, 'ts-ready');
   }
 
@@ -599,7 +626,7 @@
 
   function deleteOverLimit(db) {
     reqpromise(idbStore(db).count()).then(function(count) {
-      console.debug('STORED', count);
+      console.debug('PAGES IN STORAGE', count);
       var toremove = count - historyLimit;
       if (toremove > 0) {
         var req = idbStore(db, {write: true})
@@ -769,16 +796,17 @@
     return qsf(reply, sel);
   }
 
+  function syncattr(target, source, attr) {
+    var value = getattr(source, attr);
+    if (value != getattr(target, attr)) {
+      value ? setattr(target, attr, value) : delattr(target, attr);
+    }
+  }
 
   /** @type {function(!Element, !Element): void} */
-  function cloneAttrs(from, to) {
-    for (var i = 0; i < attrsToSettle.length; i++) {
-      var attr = attrsToSettle[i];
-      if (hasattr(from, attr) && (getattr(from, attr) != getattr(to, attr))) {
-        to.setAttribute(attr, from.getAttribute(attr));
-      } else {
-        to.removeAttribute(attr);
-      }
+  function syncSettleAttrs(target, source) {
+    for (var attr of attrsToSettle) {
+      syncattr(target, source, attr);
     }
   }
 
@@ -801,9 +829,9 @@
     }
 
     var newAttrs = el.cloneNode();
-    cloneAttrs(oldEl, el);
+    syncSettleAttrs(el, oldEl);
     ctx.tasks.push(function() {
-      cloneAttrs(newAttrs, el);
+      syncSettleAttrs(el, newAttrs);
     });
     return ctx;
   }
@@ -848,47 +876,44 @@
       }
     }
 
-    function syncattr(from, to, attr) {
-      var value = getattr(to, attr);
-      if (value != getattr(from, attr)) {
-        value ? setattr(from, attr, value) : delattr(from, attr);
-      }
-    }
-
-    /** @type {function(!Node, !Node): void} */
-    function syncAttrs(from, to) {
-      if (from.nodeType != 1) {
+    /**
+     * Makes one element look like the other
+     * @param {!Node} target In-DOM element which needs to be updated
+     * @param {!Node} reply  Incoming element of necessary shape
+     * @return void
+     */
+    function syncAttrs(target, reply) {
+      if (target.nodeType != 1) {
         // text, comments
-        from.nodeValue = to.nodeValue;
+        target.nodeValue = reply.nodeValue;
         return;
       }
 
-      for (var attr of /** @type Element */ (to).attributes) {
-        syncattr(from, to, attr.name);
+      for (var attr of /** @type Element */ (reply).attributes) {
+        syncattr(target, reply, attr.name);
       }
-      for (var attr of /** @type Element */ (from).attributes) {
-        syncattr(from, to, attr.name);
+      for (var attr of /** @type Element */ (target).attributes) {
+        syncattr(target, reply, attr.name);
       }
 
       // sync inputs
-      if (from.tagName == 'INPUT' && from.type != 'file') {
+      if (target.tagName == 'INPUT' && target.type != 'file') {
         // https://github.com/choojs/nanomorph/blob/master/lib/morph.js#L113
-        // The "value" attribute is special for the <input> element since it sets
-        // the initial value. Changing the "value" attribute without changing the
-        // "value" property will have no effect since it is only used to the set
-        // the initial value. Similar for the "checked" attribute, and "disabled".
-        from.value = to.value || '';
-        syncattr(from, to, 'value');
-        syncattr(from, to, 'checked');
-        syncattr(from, to, 'disabled');
-      } else if (from.tagName == 'OPTION') {
-        syncattr(from, to, 'selected');
-      } else if (from.tagName == 'TEXTAREA') {
-        syncattr(from, to, 'value');
+        // Changing the "value" attribute without changing the "value" property
+        // will have no effect since it is only used to set the initial
+        // value. Similar for the "checked" attribute, and "disabled".
+        target.value = reply.value || '';
+        syncattr(target, reply, 'value');
+        syncattr(target, reply, 'checked');
+        syncattr(target, reply, 'disabled');
+      } else if (target.tagName == 'OPTION') {
+        syncattr(target, reply, 'selected');
+      } else if (target.tagName == 'TEXTAREA') {
+        syncattr(target, reply, 'value');
         // NOTE what is this stuff, is it necessary? Can't find a test case, but
         // nanomorph is doing that.
-        if (from.firstChild && from.firstChild.nodeValue != to.value) {
-          from.firstChild.nodeValue = to.value;
+        if (target.firstChild && target.firstChild.nodeValue != reply.value) {
+          target.firstChild.nodeValue = reply.value;
         }
       }
     }
@@ -980,49 +1005,49 @@
     }
 
     /** @type {function(!Node, Node, !Object): Node} */
-    function morphNode(from, to, ctx) {
+    function morphNode(target, reply, ctx) {
       if (ctx.ignoreActive &&
-          from == document.activeElement &&
-          (from.tagName == 'INPUT' || from.tagName == 'TEXTAREA')) {
+          target == document.activeElement &&
+          (target.tagName == 'INPUT' || target.tagName == 'TEXTAREA')) {
         // skip focused element, if it's input
-        return from;
-      } else if (!to) {
-        cleanRemove(from, ctx);
+        return target;
+      } else if (!reply) {
+        cleanRemove(target, ctx);
         return null;
-      } else if (!isSimilar(from, to)) {
-        if (!from.parentElement) {
-          from.replaceWith(to);
+      } else if (!isSimilar(target, reply)) {
+        if (!target.parentElement) {
+          target.replaceWith(reply);
         } else {
-          from.parentElement.insertBefore(to, from.nextSibling);
-          cleanRemove(from, ctx);
-          cleanInsert(to, ctx);
+          target.parentElement.insertBefore(reply, target.nextSibling);
+          cleanRemove(target, ctx);
+          cleanInsert(reply, ctx);
         }
-        return to;
+        return reply;
       } else {
-        syncAttrs(from, to);
-        if (from.nodeType == 1 && to.nodeType == 1) {
+        syncAttrs(target, reply);
+        if (target.nodeType == 1 && reply.nodeType == 1) {
           morphChildren(
-            /** @type !Element */ (from),
-            /** @type !Element */ (to),
+            /** @type !Element */ (target),
+            /** @type !Element */ (reply),
             ctx);
         }
-        return from;
+        return target;
       }
     }
 
     /** @type {function(!Element, !Element, !Object): void} */
-    function morphChildren(from, to, ctx) {
-      var target = from.firstChild;
-      var nextReply = to.firstChild;
+    function morphChildren(parentTarget, parentReply, ctx) {
+      var target = parentTarget.firstChild;
+      var nextReply = parentReply.firstChild;
 
-      var incomingIds = new Set(qse(to, '[id]').map(el => el.id));
+      var incomingIds = new Set(qse(parentReply, '[id]').map(el => el.id));
 
       while (nextReply) {
         var reply = nextReply;
         nextReply = reply.nextSibling;
 
         if (!target) {
-          from.appendChild(reply);
+          parentTarget.appendChild(reply);
           cleanInsert(reply, ctx);
           continue;
         }
@@ -1042,13 +1067,13 @@
         }
 
         // can't morph, just insert it
-        from.insertBefore(reply, target);
+        parentTarget.insertBefore(reply, target);
         cleanInsert(reply, ctx);
       }
 
       // remove leftovers
       if (target) {
-        target = removeNodesBetween(target, from.lastChild, ctx);
+        target = removeNodesBetween(target, parentTarget.lastChild, ctx);
         cleanRemove(target, ctx);
       }
     }
@@ -1075,21 +1100,20 @@
   function executeSwap(strategy, target, reply, ctx) {
     strategy || (strategy = 'replace');
 
-    if (strategy != 'morph') {
+    if (strategy != 'morph' && strategy != 'morph-all') {
       qse(reply, '[id]').forEach(function(el) {
         transitionAttrs(el, target, ctx);
       });
     }
 
-    var mctx = {ignoreActive: strategy == 'morph'}
     switch (strategy) {
-    case 'morph-all':
-    case 'morph':       morph(target, reply, mctx);                    break;
-    case 'replace':     target.replaceWith(reply);                     break;
-    case 'inner':       target.replaceChildren(reply);                 break;
-    case 'prepend':     target.prepend(reply);                         break;
-    case 'append':      target.append(reply);                          break;
-    case 'beforebegin': target.parentNode.insertBefore(reply, target); break;
+    case 'morph-all':   reply = morph(target, reply, {ignoreActive: false});       break;
+    case 'morph':       reply = morph(target, reply, {ignoreActive: true});        break;
+    case 'replace':     target.replaceWith(reply);                                 break;
+    case 'inner':       target.replaceChildren(reply);                             break;
+    case 'prepend':     target.prepend(reply);                                     break;
+    case 'append':      target.append(reply);                                      break;
+    case 'beforebegin': target.parentNode.insertBefore(reply, target);             break;
     case 'afterend':    target.parentNode.insertBefore(reply, target.nextSibling); break;
     case 'skip':        break;
     default:            throw Error('Unknown swap strategy ' + strategy);
@@ -1346,7 +1370,7 @@
     origins.forEach(function (el) {
       el.setAttribute('aria-busy', 'true');
       el.classList.add(activeClass);
-      el['ts-active-xhr'] = query.xhr;
+      internalData(el)['active-xhr'] = query.xhr;
     });
 
     return query.promise
@@ -1355,7 +1379,7 @@
         onidle(() => origins.forEach(el => {
           el.removeAttribute('aria-busy');
           el.classList.remove('ts-active');
-          delete el['ts-active-xhr'];
+          delete internalData(el)['active-xhr'];
         }));
 
         if (query.xhr.isAborted) {
@@ -1387,7 +1411,7 @@
         onidle(() => origins.forEach(el => {
           el.removeAttribute('aria-busy');
           el.classList.remove('ts-active');
-          delete el['ts-active-xhr'];
+          delete internalData(el)['active-xhr'];
         }));
 
         ERR('Error retrieving backend response', fullurl, res.error || res);
@@ -1419,7 +1443,7 @@
         }
 
         var strategy = getattr(req.el, 'ts-req-strategy') || 'queue';
-        var activeXHR = req.el['ts-active-xhr'];
+        var activeXHR = internalData(req.el)['active-xhr'];
         if (strategy === 'first' && activeXHR) {
           // prevent duplicate request
           return null;
@@ -1428,7 +1452,7 @@
         if (strategy === 'last' && activeXHR) {
           // abort active request to trigger a new one
           activeXHR.abort();
-          delete req.el['ts-active-xhr'];
+          delete internalData(req.el)['active-xhr'];
         }
 
         // default behavior is to `ts-req-strategy='queue'` all XHR requests
@@ -1484,7 +1508,7 @@
   // End Batch Request Queue
 
   function markSubmitter(el) {
-    el.addEventListener('click', function(e) {
+    listen(el, 'click', function(e) {
       // focus here since macos won't focus submit buttons
       e.target.focus();
       // NOTE: DEPRECATED
@@ -1506,7 +1530,7 @@
       qse(el, 'button, input[type="submit"]').forEach(markSubmitter);
     }
 
-    return el.addEventListener(event, function(/** @type {!Event} */ e) {
+    return listen(el, event, function(/** @type {!Event} */ e) {
       if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey || (e.button || 0) != 0)
         return;
 
@@ -1522,7 +1546,7 @@
     }
 
     if (hasattr(el, 'ts-trigger')) {
-      el.addEventListener('ts-trigger', handler);
+      listen(el, 'ts-trigger', handler);
     } else {
       onNative(el, handler);
     }
@@ -1535,7 +1559,7 @@
     }
 
     if (hasattr(el, 'ts-trigger')) {
-      el.addEventListener('ts-trigger', handler);
+      listen(el, 'ts-trigger', handler);
     } else {
       onNative(el, handler);
     }
@@ -1545,16 +1569,16 @@
   /// Actions
 
   /** @typedef {{
-   *   src: string,
    *   name: string,
-   *   args: Array<string>
+   *   args: Array<string>,
+   *   src: string,
    * }}
    */
   var CommandDef;
 
   /** @typedef {{
+   *   commands: Array<CommandDef>,
    *   src: string,
-   *   commands: Array<CommandDef>
    * }}
    */
   var ActionDef;
@@ -1750,7 +1774,7 @@
     };
 
     if (hasattr(el, 'ts-trigger')) {
-      el.addEventListener('ts-trigger', handler);
+      listen(el, 'ts-trigger', handler);
     } else if (el.tagName == 'A' || el.tagName == 'BUTTON') {
       onNative(el, handler);
     } else {
@@ -1823,12 +1847,6 @@
     });
   });
 
-  /** @type {function(!(Node|Window)): {once: (boolean|undefined), delay: (number|undefined)}} */
-  function internalData(el) {
-    var prop = 'twinspark-internal';
-    return el[prop] || (el[prop] = {});
-  }
-
   /** @type {function(CommandDef): (function(!Element, (Event|{type: string})): undefined)}*/
   function makeTriggerListener(t) {
     var delay = t.args.indexOf('delay');
@@ -1837,7 +1855,7 @@
                 once:    t.args.indexOf('once') != -1,
                 delay:   delay != -1 ? parseTime(t.args[delay + 1]) : null};
     return function(el, e) {
-      var data = internalData(el);
+      var data = internalData(el, 'trigger', {});
 
       function executeTrigger() {
         // trigger should not bubble, it should be local to a node
@@ -1878,16 +1896,16 @@
     function inner(e) {
       handler(e);
 
-      var data = internalData(el);
+      var data = internalData(el, 'trigger', {});
       // see makeTriggerListener for details
       if (data.once) {
         el.removeEventListener(type, inner, opts);
       }
     }
-    el.addEventListener(type, inner, opts);
+    listen(el, type, inner, opts);
   }
 
-  /** @type {function(!Element, CommandDef): undefined} */
+  /** @type {function(!Element, !CommandDef): undefined} */
   function registerTrigger(el, t) {
     var type = t.name;
     var tsTrigger = makeTriggerListener(t);
@@ -1908,29 +1926,30 @@
 
     case 'remove':
       removedObs().observe(el.parentElement, {childList: true});
-      el.addEventListener(type, function(e) { tsTrigger(el, e); });
+      listen(el, type, function(e) { tsTrigger(el, e); });
       break;
 
     case 'empty':
     case 'notempty':
     case 'childrenChange':
       childrenObs().observe(el, {childList: true});
-      el.addEventListener(type, function(e) { tsTrigger(el, e); });
+      listen(el, type, function(e) { tsTrigger(el, e); });
       break;
 
     case 'visible':
     case 'invisible':
       visibleObs().observe(el);
-      el.addEventListener(type, function(e) { tsTrigger(el, e); });
+      listen(el, type, function(e) { tsTrigger(el, e); });
       break;
 
     case 'closeby':
     case 'away':
       closebyObs().observe(el);
-      el.addEventListener(type, function(e) { tsTrigger(el, e); });
+      listen(el, type, function(e) { tsTrigger(el, e); });
       break;
 
-    default:             addRemovableListener(el, type, function(e) { tsTrigger(el, e); });
+    default:
+      addRemovableListener(el, type, function(e) { tsTrigger(el, e); });
     }
   }
 
@@ -1963,8 +1982,7 @@
   // this is done outside of `init` since that way we can restore HTML before
   // `DOMContentLoaded` has happened and browser will set correct scroll
   // location automatically
-  if (window.performance && window.performance.navigation &&
-      window.performance.navigation.type == window.performance.navigation.TYPE_BACK_FORWARD) {
+  if (window.performance?.navigation?.type == window.performance.navigation.TYPE_BACK_FORWARD) {
     // Restore HTML when user came back to page from non-pushstate destination
     onpopstate({state: "initial"});
   }
