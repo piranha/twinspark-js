@@ -29,10 +29,15 @@ async function timeout(promise, t) {
 
 const RED =   '\x1b[31m%s\x1b[0m';
 const GREEN = '\x1b[32m%s\x1b[0m';
+const YELLOW = '\x1b[33m%s\x1b[0m';
+
+function indicator(success) {
+  return success ? '🟢' : '🔴';
+}
 
 
 async function runTests(browser, base, url) {
-  console.log(`Tests at ${url} ----------------------------------------------`);
+  console.log(YELLOW, `🔄 Tests at ${url}`);
   let page = await browser.newPage();
   page.on('console', async msg => {
     if (msg.type() == 'debug')
@@ -69,7 +74,10 @@ async function runTests(browser, base, url) {
 
   });
 
-  return res;
+  var success = await res;
+  console.log(success ? GREEN : RED,
+              `${indicator(success)} ${url} is done, success: ${success}`);
+  return success;
 }
 
 
@@ -100,7 +108,8 @@ function staticHandler(req, res) {
 
   var success = await runTests(browser, base, '/test/test.html') &&
       await runTests(browser, base, '/index.html');
-  console.log(success ? GREEN : RED, 'TESTS DONE, SUCCESS:' + success);
+  console.log(success ? GREEN : RED,
+              `${indicator(success)} ALL TESTS DONE, SUCCESS: ${success}`);
   await browser.close();
   process.exit(success ? 0 : 1);
 })();
