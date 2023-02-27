@@ -3,6 +3,7 @@
 const pup = require('puppeteer-core');
 const http = require('http');
 const fs = require('fs');
+const url = require('url');
 
 
 function describe(jsHandle) {
@@ -82,7 +83,11 @@ async function runTests(browser, base, url) {
 
 
 function staticHandler(req, res) {
-  fs.readFile(req.url.slice(1), (err, data) => {
+  var path = url.parse(req.url).pathname;
+  if (path.endsWith('/')) {
+    path += 'index.html';
+  }
+  fs.readFile('build-www/' + path.slice(1), (err, data) => {
     if (err) {
       res.writeHead(404, 'Not Found');
       res.write('Not Found');
@@ -106,8 +111,8 @@ function staticHandler(req, res) {
   var server = await http.createServer(staticHandler).listen(0);
   var base = 'http://localhost:' + server.address().port;
 
-  var success = await runTests(browser, base, '/test/test.html') &&
-      await runTests(browser, base, '/index.html');
+  var success = await runTests(browser, base, '/test/') &&
+      await runTests(browser, base, '/examples/');
   console.log(success ? GREEN : RED,
               `${indicator(success)} ALL TESTS DONE, SUCCESS: ${success}`);
   await browser.close();

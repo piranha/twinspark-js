@@ -1,4 +1,4 @@
-/* jshint -W030, -W084, esversion: 6 */
+// jshint -W030, -W084, esversion: 6
 
 (function(window, document, tsname) {
   var location = window.location;
@@ -11,9 +11,7 @@
 
   var xhrTimeout    = iget('timeout', 3000);
   var historyLimit  = iget('history', 20);
-  var attrsToSettle = cget('attrs-to-settle',
-                           'class,style,width,height').split(',');
-  var settleDelay   = iget('settle-delay', 20);
+  var attrsToSettle = cget('settle', 'class,style,width,height').split(',');
   var insertClass   = cget('insert-class', 'ts-insert');
   var removeClass   = cget('remove-class', 'ts-remove');
   var activeClass   = cget('active-class', 'ts-active');
@@ -267,6 +265,7 @@
     el.dispatchEvent(event);
     return event;
   }
+
   function sendError(el, type, detail) {
     sendEvent(el, type, merge({error: type}, detail));
   }
@@ -837,8 +836,8 @@
   }
 
 
-  /// MORPH, thanks to idiomorph and nanomorph
-  /// Core algorithm from https://github.com/bigskysoftware/idiomorph
+  /// Morph, thanks to idiomorph and nanomorph
+  // Core algorithm from https://github.com/bigskysoftware/idiomorph
   var morph = (function() {
     /** @type {function(!Node, !Object): void} */
     function cleanRemove(el, ctx) {
@@ -1096,7 +1095,14 @@
   })();
 
 
-  /** @type {function(string, !Element, !(Element|DocumentFragment), !SwapData): !(Element|DocumentFragment)} */
+  /**
+   * Actually puts replaces `target` with `reply`
+   * @param {!string}   strategy The way replacement is going to happen
+   * @param {!Element}  target   In-DOM element to be replaced
+   * @param {!(Element|DocumentFragment)} reply Element to be put in place
+   * @param {!SwapData} ctx      Context-carrying object
+   * @return !(Element|DocumentFragment)
+   */
   function executeSwap(strategy, target, reply, ctx) {
     strategy || (strategy = 'replace');
 
@@ -1163,7 +1169,7 @@
 
   /** @type {function(!string, !Element, !SwapData): (Element|DocumentFragment)} */
   function headerSwap(header, replyParent, ctx) {
-    // `replace: css selector <= css selector`
+    // `replace: selector to <= selector from`
     var m = header.match(/(\w+):(.+)<=(.+)/);
     if (!m) {
         throw extraerr('Cannot parse ts-swap-push header value', {header});
@@ -1249,7 +1255,7 @@
     });
     setTimeout(function() {
       ctx.tasks.forEach(function(func) { func(); });
-    }, settleDelay);
+    }, 16);
 
     return swapped;
   }
@@ -2015,3 +2021,7 @@
 
   window[tsname] = twinspark;
 })(window,document,'twinspark');
+
+// Local Variables:
+// outline-regexp: "[ ]*///+"
+// End:

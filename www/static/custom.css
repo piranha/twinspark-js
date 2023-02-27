@@ -1,0 +1,20 @@
+body {color: #333; }
+pre code {display: inline-block; } /* or else padding is broken for blocks */
+.card-body {overflow: auto; }
+.card-body > pre { margin-top: 0; }
+.btn-sm {margin-bottom: .2rem; }
+.mb-p {margin-bottom: 1.2rem; }
+.mt-p {margin-top: 1.2rem; }
+.fade {opacity: 0; transition: opacity 0.5s ease-in-out; }
+.back-logo {
+  background-image:
+    linear-gradient(to right top,
+                    rgba(255,255,255, 0.1) 0,
+                    rgba(255,255,255, 1) 100%),
+    url(/static/twinspark-icon.svg);
+  background-repeat: no-repeat;
+  background-size: 2rem 2rem;
+  background-position: right 1rem top 1rem;
+}
+
+.table td, .table th { padding: .2rem .1rem; }

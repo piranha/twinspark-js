@@ -1,0 +1,145 @@
+{{/* -*- mode: web; engine: go -*- */}}
+
+{{ define "header" }}<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ some .Title .Site.Other.Title }}</title>
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="{{ .Site.Other.Url }}{{ .Url }}">
+  <meta property="og:title" content="{{ some .Title .Site.Other.Title }}">
+  <meta property="og:description" content="Declarative enhancement for HTML: simple, composable, lean.">
+  <meta property="og:image" content="{{ version . "static/twinspark-icon.svg" }}">
+
+  <link rel="stylesheet" type="text/css" href="{{ version . "vendor/spectre.min.css" }}">
+  <link rel="stylesheet" type="text/css" href="{{ version . "static/custom.css" }}">
+  <script src="{{ version . "vendor/xhr-mock.js" }}"></script>
+  <link rel="stylesheet" href="{{ version . "vendor/highlight-foundation.min.css" }}">
+  <script src="{{ version . "vendor/highlight.min.js" }}"></script>
+
+  <link rel="icon" href="{{ version . "static/favicon.png" }}" type="image/png" />
+  <script src="{{ version . "static/twinspark.js" }}" data-timeout="5000" data-history="3"></script>
+  <script src="{{ version . "static/examples.js" }}"></script>
+</head>
+<body class="container">
+<div class="columns">
+<div class="column col-6 col-xl-8 col-lg-10 col-md-12 col-mx-auto">
+  <header class="navbar my-2">
+    <section class="navbar-section">
+      <a href="{{ .Rel "/" }}"><img src="{{ version . "static/twinspark-logo.svg" }}" style="aspect-ratio: 238 / 56; height: 30px"></a>
+    </section>
+    <section class="navbar-center">
+      <a href="{{ .Rel "/api/" }}" class="btn btn-link">API</a>
+      <a href="{{ .Rel "/examples/" }}" class="btn btn-link">Examples</a>
+    </section>
+    <section class="navbar-section">
+      <a href="https://github.com/piranha/twinspark-js" class="btn btn-link">GitHub</a>
+    </section>
+  </header>
+{{ end }}
+
+
+{{ define "footer" }}
+</div>
+</div>
+</body>
+</html>
+{{ end }}
+
+
+{{ define "page" }}{{ template "header" . }}
+  {{ .Content }}
+{{ template "network" . }}
+{{ template "footer" . }}{{ end }}
+
+
+{{ define "network" }}
+<style>
+  #debug-requests {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    padding: 0.5em;
+    width: 100vw;
+    height: 64px;
+    background-color: whitesmoke;
+    border-top: 2px solid gray;
+    transition: height .2s ease-in-out;
+  }
+  #debug-requests.show {
+    height: 45vh;
+    overflow: scroll;
+  }
+  #debug-requests ol, #debug-requests li { margin: 0; }
+  .show .show_show, .show_hide { display: none; }
+  .show .show_hide { display: inline; }
+</style>
+<div id="debug-requests-wrap" style="display: none;">
+<div style="margin-top: 50vh"></div>
+<div id="debug-requests">
+  Server Requests
+  <a class="show_show" href="#" ts-action="prevent, target #debug-requests, class+ show">↑ Show</a>
+  <a class="show_hide" href="#" ts-action="prevent, target #debug-requests, class- show">↓ Hide</a>
+
+  <div class="columns">
+    <div class="column col-3">
+      <ol id="debug-timeline" reversed>
+      </ol>
+    </div>
+    <div id="debug-details" class="column col-9">
+      <div class="d-hide">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function switchResponse(id) {
+      var active = window['debug-timeline'].querySelector('.active');
+      active && active.classList.remove('active');
+
+      var shown = window['debug-details'].querySelector(':scope > :not(.d-hide)');
+      shown && shown.classList.add('d-hide');
+
+      document.querySelector(`[rel="${id}"]`).classList.add('active');
+      document.getElementById(id).classList.remove('d-hide');
+    }
+
+    (() => {
+      var i = 0;
+      const origSend = XMLHttpRequest.prototype.send;
+      const origOpen = XMLHttpRequest.prototype.open;
+
+      XMLHttpRequest.prototype.send = function(body) {
+        this.requestBody = body;
+        origSend.apply(this, arguments);
+      };
+      XMLHttpRequest.prototype.open = function(method, url) {
+        this.addEventListener('load', function() {
+          window['debug-requests-wrap'].style.display = '';
+
+          var id = `debug${i++}`;
+          window['debug-timeline'].insertAdjacentHTML(
+            'afterbegin',
+            `<li><a style="cursor:pointer" rel="${id}" onclick="switchResponse('${id}')">
+                     <code><b>${method}</b> ${url}</code>
+               </a></li>`
+          );
+          window['debug-details'].insertAdjacentHTML(
+            'afterbegin',
+            `<div id="${id}" class="d-hide">
+                 <div><code>${this.status} <b>${method}</b> ${url} (${new Date().toTimeString().split(' ')[0]})</code></div>
+                 <div><b>Body:</b> <code>${this.requestBody || ''}</code></div>
+                 <div><b>Response</b></div>
+                 <pre style="margin-top:0" class="xml"><code>${cleancode(this.responseText)}</code></pre>
+               </div>`
+          );
+          hljs.highlightElement(document.querySelector(`#${id} pre code`));
+          document.querySelector(`[rel="${id}"]`).click();
+        });
+        origOpen.apply(this, arguments);
+      };
+    })();
+  </script>
+</div>
+{{ end }}
