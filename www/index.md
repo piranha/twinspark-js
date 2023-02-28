@@ -11,9 +11,10 @@
         <span class="card-title">Simple</span>
       </div>
       <div class="card-body">
-        It's only a handful core attributes (like <code>ts-req</code>, <code>ts-action</code>,
-        <code>ts-trigger</code>), with no surprising behavior (whatever is
-        declared on top of your DOM tree will not affect your code).
+        It's only a handful core attributes (like <code>ts-req</code>,
+        <code>ts-action</code>, <code>ts-trigger</code>) and strives to avoid
+        surprises. Also there are no dependencies on your server-side
+        technology, you can use <b>anything</b>.
       </div>
     </div>
   </div>
@@ -24,10 +25,9 @@
         <span class="card-title h5">Composable</span>
       </div>
       <div class="card-body">
-        There are enough extension points to compose with whatever your
-        needs are. You can add more directives like <code>ts-req</code>, you can
-        add more actions, you can customize requests being sent out. Whatever
-        you need.
+        There are plenty of extension points available to suit your needs.
+        You can add more directives like <code>ts-req</code>, add more actions,
+        or change the outgoing requests - whatever your needs are.
       </div>
     </div>
   </div>
