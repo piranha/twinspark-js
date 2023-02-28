@@ -1,4 +1,4 @@
-title: TwinSpark API
+title: API
 ----
 
 # TwinSpark API {.text-center}
@@ -87,7 +87,7 @@ title: TwinSpark API
 
 ## Config
 
-Attributes you can sent on twinspark <code>script</code> tag, like so:
+Attributes you can set on twinspark <code>script</code> tag, like so:
 
 ```
 <script src="/static/twinspark.js" timeout="5000">

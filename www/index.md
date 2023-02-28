@@ -62,15 +62,16 @@ TwinSpark could be mentally split in three parts:
 Some reasons why TwinSpark exists despite [HTMx](https://htmx.org) and
 [Unpoly](https://unpoly.com/) (those are similar in approach):
 
-- It's really small (8KB `.min.gz`)
-- There is no attribute inheritance — this is a big one, it keeps surprises away
+- It's really small (8KB `.min.gz`).
+- There is no attribute inheritance — this is a big one, it keeps surprises away.
 - [Batching](api/ts-req-batch/) - very useful if you want to use HTTP
   caching effectively, while maintaining some personalisation for your
   users.
 - Bundling - a lot of practical stuff packed in, like triggering an event when
   [element is almost visible](examples/120-visible/), or
   [handling clicks outside](examples/130-outside/) the element.
-- Extensibility - you can easily register new directives in the same way as core ones
+- Extensibility - you can easily register new directives the same way those in
+  core are registered.
 
 
 ## Resources

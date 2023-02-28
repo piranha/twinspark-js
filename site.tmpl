@@ -8,10 +8,10 @@
   <title>{{ if .Title }}{{ .Title }} - {{ end }}{{ .Site.Other.Title }}</title>
 
   <meta property="og:type" content="website">
-  <meta property="og:url" content="{{ .Site.Other.Url }}{{ .Url }}">
+  <meta property="og:url" content="{{ .Site.Other.Url }}/{{ .Url }}">
   <meta property="og:title" content="{{ if .Title }}{{ .Title }} - {{ end }}{{ .Site.Other.Title }}">
   <meta property="og:description" content="Declarative enhancement for HTML: simple, composable, lean.">
-  <meta property="og:image" content="{{ .Site.Other.Url }}{{ version . "static/twinspark-icon.svg" | replace "../" "" }}">
+  <meta property="og:image" content="{{ .Site.Other.Url }}{{ version . "static/twinspark-icon.svg" | absurl .Url }}">
 
   <link rel="stylesheet" type="text/css" href="{{ version . "vendor/spectre.min.css" }}">
   <link rel="stylesheet" type="text/css" href="{{ version . "static/custom.css" }}">
@@ -33,7 +33,7 @@
     </section>
     <section class="navbar-center">
       <a href="{{ .Rel "/api/" }}" class="btn btn-link">API</a>
-      <a href="{{ .Rel "/examples/" }}" class="btn btn-link">Examples</a>
+      <!-- <a href="{{ .Rel "/examples/" }}" class="btn btn-link">Examples</a> -->
     </section>
     <section class="navbar-section">
       <a href="https://github.com/piranha/twinspark-js" class="btn btn-link">GitHub</a>
