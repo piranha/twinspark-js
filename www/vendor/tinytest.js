@@ -22,8 +22,11 @@
  */
 
 window.tt = (function() {
-  var EL = document.getElementById('tinytest'),
-      RESULTS = [];
+  var RESULTS = [], _EL;
+
+  function EL() {
+    return _EL || (_EL = document.getElementById('tinytest'));
+  }
 
   function escape(s) {
     return s
@@ -54,12 +57,12 @@ window.tt = (function() {
       cls = 'pass', desc = `${tlen} Tests Passed`;
     }
 
-    var dt = duration > 5 ? `in <span class=duration>${duration}ms</span>` : '';
+    var dt = `<span class=duration>${duration}ms</span>`;
     var t = `<div class="test ${cls}"><details>
-                 <summary>${name}: ${desc} ${dt}</summary>
-                 <ul>${details}</ul>
-               </details></div>`;
-    EL.insertAdjacentHTML('beforeend', t);
+               <summary>${escape(name)}: ${desc} ${dt}</summary>
+               <ul>${details}</ul>
+             </details></div>`;
+    EL().insertAdjacentHTML('beforeend', t);
 
     if (err) {
       console.error(`✖ ${name}: Exception ${err}`);
@@ -100,7 +103,7 @@ window.tt = (function() {
       }
       RESULTS = [];
     }
-    EL.dispatchEvent(new CustomEvent('tt-done', {
+    EL().dispatchEvent(new CustomEvent('tt-done', {
       detail: {success: report.filter(r => !r.success).length == 0,
                report: report}}));
     return report;

@@ -1,0 +1,39 @@
+title: Before/After Request
+tags: ts-req-before, ts-req-after
+id: before
+----
+<p>If you need to do some custom things around your request, you can use
+  <code>ts-req-before</code> and <code>ts-req-after</code>. Those use same
+  syntax as <a href="#action"><code>ts-action</code></a>, so it's pretty
+  flexible. One additional thing is that if last (or the only) command of
+  <code>ts-req-before</code> returns falsy value (<code>false</code>, or
+  an empty string, or a zero) - this stops that request.</p>
+
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <a href="/before" ts-req ts-req-before="delay 300">This will work with delay</a><br>
+    <a href="/before" ts-req ts-req-before="prevent">This is prevented</a>
+  </p>
+
+  <script type="text/html">
+    <a href="/before" ts-req>Did you see it?</a>
+  </script>
+  <script>
+    XHRMock.get("/before", {body: prev()});
+    test(el => {
+      click(el.$$('a')[0])
+      click(el.$$('a')[1])
+      return wait(() => {
+        tt.assert(el.$$('a')[0].innerText == 'Did you see it?')
+        tt.assert(el.$$('a')[1].innerText == 'This is prevented')
+      }, 320);
+    });
+  </script>
+</div>

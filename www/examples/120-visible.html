@@ -1,0 +1,25 @@
+id: visible
+title: Visibility
+tags: ts-action
+----
+<p>Doing something when element is almost visible makes it possible to implement lazy
+  loading and various analytical events</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p ts-action="class+ loading, delay 5s, class- loading" ts-trigger="visible">
+      You'll probably see this text after around 5 seconds or so. Click "Reset" to see
+      loader again.
+    </p>
+    <p ts-action="log invisible!!!" ts-trigger="invisible">
+      This sentence will log some message when it becomes invisible (moves out of
+      browser viewport, and, actually, on load as well).
+    </p>
+  </div>
+</div>

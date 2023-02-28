@@ -1,0 +1,44 @@
+id: return
+title: Pipelining Actions
+tags: ts-action, advanced
+----
+
+<p>Actions pipe their return values into next action as <code>o.input</code>, check
+  the source of the next example to see how it works.
+</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body mb-p">
+    <button class="btn" ts-action="echo interested?, log Are you">Click to log</button>
+  </div>
+
+  <script>
+    twinspark.func({
+      echo: function(msg, o) {
+        return msg;
+      }
+    });
+
+    test(el => {
+      tt.assert('simple parsing',
+                 twinspark.parseAction('just a test')[0].commands[0].name == 'just')
+      tt.assert('a few actions',
+                 twinspark.parseAction('command 1, command 2; action 2').length == 2)
+      tt.assert('parses string completely',
+                 twinspark.parseAction('this "is a string"')[0].commands[0].args[0] != 'is')
+      tt.assert('ignores punctuation in strings',
+                 twinspark.parseAction('you "want, this;", right?')[0].commands[0].args[0] == 'want, this;')
+      // NOTE: double escape since `\"` for JS in a string is the same as `"`,
+      // and there is nothing we can do. We need to provide literal backslash
+      // to the parser
+      tt.assert('check quoting escape',
+                 twinspark.parseAction('this "is \\"a string"')[0].commands[0].args[0] == 'is "a string')
+    });
+  </script>
+</div>

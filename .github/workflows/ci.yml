@@ -8,7 +8,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: Download gostatic
       run: |
-        curl -Lso gostatic https://github.com/piranha/gostatic/releases/download/2.35/gostatic-64-linux
+        curl -Lso gostatic https://github.com/piranha/gostatic/releases/download/2.36/gostatic-64-linux
         chmod +x gostatic
     - name: render
       run: ./gostatic gostatic.config
@@ -25,7 +25,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: Download gostatic
       run: |
-        curl -Lso gostatic https://github.com/piranha/gostatic/releases/download/2.35/gostatic-64-linux
+        curl -Lso gostatic https://github.com/piranha/gostatic/releases/download/2.36/gostatic-64-linux
         chmod +x gostatic
     - name: render
       run: ./gostatic gostatic.config
@@ -39,7 +39,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: Download gostatic
       run: |
-        curl -Lso gostatic https://github.com/piranha/gostatic/releases/download/2.35/gostatic-64-linux
+        curl -Lso gostatic https://github.com/piranha/gostatic/releases/download/2.36/gostatic-64-linux
         chmod +x gostatic
     - name: render
       run: ./gostatic gostatic.config

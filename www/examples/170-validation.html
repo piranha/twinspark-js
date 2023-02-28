@@ -1,0 +1,98 @@
+id: validation
+title: Dynamic Form Validation
+tags: ts-swap, ts-trigger, advanced
+----
+<p>Form validation is a common task, and TwinSpark allows to consolidate
+  validation logic on the server. Surprisingly, it could be difficult, but
+  `ts-swap="morph"` strategy allows us to just return whole new form with errors
+  and not mess up with focus.</p>
+<p><mark>Important bits</mark>: input `id`s and that form submit appends
+  <code>&lt;input type="submit"&gt;</code>'s value - this way you can distinguish between
+  validation and submission. Notice how `keyup` updates form on every character
+  input and it feels natural.</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+  <div class="card-body">
+    <p>Solve this problem with odd numbers</p>
+    <form action="/validate" id="form-validate"
+          ts-req ts-swap="morph" ts-trigger="submit, keyup" ts-action="prevent">
+      <div>
+        <div class="form-number-div">
+          <input id="one" name="one" value="8" type="number" placeholder="Odd" autocomplete="off">
+          <div class="error"></div>
+        </div>
+        +
+        <div class="form-number-div">
+          <input id="two" name="two" value="" type="number" placeholder="Odd" autocomplete="off">
+          <div class="error"></div>
+        </div>
+        = 14
+      </div>
+      <input type="submit" class="btn" value="submit" name="submit" />
+      <div class="error"></div>
+    </form>
+    <br/>
+  </div>
+
+  <style>
+    #form-validate .error { color: #f00; font-style:italic; }
+    .form-number-div { display:inline-block; height: 60px; vertical-align: top; }
+  </style>
+
+  <script>
+    (function(html) {
+      var div = document.createElement('div');
+      div.innerHTML = html;
+      var form = div.querySelector('form');
+
+      XHRMock.post(/\/validate/, XHRMock.delay(function(req, res) {
+        var params = new URLSearchParams(req.body());
+        var one = parseInt(params.get('one'), 10),
+            two = parseInt(params.get('two'), 10);
+
+        var errors = {}, ok = true;
+        if (!one) {
+          errors.global = 'Incorrect!';
+          errors.one = 'Enter a number';
+          ok = false;
+        } else if (one % 2 == 0) {
+          errors.global = 'Incorrect!';
+          errors.one = 'Please enter odd number';
+          ok = false;
+        }
+
+        if (!two) {
+          errors.global = 'Incorrect!';
+          errors.two = 'Enter a number';
+          ok = false;
+        } else if (two % 2 == 0) {
+          errors.global = 'Incorrect!';
+          errors.two = 'Please enter odd number';
+          ok = false;
+        }
+
+        if (ok && (one + two != 14)) {
+          errors.global = 'Incorrect! Sum of two numbers should be equal to 14, not ' + (one + two);
+          ok = false;
+        }
+
+        form.querySelector('[name=one]').setAttribute('value', params.get('one'));
+        form.querySelector('[name=two]').setAttribute('value', params.get('two'));
+        form.querySelector('[name=one] + .error').innerText = errors.one || '';
+        form.querySelector('[name=two] + .error').innerText = errors.two || '';
+
+        if (params.get('submit')) {
+          form.querySelector(':scope > .error').innerText = errors.global || '';
+        }
+
+        return res.status(200).body(form.outerHTML);
+      }, 100))
+    })(prev(2));
+  </script>
+
+</div>

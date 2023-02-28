@@ -1,16 +1,11 @@
-# TwinSpark API
+title: TwinSpark API
+----
 
-<script>
-window.addEventListener('DOMContentLoaded', _ => {
-  for (var el of document.querySelectorAll('h2[id]')) {
-    el.insertAdjacentHTML('beforeend', ` <a href="#${el.id}">#</a>`);
-  }
-});
-</script>
+# TwinSpark API {.text-center}
 
-## HTML updates
+## HTML updates [#](#html-updates)
 
-<table class="table mb-p">
+<table class="table">
 <tr><th>Directive</th> <th>Description</th></tr>
 
 <tr><th colspan=2 class="text-center">Core</th></tr>
@@ -26,15 +21,15 @@ window.addEventListener('DOMContentLoaded', _ => {
 
 <tr><td><a href="ts-req-method/">ts-req-method</a></td>      <td>Is it GET or POST?</td></tr>
 <tr><td><a href="ts-req-strategy/">ts-req-strategy</a></td>  <td>How to deal with multiple requests being generated</td></tr>
-<tr><td><a href="ts-req-batch/">ts-req-batch</a></td>        <td>Combine multiple requests into a single one</td></tr>
 <tr><td><a href="ts-req-history/">ts-req-history</a></td>    <td>Change URL after request</td></tr>
 <tr><td><a href="ts-data/">ts-data</a></td>                  <td>Additional data for request</td></tr>
+<tr><td><a href="ts-req-batch/">ts-req-batch</a></td>        <td>Combine multiple requests into a single one</td></tr>
 
 </table>
 
 ## Actions
 
-<table class="table mb-p">
+<table class="table">
 <tr><th>Directive</th> <th>Description</th></tr>
 
 <tr><td><a href="ts-action/">ts-action</a></td>         <td>Run actions</td></tr>
@@ -47,7 +42,7 @@ window.addEventListener('DOMContentLoaded', _ => {
 
 ## Events
 
-<table class="table mb-p">
+<table class="table">
 <tr><th>Event</th> <th>Description</th></tr>
 
 <tr><td><code>ts-ready</code></td>        <td>When HTML is "activated"</td></tr>
@@ -71,7 +66,7 @@ window.addEventListener('DOMContentLoaded', _ => {
 
 ## Headers
 
-<table class="table mb-p">
+<table class="table">
 <tr><th>Header</th> <th>Description</th></tr>
 
 <tr><th colspan=2 class="text-center">Request</th></tr>
@@ -98,7 +93,7 @@ Attributes you can sent on twinspark <code>script</code> tag, like so:
 <script src="/static/twinspark.js" timeout="5000">
 ```
 
-<table class="table mb-p">
+<table class="table">
 <tr><th>Attribute</th> <th>Default</th> <th>Description</th></tr>
 
 <tr><td><code>timeout</code></td>      <td>3000</td>      <td>Timeout for <code>ts-req</code> requests</td></tr>

@@ -70,7 +70,7 @@ async function runTests(browser, base, url) {
         console.log('Event:', e.type, 'Success:', e.detail.success);
         setTimeout(() => window.headlessRunnerDone(e.detail.success));
       });
-      window.dispatchEvent(new CustomEvent('run-twinspark-tests'));
+      window.dispatchEvent(new CustomEvent('run-tests'));
     });
 
   });

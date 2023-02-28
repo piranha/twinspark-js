@@ -3,6 +3,9 @@ pre code {display: inline-block; } /* or else padding is broken for blocks */
 .card-body {overflow: auto; }
 .card-body > pre { margin-top: 0; }
 .btn-sm {margin-bottom: .2rem; }
+
+.example + h3, table + h2 { margin-top: 1.2rem; }
+
 .mb-p {margin-bottom: 1.2rem; }
 .mt-p {margin-top: 1.2rem; }
 .fade {opacity: 0; transition: opacity 0.5s ease-in-out; }
@@ -18,3 +21,21 @@ pre code {display: inline-block; } /* or else padding is broken for blocks */
 }
 
 .table td, .table th { padding: .2rem .1rem; }
+
+
+/* tests */
+#tinytest{font-family:sans-serif}
+#tinytest ul{margin:0 0 .5rem 1rem;padding-bottom:4px}
+#tinytest li{margin-top: .2rem;}
+#tinytest .duration{background: #c09853;
+                    padding: 2px 5px;
+                    font-size: .8rem;
+                    border-radius: 5px;
+                    box-shadow: inset 0 1px 1px rgba(0,0,0,.2);}
+#tinytest .test {margin-left: 2rem;}
+#tinytest summary{padding:4px}
+#tinytest .test.pass summary::before {
+  content: '✓'; display: inline-block; margin-right: 5px; color: #00d6b2; }
+#tinytest .test.fail summary::before, #tinytest .test.error summary::before {
+  content: '✖'; display: inline-block; margin-right: 5px; color: #c00; }
+#tinytest .test.error { background: #fcf2f2; }

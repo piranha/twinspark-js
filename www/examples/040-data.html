@@ -1,0 +1,37 @@
+title: Collecting Data
+tags: ts-data
+id: data
+----
+<p>Sometimes collecting the data you need to send in templates is really
+  annoying: you'll have to teach lower-level components/partials/etc some
+  knowledge about higher levels. That is something TwinSpark can prevent: when
+  you send a request, it iterates through element parents and searches for
+  <code>ts-data</code> attributes, parses their content as query string or JSON
+  and merges it into a single object. Note how values with same keys are aggregated
+  into an array (like normal query string or form data). You can override that by
+  specifying key with null or empty string (see demo source).</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <span ts-data="a=1&b=2&c=3">
+      <!-- empty c removes previous values of c and then adds 5 -->
+      <a href="/data" ts-data="b=4&c&c=5" ts-req ts-req-method="POST">So. Much. Data.</a>
+    </span>
+  </p>
+
+  <script>
+    XHRMock.post("/data", function(req, res) {
+      return res.status(200).body('<span>' + new URLSearchParams(req.body()).toString() + '</span>');
+    });
+   test(el => {
+     click(el.$('a'));
+     return wait(() => tt.assert(el.$('span').innerText == 'a=1&b=2&b=4&c=5'));
+   });
+  </script>
+</div>

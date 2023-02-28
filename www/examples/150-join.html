@@ -1,0 +1,49 @@
+id: push
+title: Multiple Fragments
+tags: ts-swap-push
+----
+<p>Sometimes you need to update more than a single point in your DOM tree.
+  Maybe there is a basket item counter should be incremented, or a notification
+  incoming. To perform that you need to add another tag in your HTML reply and
+  indicate where it should go. There are two ways to do that: either by a
+  selector in <code>ts-swap-push</code> attribute or by a <code>ts-swap-push</code> header.
+  The latter has a form
+  <code>[replace strategy]: [selector-in-document] <= [selector-in-response]</code></p>
+
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body" style="margin-bottom: 1.2rem" id="join-example">
+    <div>
+      <p class="primary">Update me!</p>
+    </div>
+    <div>
+      <p class="secondary">And me!</p>
+    </div>
+    <div>
+      <p class="tertiary">Also waiting here.</p>
+    </div>
+    <button class="btn"
+            ts-req="/join"
+            ts-target="#join-example .primary"
+            ts-req-selector=".primary">
+      Update them
+    </button>
+  </div>
+
+  <script type="text/html">
+    <p class="primary">Hey, you see this stuff?</p>
+    <p class="secondary" ts-swap-push="#join-example .secondary">This one was pushed from server in attributes.</p>
+    <p class="tertiary">And this one by a header.</p>
+  </script>
+  <script>
+    XHRMock.get("/join",
+                {body:    prev(),
+                 headers: {'ts-swap-push': 'replace: #join-example .tertiary <= .tertiary'}});
+  </script>
+</div>

@@ -1,0 +1,56 @@
+id: indicator
+title: Indicator
+tags: ts-req
+----
+<p>It's really irritating when you click a link and nothing happens for some
+  time. Luckily TwinSpark makes it really easy: it adds class
+  <code>ts-active</code> to a <code>ts-req</code> element.</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <a href="/indicator" class="indicator" ts-req>Just click me</a>
+  </p>
+
+  <style>
+    @keyframes border {
+      0%   {left: 0;}
+      51%  {left: calc(100% - 20px);}
+      100% {left: 0;}
+    }
+
+    .indicator.ts-active {
+      pointer-events: none;
+      position: relative;
+    }
+    .indicator.ts-active::after{
+      animation: border 1.5s infinite linear;
+      position: absolute;
+      width: 20px;
+      height: 2px;
+      bottom: -2px;
+      left: 0;
+      background: #807fe2;
+      z-index: 1;
+      content: "";
+    }
+  </style>
+
+  <script type="text/html">
+    <a href="/indicator" class="indicator" ts-req>Just click me</a>
+  </script>
+  <script>
+    XHRMock.get("/indicator", XHRMock.delay({body: prev()}, 1000));
+    test(el => {
+      click(el.$('a'));
+      return wait(() => tt.assert(el.$('a').classList.contains('ts-active')));
+      // I'm too lazy to wait for so long
+      //wait(() => tt.assert(!el.$('a').classList.contains('ts-active')), 1050);
+    });
+  </script>
+</div>

@@ -1,0 +1,32 @@
+id: script
+title: &lt;script&gt; in response
+tags: ts-swap, advanced
+----
+
+<p>Setting <code>innerHTML</code> to a value which contains <code>script</code>
+  element does not execute JavaScript inside that element. TwinSpark handles
+  that for you, check it out.</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <a href="/script" ts-req>Update me with a script</a>
+  </p>
+
+  <script type="text/html">
+    <span>Change!<script>(el => setTimeout(() => el.innerHTML = 'Double change!', 250))(document.currentScript.parentElement)</script></span>
+  </script>
+
+  <script>
+    XHRMock.get("/script", {body: prev()});
+    test(el => {
+      click(el.$('a'));
+      return wait(() => tt.assert('Updated', el.$('span').innerText == 'Double change!'), 300);
+    });
+  </script>
+</div>

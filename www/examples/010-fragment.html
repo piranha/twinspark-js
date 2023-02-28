@@ -1,0 +1,31 @@
+id: fragment
+title: Fragment Updating
+tags: ts-req
+----
+
+<p>Explanation: on click link issues a request to a server, and then is replaced
+  with a new link from a response.</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <a href="/fragment" ts-req>Update me</a>
+  </p>
+
+  <script type="text/html">
+    <a href="/fragment" ts-req>Updated!</a>
+  </script>
+  <script>
+    XHRMock.get("/fragment", {body: prev()});
+    test(el => tt.delay(1)
+      .then(_ => click(el.$('a')))
+      .then(_ => tt.delay(1))
+      .then(_ => tt.assert('Element Updated!',
+                           el.$('a').innerText == 'Updated!')));
+  </script>
+</div>

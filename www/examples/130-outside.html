@@ -1,0 +1,47 @@
+id: outside
+title: Click Outside
+tags: ts-action
+----
+<p>Popups, modals, menus and some other elements can make use of <code>click
+  happened outside</code>. It could be done with markup and underlying element,
+  but why bother if you have straightforward trigger.</p>
+
+<p>This trigger is ideally used with modifier <code>once</code>, since you're
+  probably going to remove that modal you calling it on - using <code>once</code>
+  will clean up your listeners so you won't get memory leaks.</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p ts-trigger="outside once"
+       ts-action="target 'child a', text 'Outside, but just this one time'">
+      <a href="#" ts-action="text 'Inside, every time'">No clicks yet.</a>
+    </p>
+
+    <p>
+      <a href="#" ts-action="stop">Link to check that stopPropagation doesn't matter to <code>outside</code> clicks.</a>
+    </p>
+  </div>
+
+  <script>
+    test(el => {
+      var a = el.$('a');
+      return tt.delay()
+        .then(_ => tt.assert('start: ' + a.innerText, a.innerText.startsWith('No clicks')))
+        .then(_ => a.click())
+        .then(_ => tt.delay())
+        .then(_ => tt.assert('click inside: ' + a.innerText, a.innerText.startsWith('Inside')))
+        .then(_ => el.click())
+        .then(_ => tt.delay())
+        .then(_ => tt.assert('outside: ' + a.innerText, a.innerText.startsWith('Outside')))
+        .then(_ => a.click())
+        .then(_ => tt.delay())
+        .then(_ => tt.assert('inside: ' + a.innerText, a.innerText.startsWith('Inside')))
+    });
+  </script>
+</div>

@@ -1,0 +1,142 @@
+id: actions
+title: Actions
+tags: ts-action
+----
+<p>Sometimes you don't need to go to server to do something. Closing popup or
+  hiding an element can be done without network round trip.</p>
+
+<p>Default actions (those are defined in TwinSpark without you doing anything):</p>
+<ul>
+  <li><code>stop</code>: stops propagation of an event which triggered this action pipeline</li>
+  <li><code>prevent</code>: prevents default reaction of an event which triggered this action pipeline</li>
+  <li><code>delay [Ns]</code>: delays execution of an action pipeline by N seconds</li>
+  <li><code>target ['selector']</code>: selects another element (based on current one, so you can use all selector modifiers)</li>
+  <li><code>remove</code>: removes target element (current one by default)</li>
+  <li><code>wait [event-name]</code>: waits for an event to happen on a target element</li>
+  <li><code>class+ [class-name]</code>: adds a class to a target element</li>
+  <li><code>class- [class-name]</code>: removes a class from a target element</li>
+  <li><code>class^ [class-name]</code>: toggles a class on a target element</li>
+  <li><code>not [command-name arg1 arg2]</code>: negates return value of a given command</li>
+  <li><code>log [what ever you want]</code>: logs whatever you pass it, along with an input value if any</li>
+</ul>
+
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo of <code>remove</code></h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p>
+      Hey! I'm here!
+      <button class="btn" ts-action="remove" ts-trigger="click" ts-target="parent p">Remove me!</button>
+    </p>
+  </div>
+
+  <script>
+    test(el => {
+      click(el.$('button'));
+      return wait(() => tt.assert('Removed', el.$('button') == null));
+    });
+  </script>
+</div>
+
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo of <code>delay</code></h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p ts-target="child span">
+      <span>Remove with timeout</span>
+      <button class="btn" ts-action="class+ loading, delay 1s, remove" ts-target="inherit">Do it!</button>
+    </p>
+  </div>
+
+  <script>
+    test(el => {
+      click(el.$('button'));
+      return wait(() => tt.assert('Removed with timeout', el.$('button')));
+      //wait(() => tt.assert(el.$('button')), 1050);
+    });
+  </script>
+</div>
+
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo of <code>wait</code> (waiting for an event to happen)</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p>
+      <span>Remove after transition</span>
+      <button class="btn" ts-action="class+ fade, wait transitionend, remove" ts-target="sibling span">Do it!</button>
+    </p>
+  </div>
+
+  <script>
+    test(el => {
+      click(el.$('button'));
+      return wait(() => tt.assert('Not removed yet', el.$('button')));
+      //wait(() => tt.assert(el.$('button')), 1050);
+    });
+  </script>
+</div>
+
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo of <code>animate</code> (no Safari here)</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p>
+      <button class="btn" ts-action="anim">Animate</button>
+    </p>
+  </div>
+
+  <script>
+    twinspark.func({anim: function () {
+      this.animate([{transform: "translate3D(0,0,0)"},
+                    {transform: "translate3D(300px,0,0)"}],
+                   {duration: 1000, iterations: 10})
+    }});
+    // i don't know if it's possible
+    /*test*/(el => {
+      click(el.$('button'));
+      return wait(() => {
+        console.log(getComputedStyle(el.$('button')).transform);
+        tt.assert(getComputedStyle(el.$('button')).transform != 'none')
+      }, 100);
+    });
+  </script>
+</div>
+
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo of multiple actions</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <p class="remove-me">This is going to be removed</p>
+    <p class="fade-me">And this only after transition</p>
+    <button class="btn" ts-action="
+      target 'sibling .remove-me', remove;
+      target 'sibling .fade-me', class+ fade, wait transitionend, remove
+    ">
+      Double remove</button>
+  </div>
+</div>

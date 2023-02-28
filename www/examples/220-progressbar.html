@@ -1,0 +1,66 @@
+id: progressbar
+title: Progress Bar
+tags: usecase
+----
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body mb-p">
+    <div>
+      <h3>Start progress</h3>
+      <button class="btn" ts-req="/progress" ts-req-method="post" ts-target="parent div">
+        Start job
+      </button>
+    </div>
+  </div>
+
+  <style>
+    .bar-item {
+      transition: width .2s ease-in-out;
+    }
+  </style>
+
+  <script type="text/html">
+    <div ts-req="/progress?current=XXX" ts-trigger="load delay 500">
+      <h3>Job in progress</h3>
+      <div class="bar bar-sm mb-p">
+        <div id="pb1" class="bar-item" role="progressbar" style="width:XXX%;"></div>
+      </div>
+    </div>
+  </script>
+
+  <script type="text/html">
+    <div>
+      <h3>Job in progress</h3>
+      <div class="bar bar-sm mb-p">
+        <div id="pb1" class="bar-item" role="progressbar" style="width:100%;"></div>
+      </div>
+      <button class="btn" ts-req="/progress" ts-req-method="post" ts-target="parent div">
+        Restart job
+      </button>
+    </div>
+  </script>
+
+  <script>
+    (function(progress, end) {
+      var state = 0;
+
+      XHRMock.post('/progress', function(req, res) {
+        state = 0;
+        return res.status(200).body(progress.replace(/XXX/g, state));
+      });
+
+      XHRMock.get(/^\/progress/, function(req, res) {
+        state += Math.floor(Math.random() * 30);
+        if (state >= 100)
+          return res.status(200).body(end);
+        return res.status(200).body(progress.replace(/XXX/g, state));
+      });
+    })(prev(2), prev());
+  </script>
+</div>

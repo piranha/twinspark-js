@@ -1,0 +1,32 @@
+title: Targeting Other Elements
+tags: ts-target
+id: target
+----
+<p>Often you don't want to replace clicked element, but some other part of the
+  page, like if you hit "Refresh" and need to update big part of the page. This
+  can be done with <code>ts-target</code> attribute, which takes a CSS
+  selector.</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <span id="replace">I'm waiting...</span>
+    <a href="/target" ts-req ts-target="#replace">Do it!</a>
+  </p>
+
+  <script type="text/html">
+    <span id="#replace" class="text-success">Good catch!</span>
+  </script>
+  <script>
+    XHRMock.get("/target", {body: prev()});
+    test(el => {
+      click(el.$('a'));
+      return wait(() => tt.assert(el.$('span').innerText = 'Good catch!'));
+    });
+  </script>
+</div>

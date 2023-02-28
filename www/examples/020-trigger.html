@@ -1,0 +1,31 @@
+title: Triggering Requests
+tags: ts-req, ts-trigger
+id: trigger
+----
+
+<p>Usually requests are triggered on natural interrupts: submit on forms and
+  clicks elsewhere, but sometimes you want more, like triggering on being seen
+  or hovered:</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <a href="/trigger" ts-req ts-trigger="mouseenter">Hover me!</a>
+  </p>
+
+  <script type="text/html">
+    <a href="/trigger" ts-req>Zehr gut! :)</a>
+  </script>
+  <script>
+    XHRMock.get("/trigger", {body: prev()});
+    test(el => {
+      event('mouseenter', null, el.$('a'));
+      return wait(() => tt.assert(el.$('a').innerText == 'Zehr gut! :)'));
+    });
+  </script>
+</div>

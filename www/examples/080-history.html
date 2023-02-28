@@ -1,0 +1,48 @@
+id: history
+title: Changing URL
+tags: ts-req-history
+----
+<p>URLs are a fundament of the Web. Changing URLs in line with activity makes your
+  app reloadable, browseable with backward/forward button and overall a good
+  citizen of the Web.</p>
+<p><i>NOTE:</i> twinspark is loaded with limit of 3 items in history storage (which
+uses IndexedDB), so if you click all of those links and then go back you'll see
+than it'll only restore HTML for the first 3 clicks</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <a href="/history" ts-req ts-req-history>Let's change history!</a>
+  </p>
+  <p class="card-body">
+    <a href="/history2" ts-req ts-req-history>Let's change history 2!</a>
+  </p>
+  <p class="card-body">
+    <a href="/history3" ts-req ts-req-history>Let's change history 3!</a>
+  </p>
+  <p class="card-body">
+    <a href="/history4" ts-req ts-req-history>Let's change history 4!</a>
+  </p>
+
+  <script type="text/html">
+    <span>Now check that back button works</span>
+  </script>
+  <script>
+    XHRMock.get("/history", {body: prev()});
+    XHRMock.get("/history2", {body: prev()});
+    XHRMock.get("/history3", {body: prev()});
+    XHRMock.get("/history4", {body: prev()});
+    test(el => {
+      click(el.$('a'));
+      return wait(() => {
+        tt.assert(location.pathname == '/history');
+        history.replaceState(null, null, '/');
+      });
+    });
+  </script>
+</div>

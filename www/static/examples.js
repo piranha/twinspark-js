@@ -45,16 +45,7 @@ function codewrap(s) {
   return '<pre><code>' + cleancode(s) +'</code></pre>';
 }
 
-function makeel(tag, attrs, content) {
-  var el = document.createElement(tag);
-  el.innerHTML = content;
-  for (var k in attrs) {
-    el.setAttribute(k, attrs[k]);
-  }
-  return el;
-}
-
-document.addEventListener('DOMContentLoaded', function() {
+function enableExamples() {
   [].forEach.call(document.querySelectorAll('.card.example'), function(card) {
     var example = card.querySelector('.card-body');
     example.initial = example.innerHTML;
@@ -65,27 +56,79 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     card.querySelector('.source').addEventListener('click', function(e) {
-      /* var sources = card.querySelectorAll('script');
-       * var html = '<h5>Example HTML</h5>' + codewrap(example.initial);
-       * for (var i = 0; i < sources.length; i++) {
-       *   var el = sources[i];
-       *   var title = el.getAttribute('type') == 'text/html' ? 'Server response' : 'Tests/support scripts';
-       *   html += '<hr><h5>' + title + '</h5>';
-       *   html += codewrap(el.innerHTML);
-       * }
-       * example.innerHTML = html; */
       if (example.firstElementChild.tagName == 'PRE')
         return;
       example.innerHTML = codewrap(example.innerHTML);
       example.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
     });
   });
+}
 
-  [].forEach.call(document.querySelectorAll('h3, h4'), function(el) {
-    if (el.id && !el.querySelector('.anchor')) {
-      var a = makeel('a', {href: '#' + el.id, className: 'anchor'}, '#');
-      el.append(' ');
-      el.append(a);
+document.addEventListener('DOMContentLoaded', enableExamples);
+window.addEventListener('hotreload', enableExamples);
+
+/// Tests
+
+window.test = (function() {
+  var TESTS = [];
+
+  function makeTest(testfn) {
+    var parent = document.currentScript.closest('div');
+    var example = parent.querySelector('.card-body');
+    var h = parent;
+    while(h && !((h = h.previousElementSibling).tagName == 'H3')) {
     }
-  });
-});
+
+    return {
+      name: h && h.innerText || 'test',
+      func: async () => {
+        example.innerHTML = example.initial;
+        twinspark.activate(example);
+        try {
+          await testfn(example)
+        } finally {
+          example.innerHTML = example.initial;
+          twinspark.activate(example);
+        }
+        return 1;
+      }
+      };
+    }
+
+    function test(testfn) {
+      TESTS.push(makeTest(testfn));
+    }
+
+    // use to limit tests to only single function, so less noise happens when you
+    // debug a test
+    function test1(testfn) {
+      var test = makeTest(testfn);
+      setTimeout(_ => { TESTS = [test] }, 100);
+    }
+
+    function runTests(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      Element.prototype.$ = Element.prototype.querySelector;
+      Element.prototype.$$ = Element.prototype.querySelectorAll;
+
+      window.event = (type, attrs, el) => {
+        var e = new Event(type);
+        if (attrs) Object.assign(e, attrs);
+        el.dispatchEvent(e);
+      }
+      window.click = (el) => event('click', {button: 0}, el);
+      window.wait = function(func, t) {
+        return new Promise(resolve => setTimeout(() => resolve(func()), t || 16))
+      }
+
+      tt.test(TESTS);
+    }
+
+    window.addEventListener('run-tests', runTests);
+
+  return test;
+})();

@@ -5,13 +5,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ some .Title .Site.Other.Title }}</title>
+  <title>{{ if .Title }}{{ .Title }} - {{ end }}{{ .Site.Other.Title }}</title>
 
   <meta property="og:type" content="website">
   <meta property="og:url" content="{{ .Site.Other.Url }}{{ .Url }}">
-  <meta property="og:title" content="{{ some .Title .Site.Other.Title }}">
+  <meta property="og:title" content="{{ if .Title }}{{ .Title }} - {{ end }}{{ .Site.Other.Title }}">
   <meta property="og:description" content="Declarative enhancement for HTML: simple, composable, lean.">
-  <meta property="og:image" content="{{ version . "static/twinspark-icon.svg" }}">
+  <meta property="og:image" content="{{ .Site.Other.Url }}{{ version . "static/twinspark-icon.svg" | replace "../" "" }}">
 
   <link rel="stylesheet" type="text/css" href="{{ version . "vendor/spectre.min.css" }}">
   <link rel="stylesheet" type="text/css" href="{{ version . "static/custom.css" }}">
@@ -21,6 +21,7 @@
 
   <link rel="icon" href="{{ version . "static/favicon.png" }}" type="image/png" />
   <script src="{{ version . "static/twinspark.js" }}" data-timeout="5000" data-history="3"></script>
+  <script src="{{ version . "vendor/tinytest.js" }}"></script>
   <script src="{{ version . "static/examples.js" }}"></script>
 </head>
 <body class="container">
@@ -50,8 +51,8 @@
 
 
 {{ define "page" }}{{ template "header" . }}
-  {{ .Content }}
-{{ template "network" . }}
+  <main>{{ .Content }}</main>
+  {{ template "network" . }}
 {{ template "footer" . }}{{ end }}
 
 
@@ -142,4 +143,13 @@
     })();
   </script>
 </div>
+{{ end }}
+
+
+{{ define "examples" }}
+<h2>Examples</h2>
+{{ range .Site.Pages.WithTag .Title | abcsort }}
+  <h3 id="{{ .Other.Id }}">{{ .Title }} <a href="#{{ .Other.Id }}">#</a></h3>
+  {{ .Raw }}
+{{ end }}
 {{ end }}

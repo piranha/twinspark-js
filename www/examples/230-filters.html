@@ -1,0 +1,63 @@
+id: filters
+title: Filters
+tags: usecase
+----
+<p>Filtering on ecommerce sites is a complex task. On one side you want it to be crawlable
+  by Google, on the other if a user selected two filters one by one you'd like to see
+  products, filtered by both. Naïve implementation will filter only one of them if
+  a pause between clicks was short enough. It seems like the best way is form, full
+  of links (so that Google/no-js envs can still use it), which toggle checkboxes when
+  JS is enabled and auto-submit form.
+</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body" ts-target="child .out">
+    <form method="get" action="/filters" ts-target="inherit" ts-req>
+      <div><b>Brand</b></div>
+      <span class="filter">
+        <input type="checkbox" name="brand" value="adidas">
+        <a class="btn" href="?brand=adidas" ts-action="togglebox, submit">Adidas</a>
+      </span>
+      <span class="filter">
+        <input type="checkbox" name="brand" value="nike">
+        <a class="btn" href="?brand=nike" ts-action="togglebox, submit">Nike</a>
+      </span>
+      <span class="filter">
+        <input type="checkbox" name="brand" value="puma">
+        <a class="btn" href="?brand=puma" ts-action="togglebox, submit">Puma</a>
+      </span>
+    </form>
+    <hr>
+    <p class="out">Selected filters: </p>
+  </div>
+
+  <script>
+    twinspark.func({
+      togglebox: function(o) {
+        var box = o.el.parentElement.querySelector('[type="checkbox"]');
+        box.checked = !box.checked;
+      },
+      submit: function(o) {
+        twinspark.trigger(o.el.closest('form'), 'submit');
+      },
+    });
+    XHRMock.get(/^\/filters/, function(req, res) {
+      return res.status(200).body('<p class="out">Selected filters: ' + req.url() + '</p>');
+    });
+  </script>
+
+  <style>
+    .filter [type="checkbox"] { display: none; }
+    .filter [type="checkbox"]:checked + a { /* copy of btn-primary */
+      background: #5755d9;
+      border-color: #4b48d6;
+      color: #fff;
+    }
+  </style>
+</div>

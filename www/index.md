@@ -51,8 +51,8 @@
 
 TwinSpark could be mentally split in three parts:
 
-- Page fragment updates facilitated via HTML attributes (no JS needed). This is
-  the core idea.
+- [Page fragment updates](/api/#html-updates) facilitated via HTML attributes
+  (no JS needed). This is the core idea.
 - [Morphing](/examples/validation/) - a strategy to update HTML graduallly,
   without breaking state and focus. Makes form validation and animations on HTML
   changes a breeze.

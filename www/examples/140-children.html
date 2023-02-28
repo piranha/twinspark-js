@@ -1,0 +1,42 @@
+id: children
+title: Multiple Children
+tags: ts-req-selector
+----
+<p>TwinSpark usually deals with single element being target (<code>ts-target</code>)
+  and single element being replacement (<code>ts-req-selector</code>) - this is
+  much more controlled behavior than multiple elements. But if you look how
+  endless scrolling is implemented in HTML, it's usually a long list of elements
+  inside some other element - so you have to deal with several elements being appended
+  to a parent. For this and similar use cases there is a modifier <code>children</code>
+  in <code>ts-req-selector</code>.</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <span class="list">
+      <span class="chip">Element 1</span><br>
+      <span class="chip">Element 2</span><br>
+      <button class="btn" ts-req="/children" ts-req-selector="children .list">Load more</button>
+    </span>
+  </p>
+
+  <script type="text/html">
+    <span class="list">
+      <span class="chip">Element 3</span><br>
+      <span class="chip">Element 4</span><br>
+    </span>
+  </script>
+  <script>
+    XHRMock.get("/children", {body: prev()});
+    test(el => {
+      click(el.$('button'));
+      return wait(() => {
+          tt.assert(el.$$('.list span').length == 4)});
+      });
+  </script>
+</div>
