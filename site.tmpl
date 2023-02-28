@@ -1,7 +1,7 @@
 {{/* -*- mode: web; engine: go -*- */}}
 
 {{ define "header" }}<!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -29,7 +29,7 @@
 <div class="column col-6 col-xl-8 col-lg-10 col-md-12 col-mx-auto">
   <header class="navbar my-2">
     <section class="navbar-section">
-      <a href="{{ .Rel "/" }}"><img src="{{ version . "static/twinspark-logo.svg" }}" style="aspect-ratio: 238 / 56; height: 30px"></a>
+      <a href="{{ .Rel "/" }}"><img src="{{ version . "static/twinspark-logo.svg" }}" alt="TwinSpark" style="aspect-ratio: 238 / 56; height: 30px"></a>
     </section>
     <section class="navbar-center">
       <a href="{{ .Rel "/api/" }}" class="btn btn-link">API</a>
