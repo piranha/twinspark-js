@@ -1,0 +1,49 @@
+title: Video
+tags: ts-swap
+id: video
+----
+<p>
+  <code>ts-swap="morph"</code> makes Youtube video still playing even
+  if DOM structure changes quite a bit
+</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body mb-p">
+    <div>
+      <div>
+        <h3>Above</h3>
+      </div>
+      <div>
+        <iframe id="video" width="422" height="240" src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                title="Rick Astley - Never Gonna Give You Up (Official Music Video)" frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+      </div>
+      <a href="/video" class="btn" ts-req ts-target="parent div" ts-swap="morph">Update</a>
+    </div>
+  </div>
+
+  <script type="text/html">
+    <div>
+      <div>
+        <iframe id="video" width="422" height="240" src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+                title="Rick Astley - Never Gonna Give You Up (Official Music Video)" frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+      </div>
+      <div>
+        <h3>Below</h3>
+      </div>
+    </div>
+  </script>
+
+  <script>
+    XHRMock.get("/video", {body: prev()});
+  </script>
+</div>

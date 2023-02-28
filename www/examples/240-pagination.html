@@ -1,0 +1,84 @@
+title: Pagination Animation
+tags: ts-swap, usecase
+id: pagination
+----
+<p><code>ts-swap="morph"</code> makes your pagination nice and smooth.</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body mb-p">
+  </div>
+
+  <style>
+    /* classes for incoming/outgoing links, they'll have same animation */
+    .pagination .page-item.normal.ts-remove,
+    .pagination .page-item.normal.ts-insert {
+      width: 0;
+      opacity: 0;
+      margin: 0;
+    }
+    /* new class to set width so it could be animated, Prev/Next are too wide */
+    .pagination .page-item.normal {
+      width: 1.5rem;
+      opacity: 1;
+      transition: width   ease-in-out .3s .15s,
+                  opacity ease-in-out .25s .15s,
+                  margin  ease-in-out .25s .15s;
+    }
+    /* transition for background-color for .active */
+    .pagination .page-item a {
+      transition: background-color .15s ease-in-out, color .15s ease-in-out;
+    }
+  </style>
+
+  <script>
+    function renderPagination(page) {
+      var TOTAL = 20;
+      page = Math.min(TOTAL, Math.max(1, parseInt(page, 10) || 1));
+
+      function link(n, name, cls) {
+        if (n == '...') {
+          return `<li class="page-item normal"><span>...</span></li>`;
+        }
+        return `<li class="page-item ${cls}" id="p${name}">
+                  <a href="/page?n=${n}"
+                     ts-req ts-target="inherit" ts-swap="morph">${name}</a>
+                </li>`;
+      }
+
+      var items = [];
+
+      items.push(link(page - 1, 'Previous', page > 1 ? '' : 'disabled'));
+
+      if (page - 2 > 1) {
+        items.push(link('...'));
+      }
+
+      for (var i = Math.max(1, page - 2); i < Math.min(TOTAL + 1, page + 3); i++) {
+        items.push(link(i, i, i == page ? 'active normal' : 'normal'));
+      }
+
+      if (page + 2 < TOTAL) {
+        items.push(link('...'));
+      }
+
+      items.push(link(page + 1, 'Next', page < TOTAL ? '' : 'disabled'));
+
+      return `<div ts-target="target">
+                <h2>Page ${page}</h2>
+                <ul class="pagination">\n${items.join('\n')}\n</ul>
+              </div>`;
+    }
+
+    document.currentScript.parentElement.querySelector('.card-body').innerHTML = renderPagination(10);
+    XHRMock.get(/^\/page/, XHRMock.delay((req, res) => {
+      var n = parseInt(req.url().query.n, 10) || 1;
+      return res.status(200).body(renderPagination(n));
+    }, 60));
+  </script>
+</div>

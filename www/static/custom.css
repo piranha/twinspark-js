@@ -14,7 +14,7 @@ pre code {display: inline-block; } /* or else padding is broken for blocks */
     linear-gradient(to right top,
                     rgba(255,255,255, 0.1) 0,
                     rgba(255,255,255, 1) 100%),
-    url(/static/twinspark-icon.svg);
+    url(twinspark-icon.svg);
   background-repeat: no-repeat;
   background-size: 2rem 2rem;
   background-position: right 1rem top 1rem;
