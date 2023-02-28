@@ -6,12 +6,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Download gostatic
-      run: |
-        curl -Lso gostatic https://github.com/piranha/gostatic/releases/download/2.36/gostatic-64-linux
-        chmod +x gostatic
     - name: render
-      run: ./gostatic gostatic.config
+      run: make deps render
     - uses: actions/setup-java@v3
       with:
         distribution: 'zulu' # https://github.com/marketplace/actions/setup-java-jdk#supported-distributions
@@ -23,12 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Download gostatic
-      run: |
-        curl -Lso gostatic https://github.com/piranha/gostatic/releases/download/2.36/gostatic-64-linux
-        chmod +x gostatic
     - name: render
-      run: ./gostatic gostatic.config
+      run: make deps render
     - uses: browser-actions/setup-chrome@v1
     - run: npm i
     - run: CHROMIUM_BIN=$(which chrome) ./headless-tests.js
@@ -37,15 +29,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Download gostatic
-      run: |
-        curl -Lso gostatic https://github.com/piranha/gostatic/releases/download/2.36/gostatic-64-linux
-        chmod +x gostatic
     - name: render
-      run: ./gostatic gostatic.config
+      run: make deps render
     - uses: actions/upload-pages-artifact@v1
       with:
-        path: build-www
+        path: public
 
   deploy:
     needs: build

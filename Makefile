@@ -17,4 +17,13 @@ serve:
 	darkhttpd . --port 3000 --addr 127.0.0.1
 
 w:
-	gostatic -w gostatic.config
+	gostatic -w gostatic.conf
+
+# Deploy
+
+deps:
+	curl -Lso gostatic https://github.com/piranha/gostatic/releases/download/2.36/gostatic-64-linux
+	chmod +x gostatic
+
+render:
+	./gostatic gostatic.conf
