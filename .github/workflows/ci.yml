@@ -3,7 +3,7 @@ on: [push]
 jobs:
 
   types:
-    runs-on: ubuntu-latest
+    runs-on: buildjet-4vcpu-ubuntu-2204
     steps:
     - uses: actions/checkout@v3
     - name: render
@@ -16,7 +16,7 @@ jobs:
     - run: make adv
 
   tests:
-    runs-on: ubuntu-latest
+    runs-on: buildjet-4vcpu-ubuntu-2204
     steps:
     - uses: actions/checkout@v3
     - name: render
