@@ -3,7 +3,7 @@ on: [push]
 jobs:
 
   types:
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: render
@@ -16,7 +16,7 @@ jobs:
     - run: make adv
 
   tests:
-    runs-on: buildjet-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: render
@@ -26,7 +26,7 @@ jobs:
     - run: CHROMIUM_BIN=$(which chrome) ./headless-tests.js public
 
   build:
-    runs-on: buildjet-2vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: render
@@ -37,7 +37,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: buildjet-2vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     permissions:
       pages: write
       id-token: write

@@ -61,6 +61,8 @@ async function runTests(browser, base, url, needsTrigger) {
 
     await page.exposeFunction('headlessRunnerDone', async (success) => {
       clearTimeout(timeout);
+      // wait for all logs to resolve
+      await new Promise(r => setTimeout(r, 10));
       await page.close();
       resolve(success);
     });
@@ -71,12 +73,12 @@ async function runTests(browser, base, url, needsTrigger) {
         setTimeout(() => window.headlessRunnerDone(e.detail.success));
       });
     });
+
     if (needsTrigger) {
       await page.evaluate(() => {
         window.dispatchEvent(new CustomEvent('run-tests'));
       });
     }
-
   });
 
   var success = await res;
@@ -114,11 +116,11 @@ function staticHandler(root) {
     executablePath: path,
   });
 
-  var root = process.argv[2];
+  var root = process.argv[2] || 'public';
   var server = await http.createServer(staticHandler(root)).listen(0);
   var base = 'http://localhost:' + server.address().port;
 
-  var success = await runTests(browser, base, '/test/', false) &&
+  var success = await runTests(browser, base, '/test/morph/', false) &&
       await runTests(browser, base, '/examples/', true);
   console.log(success ? GREEN : RED,
               `${indicator(success)} ALL TESTS DONE, SUCCESS: ${success}`);
