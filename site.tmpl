@@ -145,11 +145,15 @@
 </div>
 {{ end }}
 
+{{ define "example" }}
+  <h3 id="{{ .Other.Id }}">{{ .Title }} <a href="#{{ .Other.Id }}">#</a></h3>
+  {{ .Content }}
+{{ end }}
+
 
 {{ define "examples" }}
 <h2>Examples</h2>
 {{ range .Site.Pages.WithTag .Title | abcsort }}
-  <h3 id="{{ .Other.Id }}">{{ .Title }} <a href="#{{ .Other.Id }}">#</a></h3>
-  {{ .Raw }}
+  {{ template "example" . }}
 {{ end }}
 {{ end }}

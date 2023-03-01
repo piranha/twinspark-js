@@ -7,7 +7,6 @@ pre code {display: inline-block; } /* or else padding is broken for blocks */
 .example + h3, table + h2 { margin-top: 1.2rem; }
 
 .mb-p {margin-bottom: 1.2rem; }
-.mt-p {margin-top: 1.2rem; }
 .fade {opacity: 0; transition: opacity 0.5s ease-in-out; }
 .back-logo {
   background-image:
