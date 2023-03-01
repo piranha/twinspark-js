@@ -23,10 +23,10 @@ jobs:
       run: make deps render
     - uses: browser-actions/setup-chrome@v1
     - run: npm i
-    - run: CHROMIUM_BIN=$(which chrome) ./headless-tests.js
+    - run: CHROMIUM_BIN=$(which chrome) ./headless-tests.js public
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: buildjet-2vcpu-ubuntu-2204
     steps:
     - uses: actions/checkout@v3
     - name: render
@@ -37,7 +37,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: buildjet-2vcpu-ubuntu-2204
     permissions:
       pages: write
       id-token: write

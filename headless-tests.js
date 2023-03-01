@@ -37,7 +37,7 @@ function indicator(success) {
 }
 
 
-async function runTests(browser, base, url) {
+async function runTests(browser, base, url, needsTrigger) {
   console.log(YELLOW, `🔄 Tests at ${url}`);
   let page = await browser.newPage();
   page.on('console', async msg => {
@@ -70,8 +70,12 @@ async function runTests(browser, base, url) {
         console.log('Event:', e.type, 'Success:', e.detail.success);
         setTimeout(() => window.headlessRunnerDone(e.detail.success));
       });
-      window.dispatchEvent(new CustomEvent('run-tests'));
     });
+    if (needsTrigger) {
+      await page.evaluate(() => {
+        window.dispatchEvent(new CustomEvent('run-tests'));
+      });
+    }
 
   });
 
@@ -82,21 +86,23 @@ async function runTests(browser, base, url) {
 }
 
 
-function staticHandler(req, res) {
-  var path = url.parse(req.url).pathname;
-  if (path.endsWith('/')) {
-    path += 'index.html';
-  }
-  fs.readFile('build-www/' + path.slice(1), (err, data) => {
-    if (err) {
-      res.writeHead(404, 'Not Found');
-      res.write('Not Found');
-      return res.end();
+function staticHandler(root) {
+  return function (req, res) {
+    var path = url.parse(req.url).pathname;
+    if (path.endsWith('/')) {
+      path += 'index.html';
     }
-    res.writeHead(200);
-    res.write(data);
-    return res.end();
-  });
+    fs.readFile(root + '/' + path.slice(1), (err, data) => {
+      if (err) {
+        res.writeHead(404, 'Not Found');
+        res.write('Not Found');
+        return res.end();
+      }
+      res.writeHead(200);
+      res.write(data);
+      return res.end();
+    });
+  }
 }
 
 
@@ -108,11 +114,12 @@ function staticHandler(req, res) {
     executablePath: path,
   });
 
-  var server = await http.createServer(staticHandler).listen(0);
+  var root = process.argv[2];
+  var server = await http.createServer(staticHandler(root)).listen(0);
   var base = 'http://localhost:' + server.address().port;
 
-  var success = await runTests(browser, base, '/test/') &&
-      await runTests(browser, base, '/examples/');
+  var success = await runTests(browser, base, '/test/', false) &&
+      await runTests(browser, base, '/examples/', true);
   console.log(success ? GREEN : RED,
               `${indicator(success)} ALL TESTS DONE, SUCCESS: ${success}`);
   await browser.close();
