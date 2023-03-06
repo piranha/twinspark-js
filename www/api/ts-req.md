@@ -10,7 +10,7 @@ There is one limitation - TwinSpark expects you to return a single element for
 replacement. If you return more, they will be ignored - you can make use of this
 with help of [ts-swap-push]({{ $.Rel "/api/ts-swap-push/" }}).
 
-## Details
+## Notes
 
 - Method by default is `POST` when placed on a form and `GET` in other cases
 - [ts-req-method]({{ $.Rel "/api/ts-req-method/" }}) to override request method

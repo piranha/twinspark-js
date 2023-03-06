@@ -2,17 +2,9 @@ title: Targeting Parents
 tags: ts-target
 id: parent
 ----
-<p>Interestingly, this seems like the most common pattern - when a button needs
-  to update an element around itself. Add modifier <code>parent</code> before
-  selector and <code>element.closest(selector)</code> method will be used to
-  find a parent. This will help a lot to minimize amount of ids.</p>
-
-<p>There are a few other selector modifiers - please read sources of the function
-  <code>_findSingleTarget</code> until we get proper documentation. They are here
-  because regular CSS selectors start at the top of the document, but in case of
-  TwinSpark you're starting from a concrete element. DOM has various APIs to do
-  that, which TwinSpark maps to modifiers: <code>inherit</code>,
-  <code>parent</code>, <code>child</code>, <code>sibling</code>.</p>
+<p>This is very common pattern - when a button needs to update an element around
+  itself. Modifier <code>parent</code> will search upwards for a suitable
+  element (using <code>element.closest(sel)</code>).</p>
 
 <div class="card example">
   <div class="card-header">

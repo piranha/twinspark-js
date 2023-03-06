@@ -1,6 +1,6 @@
 id: target-target
 title: Relative Targeting
-tags: ts-target
+tags: ts-target, advanced
 ----
 <p>Most twinspark commands and extensions operate directly on the current
   target element. However, some of them might require a pair of elements
@@ -56,7 +56,7 @@ tags: ts-target
 
   <div class="card-body">
     <div ts-trigger="click" ts-action="prevent, targetSource, class^ active">
-      <p>None of these buttons have <code>ts-actions</code>, but when you click,
+      <p>None of these buttons have <code>ts-action</code> attribute, but when you click,
         the event is bubbled to the container that executes commands:<br/>
         <a href="" class="btn">One</a>
         <a href="" class="btn">Two</a>

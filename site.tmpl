@@ -146,7 +146,7 @@
 {{ end }}
 
 {{ define "example" }}
-  <h3 id="{{ .Other.Id }}">{{ .Title }} <a href="#{{ .Other.Id }}">#</a></h3>
+<h3 id="{{ .Other.Id }}">{{ .Title }} {{ if .Has "Tag" "advanced" }} <small class="text-muted">(advanced)</small>{{ end }} <a href="#{{ .Other.Id }}">#</a></h3>
   {{ .Raw }}
 {{ end }}
 

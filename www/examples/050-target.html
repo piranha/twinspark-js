@@ -2,10 +2,10 @@ title: Targeting Other Elements
 tags: ts-target
 id: target
 ----
-<p>Often you don't want to replace clicked element, but some other part of the
-  page, like if you hit "Refresh" and need to update big part of the page. This
-  can be done with <code>ts-target</code> attribute, which takes a CSS
-  selector.</p>
+
+<p>Default behavior is to replace element, which issues the request (in this
+  case an <code>a</code>). <code>ts-target</code> sets another element as a
+  target for the request.</p>
 
 <div class="card example">
   <div class="card-header">
