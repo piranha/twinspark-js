@@ -795,9 +795,12 @@
     return qsf(reply, sel);
   }
 
-  function syncattr(target, source, attr) {
+  function syncattr(target, source, attr, withProp) {
     var value = getattr(source, attr);
     if (value != getattr(target, attr)) {
+      if (withProp) {
+        target[attr] = source[attr] || '';
+      }
       value ? setattr(target, attr, value) : delattr(target, attr);
     }
   }
@@ -901,10 +904,9 @@
         // Changing the "value" attribute without changing the "value" property
         // will have no effect since it is only used to set the initial
         // value. Similar for the "checked" attribute, and "disabled".
-        target.value = reply.value || '';
-        syncattr(target, reply, 'value');
-        syncattr(target, reply, 'checked');
-        syncattr(target, reply, 'disabled');
+        syncattr(target, reply, 'value', true);
+        syncattr(target, reply, 'checked', true);
+        syncattr(target, reply, 'disabled', true);
       } else if (target.tagName == 'OPTION') {
         syncattr(target, reply, 'selected');
       } else if (target.tagName == 'TEXTAREA') {
