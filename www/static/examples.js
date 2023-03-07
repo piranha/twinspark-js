@@ -55,10 +55,15 @@ function enableExamples() {
       twinspark.activate(example);
     });
 
+    var source = example.innerHTML;
+    var next = example.nextElementSibling;
+    if (next && next.tagName == 'STYLE') {
+      source += '\n\n' + next.outerHTML;
+    }
     card.querySelector('.source').addEventListener('click', function(e) {
       if (example.firstElementChild.tagName == 'PRE')
         return;
-      example.innerHTML = codewrap(example.innerHTML);
+      example.innerHTML = codewrap(source);
       example.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
     });
   });

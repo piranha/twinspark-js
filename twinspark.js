@@ -1108,7 +1108,9 @@
   function executeSwap(strategy, target, reply, ctx) {
     strategy || (strategy = 'replace');
 
-    if (strategy != 'morph' && strategy != 'morph-all') {
+    if (strategy != 'morph' &&
+        strategy != 'morph-all' &&
+        strategy != 'skip') {
       qse(reply, '[id]').forEach(function(el) {
         transitionAttrs(el, target, ctx);
       });

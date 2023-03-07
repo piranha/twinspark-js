@@ -1,10 +1,11 @@
-title: Video
+title: Morphing Video
 tags: ts-swap
 id: video
 ----
-<p>
-  <code>ts-swap="morph"</code> makes Youtube video still playing even
-  if DOM structure changes quite a bit
+<p>This is a hard problem to solve with other algorithms (notably, morphdom gets
+  it wrong). HTML structure is changed a lot, and element with an
+  <code>id</code> is deep (enough) inside that structure, but Youtube video
+  still plays after change.
 </p>
 
 <div class="card example">

@@ -6,8 +6,6 @@ title: ts-target
 Assigns a target element for the request issued by origin element. Could be some
 parent element, or a sibling, or a complete separate part of the page.
 
-## Syntax
-
 `ts-target` accepts CSS selector (with possible modifiers) or a keywords
 `target` or `inherit`:
 

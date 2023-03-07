@@ -1,6 +1,6 @@
 id: children
 title: Multiple Children
-tags: ts-req-selector
+tags: ts-req-selector, ts-swap
 ----
 <p>If you look how endless scrolling is implemented in HTML, it's usually a long
   list of elements inside some other element - so you have to deal with several
@@ -18,7 +18,10 @@ tags: ts-req-selector
     <span class="list">
       <span class="chip">Element 1</span><br>
       <span class="chip">Element 2</span><br>
-      <button class="btn" ts-req="/children" ts-req-selector="children .list">Load more</button>
+      <button class="btn"
+              ts-req="/children"
+              ts-req-selector="children .list"
+              ts-swap="beforebegin">Load more</button>
     </span>
   </p>
 
