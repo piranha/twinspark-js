@@ -1,0 +1,37 @@
+id: partial-response
+title: Use only part of the response
+tags: ts-req-selector
+----
+
+<p>Server returns more HTML than we need - maybe a full template is rendered,
+  maybe something else is going on - and we need to use just a part of it.</p>
+
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+    <a href="/partial-response" ts-req ts-req-selector="a[ts-req]">Click me</a>
+  </p>
+
+  <script type="text/html">
+    <body>
+      <div>
+        <a href="#">This is an excessive tag</a>
+        <a href="/partial-response" ts-req ts-req-selector="a[ts-req]">See network activity in a debug panel!</a>
+      </div>
+    </body>
+  </script>
+  <script>
+    XHRMock.get("/partial-response", {body: prev()});
+    test(el => tt.delay(1)
+      .then(_ => click(el.$('a')))
+      .then(_ => tt.delay(1))
+      .then(_ => tt.assert('Element Updated!',
+                           el.$('a').innerText.includes("network"))));
+  </script>
+</div>
