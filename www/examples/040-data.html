@@ -1,6 +1,6 @@
-title: Collecting Data
-tags: ts-data
 id: data
+title: Collecting Data
+tags: ts-data, ts-req-method
 ----
 <p>Sometimes collecting the data you need to send in templates is really
   annoying: you'll have to teach lower-level components/partials/etc some
@@ -21,7 +21,7 @@ id: data
   <p class="card-body">
     <span ts-data="a=1&b=2&c=3">
       <!-- empty c removes previous values of c and then adds 5 -->
-      <a href="/data" ts-data="b=4&c&c=5" ts-req ts-req-method="POST">So. Much. Data.</a>
+      <a href="/data" ts-data="b=4&c&c=5" ts-req ts-req-method="post">So. Much. Data.</a>
     </span>
   </p>
 
