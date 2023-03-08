@@ -326,7 +326,7 @@
   function elcrumbs(el, attr) {
     var result = [];
     var value;
-    var _el = el; // this is to make Closure Compiler typing happy :(
+    var _el = el; // this is to make Closure Compiler type checker happy :(
 
     do {
       value = getattr(_el, attr);
@@ -795,6 +795,7 @@
     return qsf(reply, sel);
   }
 
+  /** @type {function(!Element, !Element, !string, !boolean=): void} */
   function syncattr(target, source, attr, withProp) {
     var value = getattr(source, attr);
     if (value != getattr(target, attr)) {
@@ -891,10 +892,13 @@
         return;
       }
 
-      for (var attr of /** @type Element */ (reply).attributes) {
+      target = /** @type !Element */ (target);
+      reply = /** @type !Element */ (reply);
+
+      for (var attr of reply.attributes) {
         syncattr(target, reply, attr.name);
       }
-      for (var attr of /** @type Element */ (target).attributes) {
+      for (var attr of target.attributes) {
         syncattr(target, reply, attr.name);
       }
 
