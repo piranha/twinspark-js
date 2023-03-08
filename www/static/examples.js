@@ -45,6 +45,7 @@ function codewrap(s) {
   return '<pre><code>' + cleancode(s) +'</code></pre>';
 }
 
+
 function enableExamples() {
   [].forEach.call(document.querySelectorAll('.card.example'), function(card) {
     var example = card.querySelector('.card-body');
@@ -71,6 +72,7 @@ function enableExamples() {
 
 document.addEventListener('DOMContentLoaded', enableExamples);
 window.addEventListener('hotreload', enableExamples);
+window.addEventListener('popstate', _ => setTimeout(enableExamples, 16));
 
 /// Tests
 
