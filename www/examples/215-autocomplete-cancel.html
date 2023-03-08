@@ -6,14 +6,6 @@ tags: ts-req-strategy, usecase
   the implementation above triggers numerous requests if the user types slow enough.
   If requests finish at different durations, an older request can override the
   latest. To avoid this, we need to abort the XHR using <code>ts-req-strategy="last"</code>.</p>
-<p>Possible values for <code>ts-req-strategy</code> are:</p>
-<ol>
-  <li><code>first</code> prevent triggering new requests until the active one finishes
-    (useful for forms)</li>
-  <li><code>last</code> abort active request when a new one is triggered</li>
-  <li><code>queue</code> (default) send requests as they are triggered</li>
-</ol>
-<br/>
 
 <div class="card example">
   <div class="card-header">
