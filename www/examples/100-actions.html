@@ -81,13 +81,13 @@ tags: ts-action
 
 <div class="card example">
   <div class="card-header">
-    <h5 class="d-inline mr-2">Demo of <code>animate</code> (no Safari here)</h5>
+    <h5 class="d-inline mr-2">Demo of <code>animate</code></h5>
     <button class="btn btn-link btn-sm reset">Reset</button>
     <button class="btn btn-link btn-sm source">View Source</button>
   </div>
 
   <div class="card-body">
-    <p>
+    <p style="container-type: inline-size">
       <button class="btn" ts-action="anim">Animate</button>
     </p>
   </div>
@@ -95,7 +95,7 @@ tags: ts-action
   <script data-source="1">
     twinspark.func({anim: function () {
       this.animate([{transform: "translate3D(0,0,0)"},
-                    {transform: "translate3D(300px,0,0)"}],
+                    {transform: "translate3D(calc(100cqw - 100%),0,0)"}],
                    {duration: 1000, iterations: 3})
     }});
   </script>
