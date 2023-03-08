@@ -2,13 +2,10 @@ title: Before/After Request
 tags: ts-req-before, ts-req-after
 id: before
 ----
-<p>If you need to do some custom things around your request, you can use
-  <code>ts-req-before</code> and <code>ts-req-after</code>. Those use same
-  syntax as <a href="#action"><code>ts-action</code></a>, so it's pretty
-  flexible. One additional thing is that if last (or the only) command of
-  <code>ts-req-before</code> returns falsy value (<code>false</code>, or
-  an empty string, or a zero) - this stops that request.</p>
-
+<p>
+  This example demostrates how you can interfere with request using
+  <code>ts-req-before</code>.
+</p>
 
 <div class="card example">
   <div class="card-header">
