@@ -37,6 +37,7 @@
       var args = [].slice.call(arguments, 1, arguments.length - 1);
       var o = merge({}, arguments[arguments.length - 1]);
       o.src = o.src.slice(o.command.length + 1);
+      o = /** @type {!CommandPayload}*/ (o);
 
       var rv = executeCommand(funcname, args, o);
 
@@ -664,7 +665,7 @@
 
     // we need to put some state in our *current* history item, so that
     // `onpopstate` knows it wasn't called because of `hashchange`
-    history.replaceState('history', null, null);
+    history.replaceState('history', '', '');
     history.pushState(null, title, url);
     sendEvent(window, 'ts-pushstate', {url: url});
   }
@@ -1600,6 +1601,17 @@
    */
   var ActionDef;
 
+  /** @typedef {{
+   *   el:      !Element,
+   *   e:       !Event,
+   *   command: !string,
+   *   src:     !string,
+   *   line:    !string,
+   *   input:   *,
+   * }}
+   */
+  var CommandPayload;
+
   /**
    * Either call it with object of name to function, or with a name and a
    * function.
@@ -1613,6 +1625,7 @@
     return FUNCS;
   }
 
+  /** @type {function(!string, Array<!string>, CommandPayload): *} */
   function executeCommand(command, args, payload) {
     var cmd = /** @type {Function|undefined|null} */ (
       (window._ts_func && window._ts_func[command]) ||
@@ -1729,7 +1742,7 @@
   }
 
 
-  /** @type {function(ActionDef, {el: Element, e: Event}): !Promise} */
+  /** @type {function(ActionDef, {el: !Element, e: !Event}): !Promise} */
   function _doAction(action, payload) {
     console.debug('ACTION', action.src, payload);
 
@@ -1748,6 +1761,7 @@
 
         opts.command = command.name;
         opts.src = command.src;
+        opts = /** @type {!CommandPayload} */ (opts);
 
         return executeCommand(command.name, command.args, opts);
       }).catch(function(err) {
@@ -1767,7 +1781,8 @@
     console.debug('ACTIONS', {spec: spec, event: e, payload: payload});
     var actions = parseActionSpec(spec);
     // parens indicate type cast rather than type declaration
-    var mypayload = /** @type {{el: Element, e: Event}} */ (merge({el: target, event: e}, payload));
+    var mypayload = /** @type {{el: !Element, e: !Event}}
+                     */ (merge({el: target, event: e}, payload));
 
     var result;
     for (var i = 0; i < actions.length; i++) {
