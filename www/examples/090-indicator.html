@@ -24,11 +24,11 @@ tags: ts-req
       100% {left: 0;}
     }
 
-    .indicator.ts-active {
+    .indicator[aria-busy=true] {
       pointer-events: none;
       position: relative;
     }
-    .indicator.ts-active::after{
+    .indicator[aria-busy=true]::after{
       animation: border 1.5s infinite linear;
       position: absolute;
       width: 20px;
