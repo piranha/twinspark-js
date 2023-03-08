@@ -1274,7 +1274,7 @@
   // `origin` - an element where request started from, a link or a button
   // `target` - where the incoming HTML will end up
   // `reply` - incoming HTML to end up in target
-  /** @type {function(string, Array<!Element>, string, Response): Array<!Element>} */
+  /** @type {function(!string, Array<!Element>, !string, !Response): Array<!Element>} */
   function swapResponse(url, origins, content, res) {
     var html = new DOMParser().parseFromString(content, 'text/html');
 
@@ -1402,18 +1402,19 @@
           return false;
         }
 
-        // res.url == "" with mock-xhr
-        if (res.ok && res.url && (res.url != new URL(fullurl, location.href).href)) {
-          res.headers['ts-history'] = res.url;
-          return swapResponse(res.url, [document.body], res.content,
-                              /** @type {Response} */ (res));
-        }
-
         if (res.ok) {
-          // cannot use res.url here since fetchMock will not set it to right
-          // value
-          return swapResponse(fullurl, origins, res.content,
-                              /** @type {Response} */ (res));
+          res = /** @type !Response */ (res);
+          let redirected = (res.url &&
+                            (res.url != new URL(fullurl, location.href).href));
+
+          if (redirected) {
+            if (!res.headers['ts-history']) {
+              res.headers['ts-history'] = res.url;
+            }
+            return swapResponse(res.url, [document.body], res.content, res);
+          }
+
+          return swapResponse(url, origins, res.content, res);
         }
 
         ERR('Something wrong with response', res.content);
