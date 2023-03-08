@@ -663,18 +663,25 @@
     // Store HTML before "changing page", `swap` is going to change HTML after
     // that
     storeCurrentState();
-    history.pushState("history", title, url);
+
+    // we need to put some state in our *current* history item, so that
+    // `onpopstate` knows it wasn't called because of `hashchange`
+    history.replaceState('history', null, null);
+    history.pushState(null, title, url);
     sendEvent(window, 'ts-pushstate', {url: url});
   }
 
   function replaceState(url) {
-    history.replaceState(null, '', url);
-    sendEvent(window, 'ts-replacestate', {detail: url});
+    history.replaceState('history', '', url);
+    sendEvent(window, 'ts-replacestate', {url: url});
   }
 
   function onpopstate(e) {
     // hashchange triggers onpopstate and there is nothing we can do about it
     // https://stackoverflow.com/questions/25634422/stop-firing-popstate-on-hashchange
+    //
+    // the worst news here is that `popstate` is fired *before* `hashchange`, so
+    // we store some state in previous item in `pushState` function
     if (!e.state)
       return;
 
