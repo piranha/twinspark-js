@@ -53,13 +53,13 @@ TwinSpark could be mentally split in three parts:
 
 - [Page fragment updates](api/ts-req/) facilitated via HTML attributes
   (no JS needed). This is the core idea.
-- [Morphing](api/ts-swap/#pagination) - a strategy to update HTML graduallly,
+- [Morphing](api/ts-swap/#morph) - a strategy to update HTML graduallly,
   without breaking state and focus. Makes form validation and animations on HTML
   changes a breeze.
 - [Actions](api/ts-action/) - incredibly simple promise-enabled language for
   (limited) client-side scripting. Bring your logic into a single place.
 
-Some reasons why TwinSpark exists despite [HTMx](https://htmx.org) and
+Some reasons why TwinSpark exists despite [HTMx](https://htmx.org/) and
 [Unpoly](https://unpoly.com/) (those are similar in approach):
 
 - It's really small (8KB `.min.gz`).
@@ -68,8 +68,8 @@ Some reasons why TwinSpark exists despite [HTMx](https://htmx.org) and
   caching effectively, while maintaining some personalisation for your
   users.
 - Bundling - a lot of practical stuff packed in, like triggering an event when
-  [element is almost visible](examples/120-visible/), or
-  [handling clicks outside](examples/130-outside/) the element.
+  [element is almost visible](api/ts-trigger/), or
+  [handling clicks outside](api/ts-trigger/#outside) the element.
 - Extensibility - you can easily register new directives the same way those in
   core are registered.
 
