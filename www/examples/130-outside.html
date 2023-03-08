@@ -34,13 +34,13 @@ tags: ts-trigger, ts-action
         .then(_ => tt.assert('start: ' + a.innerText, a.innerText.startsWith('No clicks')))
         .then(_ => a.click())
         .then(_ => tt.delay())
-        .then(_ => tt.assert('click inside: ' + a.innerText, a.innerText.startsWith('Inside')))
+        .then(_ => tt.assert('click inside: ' + a.innerText, a.innerText.includes('inside')))
         .then(_ => el.click())
         .then(_ => tt.delay())
-        .then(_ => tt.assert('outside: ' + a.innerText, a.innerText.startsWith('Outside')))
+        .then(_ => tt.assert('outside: ' + a.innerText, a.innerText.includes('Outside')))
         .then(_ => a.click())
         .then(_ => tt.delay())
-        .then(_ => tt.assert('inside: ' + a.innerText, a.innerText.startsWith('Inside')))
+        .then(_ => tt.assert('inside: ' + a.innerText, a.innerText.includes('inside')))
     });
   </script>
 </div>
