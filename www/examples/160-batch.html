@@ -1,12 +1,12 @@
 id: batch
 title: Batching
-tags: ts-req-batch, advanced
+tags: ts-data, ts-req-batch, advanced
 ----
-<p>This is a thing which is not immediately obvious, but is one of the reasons why
-  TwinSpark appeared. It is an important optimization. Our use case for it was
-  following: page renders for an anonymous user (for efficient caching on CDN) and
-  then status of wishlisted products is checked. It's a pattern we use often and
-  we really wanted it to be a first-class feature.</p>
+<p>
+  Here all spans trigger request on <code>visible</code>, so click "Reset" to
+  see more requests. See sources and debug panel to see how requests are
+  combined in a single one.
+</p>
 
 <div class="card example">
   <div class="card-header">
