@@ -23,6 +23,17 @@ pre code {display: inline-block; } /* or else padding is broken for blocks */
 pre { overflow-x: scroll; }
 
 
+.footer {
+  color: #bcc3ce;
+  padding: 1.8rem .75rem 1rem;
+  position: relative;
+  z-index: 200;
+}
+
+.footer a {
+  color: #66758c;
+}
+
 /* tests */
 #tinytest{font-family:sans-serif}
 #tinytest ul{margin:0 0 .5rem 1rem;padding-bottom:4px}

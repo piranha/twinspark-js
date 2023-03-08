@@ -2,7 +2,7 @@
   eliminate most of the logic from JS, while allowing to make a good interactive
   site.</p>
 
-<p class="toast toast-primary">TwinSpark a battle-tested technology used on websites with 100k+ daily active users.</p>
+<p class="toast toast-primary text-center">TwinSpark a battle-tested technology used on websites with 100k+ daily active users.</p>
 
 <div class="columns">
   <div class="column col-4 col-xs-12">

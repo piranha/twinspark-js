@@ -26,35 +26,40 @@
   <script src="{{ version . "vendor/tinytest.js" }}"></script>
   <script src="{{ version . "static/examples.js" }}"></script>
 </head>
-<body class="container">
-<div class="columns">
-<div class="column col-6 col-xl-8 col-lg-10 col-md-12 col-mx-auto">
-  <header class="navbar my-2">
+<body>
+  <header class="navbar my-2 container grid-md">
     <section class="navbar-section">
       <a href="{{ .Rel "/" }}"><img src="{{ version . "static/twinspark-logo.svg" }}" alt="TwinSpark" style="aspect-ratio: 238 / 56; height: 30px"></a>
     </section>
-    <section class="navbar-center">
+    <section class="navbar-section">
       <a href="{{ .Rel "/api/" }}" class="btn btn-link">API</a>
       <a href="{{ .Rel "/usecases/" }}" class="btn btn-link">Use Cases</a>
       <!-- <a href="{{ .Rel "/examples/" }}" class="btn btn-link">Examples</a> -->
-    </section>
-    <section class="navbar-section">
-      <a href="https://github.com/piranha/twinspark-js" class="btn btn-link">GitHub</a>
     </section>
   </header>
 {{ end }}
 
 
-{{ define "footer" }}
-</div>
-</div>
+  {{ define "footer" }}
+  <footer class="footer container grid-md">
+    <div class="columns">
+      <p class="col-8 col-md-6">
+        <a href="https://github.com/piranha/twinspark-js">GitHub</a>
+        ·
+        <a href="https://twitter.com/asolovyov">Twitter</a>
+      </p>
+      <p class="col-4 col-md-6">Made by <a href="https://solovyov.net/">Alexander Solovyov</a>, licensed under <a href="https://github.com/piranha/twinspark-js/blob/master/LICENSE">MIT license</a>.</p>
+    </div>
+    <hr>
+    <aside>If you found an error, or want to add something, please <a href="https://github.com/piranha/twinspark-js/blob/master/www/{{ .Source }}">edit the file on Github</a> and submit a pull request.</aside>
+  </footer>
 </body>
 </html>
 {{ end }}
 
 
 {{ define "page" }}{{ template "header" . }}
-  <main>{{ .Content }}</main>
+  <main class="container grid-md">{{ .Content }}</main>
   {{ template "network" . }}
 {{ template "footer" . }}{{ end }}
 
@@ -153,6 +158,7 @@
       };
     })();
   </script>
+</div>
 </div>
 {{ end }}
 

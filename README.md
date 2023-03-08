@@ -1,4 +1,4 @@
-# ![TwinSpark](https://github.com/piranha/twinspark-js/blob/master/static/twinspark-logo.svg?raw=true)
+# ![TwinSpark](https://github.com/piranha/twinspark-js/blob/master/www/static/twinspark-logo.svg?raw=true)
 
 Declarative enhancement for HTML: simple, composable, lean. It's main goal is to
 eliminate most of the logic from JS, while allowing to make a good interactive
