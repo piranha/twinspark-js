@@ -35,6 +35,7 @@
     </section>
     <section class="navbar-center">
       <a href="{{ .Rel "/api/" }}" class="btn btn-link">API</a>
+      <a href="{{ .Rel "/usecases/" }}" class="btn btn-link">Use Cases</a>
       <!-- <a href="{{ .Rel "/examples/" }}" class="btn btn-link">Examples</a> -->
     </section>
     <section class="navbar-section">
@@ -142,7 +143,7 @@
                  ${headers || ''}
                  ${body || ''}
                  <div><b>Response</b></div>
-                 <pre style="margin-top:0" class="xml"><code>${cleancode(this.responseText)}</code></pre>
+                 <pre style="margin-top:0" class="xml"><code>${escape(dedent(this.responseText))}</code></pre>
                </div>`
           );
           hljs.highlightElement(document.querySelector(`#${id} pre code`));

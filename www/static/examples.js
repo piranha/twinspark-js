@@ -2,11 +2,14 @@ XHRMock.setup();
 
 XHRMock.delay = function(mock, ms) {
   return function (req, res) {
-    var ret = typeof mock === 'function' ?
-        mock(req, res) :
-        res.status(mock.status || 200).body(mock.body);
-    if (ret === undefined) return ret;
-    return new Promise(resolve => setTimeout(() => resolve(ret), ms));
+    var msint = typeof ms == 'function' ? ms() : ms;
+    return new Promise((resolve) => setTimeout(() => resolve(true), msint))
+      .then(_ => {
+        var ret = typeof mock === 'function' ?
+            mock(req, res, msint) :
+            res.status(mock.status || 200).body(mock.body);
+        return ret;
+      });
   }
 }
 

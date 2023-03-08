@@ -1,11 +1,21 @@
 id: autocomplete
 title: Autocomplete
-tags: usecase
+tags: ts-req-strategy, usecase
+desc: How to write simple autocomplete
 ----
-<p>Autocomplete is interesting because it executes many things at once. Just look
-  at the source, the interesting part is trigger modifiers - it does something only
-  if user typed something (rather than just navigated field with cursor keys) and
-  then stopped for 200 ms.
+<p>
+  Autocomplete is interesting because it executes many things at once. Just look
+  at the source, the interesting part is trigger modifiers - it does something
+  only if user typed something (rather than just navigated field with cursor
+  keys) and then stopped for 200 ms.
+</p>
+
+<p>
+  When autocomplete triggers a time-consuming operation (e.g. full-text search),
+  the implementation above triggers numerous requests if the user types slow
+  enough. If requests finish at different durations, an older request can
+  override the latest. To avoid this, we need to abort the XHR using
+  <code>ts-req-strategy="last"</code>.
 </p>
 
 <div class="card example">
@@ -16,27 +26,67 @@ tags: usecase
   </div>
 
   <div class="card-body">
+    <p>
+      <label>
+        <input type="radio" name="slow" value="false" checked ts-trigger="change" ts-action="target 'parent div | [name=q]', attr 'ts-req' '/autocomplete'">
+        Just normal fast autocomplete
+      </label>
+      <br>
+      <label>
+        <input type="radio" name="slow" value="true" ts-trigger="change" ts-action="target 'parent div | [name=q]', attr 'ts-req' '/slowcomplete'">
+        Every other request is slow (<code>ts-req-strategy</code> demo)
+      </label>
+    </p>
     <p><input type="text"
               name="q"
               ts-req="/autocomplete"
-              ts-trigger="keyup changed delay 200"
+              ts-req-strategy="last"
+              ts-req-before="attr value, lessThan 2, prevent"
+              ts-trigger="keyup changed delay 50"
               ts-target="#search-results"
               ts-swap="inner"
+              pattern=".*\S\S.*"
               placeholder="Search..."/></p>
     <div id="search-results"></div>
   </div>
 
+  <style>
+    [name=q]:invalid { background-color: lightpink; }
+  </style>
+
   <script>
-    XHRMock.get(/\/autocomplete/, function(req, res) {
-      var q = req.url().query.q;
-      var now = +new Date;
-      return res.status(200).body('<div>' +
-                      ('one two three four five six seven'
-                        .split(' ')
-                        .map(s => '<p>' + q + ' ' + s + ' ' + now + '</p>')
-                        .join('')) +
-                      '</div>');
+    twinspark.func({
+      lessThan: (n, o) => o.input.length < parseInt(n, 10)
     });
+  </script>
+
+  <script>
+    var counter = 0;
+    function randdelay() {
+      return 100 + (counter++ % 2) * 2000;
+    }
+    function nodelay() {
+      counter++;
+      return 0;
+    }
+
+    function autocompleteResponse(req, res, ms) {
+      var q = req.url().query.q;
+      if (ms) {
+        q = `Query ${counter+1} (${ms}ms): ${q}`;
+      } else {
+        q = `Query ${counter+1}: ${q}`;
+      }
+      var now = +new Date;
+      var xs = ('one two three four five six seven'
+        .split(' ')
+        .map(s => `<p>${q} ${s} ${now}</p>`)
+        .join('\n  '));
+      return res.status(200).body(`<div>\n  ${xs}\n</div>`);
+    }
+
+    XHRMock.get(/\/autocomplete/, XHRMock.delay(autocompleteResponse, nodelay));
+    XHRMock.get(/\/slowcomplete/, XHRMock.delay(autocompleteResponse, randdelay));
   </script>
 </div>
 <br/>

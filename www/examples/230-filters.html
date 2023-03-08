@@ -1,13 +1,15 @@
 id: filters
 title: Filters
 tags: usecase
+desc: Faceting interface for humans and crawlers alike
 ----
-<p>Filtering on ecommerce sites is a complex task. On one side you want it to be crawlable
-  by Google, on the other if a user selected two filters one by one you'd like to see
-  products, filtered by both. Naïve implementation will filter only one of them if
-  a pause between clicks was short enough. It seems like the best way is form, full
-  of links (so that Google/no-js envs can still use it), which toggle checkboxes when
-  JS is enabled and auto-submit form.
+<p>
+  Filtering on ecommerce sites is a complex task. On one side you want it to be
+  crawlable by Google, on the other if a user selected two filters one by one
+  you'd like to see products, filtered by both. Naïve implementation will filter
+  only one of them if a pause between clicks was short enough. It seems like the
+  best way is form, full of links (so that Google/no-js envs can still use it),
+  which toggle checkboxes when JS is enabled and auto-submit form.
 </p>
 
 <div class="card example">

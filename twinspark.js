@@ -95,9 +95,13 @@
     ),
 
     attr: arity(
-      function(name, o) { return o.el[name]; },
+      function(name, o) {
+        let val = o.el[name];
+        return typeof val != 'undefined' ? val : getattr(o.el, name);
+      },
       function(name, value, o) {
         o.el[name] = value;
+        setattr(o.el, name, value);
         return value;
       }
     ),

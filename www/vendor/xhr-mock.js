@@ -2514,6 +2514,7 @@ var MockXMLHttpRequest = /** @class */ (function (_super) {
         }
         else {
             console.error(formatError('A handler returned an error for the request.', req, err));
+          throw err;
         }
     };
     return MockXMLHttpRequest;
