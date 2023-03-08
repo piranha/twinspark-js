@@ -11,7 +11,9 @@
   <meta property="og:url" content="{{ .Site.Other.Url }}/{{ .Url }}">
   <meta property="og:title" content="{{ if .Title }}{{ .Title }} - {{ end }}{{ .Site.Other.Title }}">
   <meta property="og:description" content="Declarative enhancement for HTML: simple, composable, lean.">
-  <meta property="og:image" content="{{ .Site.Other.Url }}{{ version . "static/twinspark-icon.svg" | absurl .Url }}">
+  <meta property="og:image" content="{{ .Site.Other.Url }}{{ version . "static/favicon.png" | absurl .Url }}">
+  <meta property="og:image:width" content="197">
+  <meta property="og:image:height" content="256">
 
   <link rel="stylesheet" type="text/css" href="{{ version . "vendor/spectre.min.css" }}">
   <link rel="stylesheet" type="text/css" href="{{ version . "static/custom.css" }}">
