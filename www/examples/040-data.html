@@ -2,14 +2,13 @@ id: data
 title: Collecting Data
 tags: ts-data, ts-req-method
 ----
-<p>Sometimes collecting the data you need to send in templates is really
-  annoying: you'll have to teach lower-level components/partials/etc some
-  knowledge about higher levels. That is something TwinSpark can prevent: when
-  you send a request, it iterates through element parents and searches for
-  <code>ts-data</code> attributes, parses their content as query string or JSON
-  and merges it into a single object. Note how values with same keys are aggregated
-  into an array (like normal query string or form data). You can override that by
-  specifying key with null or empty string (see demo source).</p>
+<p>
+  Here parent <code>span</code> declares <code>ts-data</code> with three keys
+  (a, b, c) and then child <code>a</code> adds another entry with key
+  <code>b</code>, drops existing <code>c</code> value and adds another
+  (so it overrides <code>c</code> value). And then sends a <code>POST</code>
+  request to a backend. Click link to see what data was sent.
+</p>
 
 <div class="card example">
   <div class="card-header">
