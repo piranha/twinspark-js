@@ -623,40 +623,38 @@
 
   /// History
 
-  function deleteOverLimit(db) {
-    reqpromise(idbStore(db).count()).then(function(count) {
-      console.debug('PAGES IN STORAGE', count);
-      var toremove = count - historyLimit;
-      if (toremove > 0) {
-        var req = idbStore(db, {write: true})
-            .index('time')
-            .openCursor();
-        // This API is like an abyss looking at me. `onsuccess` will be called
-        // every time you call `cursor.continue()`.
-        req.onsuccess = function(_) {
-          var cursor = req.result;
-          if (cursor) {
-            cursor.delete();
-            if (--toremove > 0) {
-              cursor.continue();
-            }
-          }
-        };
+  async function deleteOverLimit(db) {
+    let store = idbStore(db);
+    let count = await reqpromise(store.count());
+    console.debug('PAGES IN STORAGE', count);
+    var toremove = count - historyLimit;
+    if (toremove <= 0)
+      return;
+
+    store = idbStore(db, {write: true});
+    let req = store.index('time').openCursor();
+
+    // This API is like an abyss looking at me. `onsuccess` will be called
+    // every time you call `cursor.continue()`.
+    req.onsuccess = function(_) {
+      var cursor = req.result;
+      if (cursor) {
+        cursor.delete();
+        if (--toremove > 0) {
+          cursor.continue();
+        }
       }
-    });
+    }
   }
 
-  function storeCurrentState() {
+  async function storeCurrentState() {
     var data = {url:  location.pathname + location.search,
                 html: document.body.innerHTML,
                 time: +new Date()};
-    idb().then(function(db) {
-      reqpromise(idbStore(db, {write: true})
-                 .put(data))
-        .then(function() {
-          deleteOverLimit(db);
-        });
-    });
+    var db = await idb();
+    var store = idbStore(db, {write: true});
+    var res = await reqpromise(store.put(data));
+    await deleteOverLimit(db);
   }
 
   function pushState(url, title) {
@@ -676,7 +674,7 @@
     sendEvent(window, 'ts-replacestate', {url: url});
   }
 
-  function onpopstate(e) {
+  async function onpopstate(e) {
     // hashchange triggers onpopstate and there is nothing we can do about it
     // https://stackoverflow.com/questions/25634422/stop-firing-popstate-on-hashchange
     //
@@ -685,29 +683,26 @@
     if (!e.state)
       return;
 
-    var url = location.pathname + location.search;
-    idb().then(function(db) {
-      return reqpromise(
-        db.transaction(db.name, 'readonly')
-          .objectStore(db.name)
-          .get(url));
-    }).then(function(data) {
-      console.debug('onpopstate restore', data.url, data.html.length, data.time);
-      if (data && data.html) {
-        document.body.innerHTML = data.html;
+    let url = location.pathname + location.search;
+    let db = await idb();
+    let store = idbStore(db);
+    let data = await reqpromise(store.get(url));
+    console.debug('onpopstate restore', data.url, data.html.length, data.time);
 
-        // If user came back from a real page change, we indicate this with an
-        // `initial` property. There is a race between IndexedDB loading HTML
-        // and DOMContentLoaded, so in case when first happened and second did
-        // not, `READY` is false and thus `activate` will be run later on inside
-        // `init`. Skip this not to activate everything twice.
-        if (e.state == "initial" && !READY) {
-          return;
-        }
+    if (data && data.html) {
+      document.body.innerHTML = data.html;
 
-        activate(document.body);
+      // If user came back from a real page change, we indicate this with an
+      // `initial` property. There is a race between IndexedDB loading HTML
+      // and DOMContentLoaded, so in case when first happened and second did
+      // not, `READY` is false and thus `activate` will be run later on inside
+      // `init`. Skip this not to activate everything twice.
+      if (e.state == "INITIAL" && !READY) {
+        return;
       }
-    });
+
+      activate(document.body);
+    }
   }
 
 
@@ -2005,7 +2000,7 @@
   // location automatically
   if (window.performance?.navigation?.type == window.performance.navigation.TYPE_BACK_FORWARD) {
     // Restore HTML when user came back to page from non-pushstate destination
-    onpopstate({state: "initial"});
+    onpopstate({state: "INITIAL"});
   }
 
   /// Public interface
