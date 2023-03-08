@@ -1,6 +1,6 @@
 id: outside
 title: Click Outside
-tags: ts-action
+tags: ts-trigger, ts-action
 ----
 <p>Popups, modals, menus and some other elements can make use of <code>click
   happened outside</code>. It could be done with markup and underlying element,
@@ -19,12 +19,11 @@ tags: ts-action
 
   <div class="card-body">
     <p ts-trigger="outside once"
-       ts-action="target 'child a', text 'Outside, but just this one time'">
-      <a href="#" ts-action="text 'Inside, every time'">No clicks yet.</a>
+       ts-action="target 'child a', text 'Outside, but only once - see source.'">
+      <a href="#" ts-action="text 'This is inside job.'">No clicks yet.</a>
     </p>
-
     <p>
-      <a href="#" ts-action="stop">Link to check that stopPropagation doesn't matter to <code>outside</code> clicks.</a>
+      <a href="#" ts-action="prevent, stop">Link to check that stopPropagation doesn't matter to <code>outside</code> clicks.</a>
     </p>
   </div>
 
