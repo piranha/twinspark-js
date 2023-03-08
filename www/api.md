@@ -3,10 +3,6 @@ title: API
 
 # TwinSpark API {.text-center}
 
-<style>
-table tr td:first-child {white-space: nowrap;}
-</style>
-
 ## HTML updates [#](#html-updates)
 
 <table class="table">

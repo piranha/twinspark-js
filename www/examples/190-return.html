@@ -16,17 +16,19 @@ tags: ts-action, advanced
 
   <div class="card-body">
     <p>
-      <button class="btn" ts-action="echo interested?, log Are you">Click to log</button>
+      <button class="btn" ts-action="echo interested?, log 'Are you'">Click to log to console</button>
     </p>
   </div>
 
-  <script>
+  <script data-source="1">
     twinspark.func({
       echo: function(msg, o) {
         return msg;
       }
     });
+  </script>
 
+  <script>
     test(el => {
       tt.assert('simple parsing',
                  twinspark.parseAction('just a test')[0].commands[0].name == 'just')

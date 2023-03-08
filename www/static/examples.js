@@ -37,12 +37,8 @@ function dedent(s) {
   return s;
 }
 
-function cleancode(s) {
-  return escape(dedent((s || '').trim()));
-}
-
 function codewrap(s) {
-  return '<pre><code>' + cleancode(s) +'</code></pre>';
+  return '<pre><code>' + escape(s) +'</code></pre>';
 }
 
 
@@ -56,10 +52,22 @@ function enableExamples() {
       twinspark.activate(example);
     });
 
-    var source = example.innerHTML;
-    var next = example.nextElementSibling;
-    if (next && next.tagName == 'STYLE') {
-      source += '\n\n' + next.outerHTML;
+    function isSource(el) {
+      if (!el) return;
+      if (el.classList.contains('card-body') ||
+          el.tagName == 'STYLE' ||
+          (el.tagName == 'SCRIPT' && el.dataset.source)) {
+        return true;
+      }
+    }
+
+    var source = dedent(example.innerHTML.trim());
+    let next = example.nextElementSibling;
+    while (true) {
+      if (!isSource(next))
+        break;
+      source += '\n\n' + dedent(next.outerHTML.trim());
+      next = next.nextElementSibling;
     }
     card.querySelector('.source').addEventListener('click', function(e) {
       if (example.firstElementChild.tagName == 'PRE')
@@ -71,6 +79,7 @@ function enableExamples() {
 }
 
 document.addEventListener('DOMContentLoaded', enableExamples);
+window.addEventListener('hotreload', _ => twinspark.activate(document.body));
 window.addEventListener('hotreload', enableExamples);
 window.addEventListener('popstate', _ => setTimeout(enableExamples, 16));
 
