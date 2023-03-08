@@ -2,13 +2,13 @@ id: push
 title: Multiple Fragments
 tags: ts-swap-push
 ----
-<p>Sometimes you need to update more than a single point in your DOM tree.
-  Maybe there is a basket item counter should be incremented, or a notification
-  incoming. To perform that you need to add another tag in your HTML reply and
-  indicate where it should go. There are two ways to do that: either by a
-  selector in <code>ts-swap-push</code> attribute or by a <code>ts-swap-push</code> header.
+<p>
+  First element is updated through regular flow with <code>ts-target</code>.
+  Second element uses <code>ts-swap-push</code> attribute.
+  Third element uses <code>ts-swap-push</code> header.
   The latter has a form
-  <code>[replace strategy]: [selector-in-document] <= [selector-in-response]</code></p>
+  <code>[replace strategy]: [selector-in-document] <= [selector-in-response]</code>.
+</p>
 
 
 <div class="card example">
@@ -28,10 +28,7 @@ tags: ts-swap-push
     <div>
       <p class="tertiary">Also waiting here.</p>
     </div>
-    <button class="btn"
-            ts-req="/join"
-            ts-target="#join-example .primary"
-            ts-req-selector=".primary">
+    <button class="btn" ts-req="/join" ts-target="sibling .primary">
       Update them
     </button>
   </div>

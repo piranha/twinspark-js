@@ -126,11 +126,19 @@
                      <code><b>${method}</b> ${url}</code>
                </a></li>`
           );
+
+          var headers = '';
+          for (let k in this.res._headers) {
+            headers += `<tr><td><code>${k}</code></td> <td><code>${this.res._headers[k]}</code></td></tr>`
+          }
+          headers && (headers = `<div><b>Headers:</b> <table class=table>${headers}</table></div>`);
+          var body = this.requestBody && `<div><b>Body:</b> <code>${this.requestBody}</code></div>`;
           window['debug-details'].insertAdjacentHTML(
             'afterbegin',
             `<div id="${id}" class="d-hide">
                  <div><code>${this.status} <b>${method}</b> ${url} (${new Date().toTimeString().split(' ')[0]})</code></div>
-                 <div><b>Body:</b> <code>${this.requestBody || ''}</code></div>
+                 ${headers || ''}
+                 ${body || ''}
                  <div><b>Response</b></div>
                  <pre style="margin-top:0" class="xml"><code>${cleancode(this.responseText)}</code></pre>
                </div>`
