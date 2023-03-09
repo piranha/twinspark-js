@@ -19,8 +19,9 @@ pre code {display: inline-block; } /* or else padding is broken for blocks */
 }
 
 .table td, .table th { padding: .2rem .1rem; }
-.table tr td:first-child {white-space: nowrap;}
+.table tr td:first-child { white-space: nowrap; }
 pre { overflow-x: scroll; }
+.nw { white-space: nowrap; }
 
 
 .footer {

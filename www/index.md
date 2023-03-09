@@ -11,10 +11,12 @@
         <span class="card-title">Simple</span>
       </div>
       <div class="card-body">
-        It's only a handful core attributes (like <code>ts-req</code>,
-        <code>ts-action</code>, <code>ts-trigger</code>) and strives to avoid
-        surprises. Also there are no dependencies on your server-side
-        technology, you can use <b>anything</b>.
+        It's only a handful core attributes (like
+        <a href="api/ts-req/"><code class=nw>ts-req</code></a>,
+        <a href="api/ts-action/"><code class=nw>ts-action</code></a>,
+        <a href="api/ts-trigger/"><code class=nw>ts-trigger</code></a>)
+        and strives to avoid surprises. Also there are no dependencies
+        on your server-side technology, you can use <b>anything</b>.
       </div>
     </div>
   </div>
@@ -62,14 +64,13 @@ TwinSpark could be mentally split in three parts:
 Some reasons why TwinSpark exists despite [HTMx](https://htmx.org/) and
 [Unpoly](https://unpoly.com/) (those are similar in approach):
 
-- It's really small (8KB `.min.gz`).
-- There is no attribute inheritance — this is a big one, it keeps surprises away.
+- It's really small ([8KB `.min.gz`](https://github.com/piranha/twinspark-js/blob/master/dist/twinspark.min.js)).
+- There is no attribute inheritance — keeps surprises away.
 - [Batching](api/ts-req-batch/) - very useful if you want to use HTTP
   caching effectively, while maintaining some personalisation for your
   users.
-- Bundling - a lot of practical stuff packed in, like triggering an event when
-  [element is almost visible](api/ts-trigger/), or
-  [handling clicks outside](api/ts-trigger/#outside) the element.
+- Bundled - a lot of practical stuff packed in, like actions, or non-traditional
+  [event triggers](api/ts-trigger), or morphing.
 - Extensibility - you can easily register new directives the same way those in
   core are registered.
 
