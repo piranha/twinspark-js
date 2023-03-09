@@ -1,4 +1,4 @@
-CCOPTS := --language_out ECMASCRIPT6
+CCOPTS := --language_out ECMASCRIPT_2017
 
 min: dist/twinspark.min.js
 adv: dist/twinspark.adv.js

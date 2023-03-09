@@ -1,4 +1,20 @@
 {
+  "name": "twinspark",
+  "description": "Declarative enhancement for HTML",
+  "keywords": ["HTML", "AJAX", "XMLHttpRequest", "morph"],
+  "version": "1.0",
+  "homepage": "https://piranha.github.io/twinspark-js/",
+  "bugs": {
+    "url": "https://github.com/piranha/twinspark-js/issues"
+  },
+  "license": "MIT",
+  "files": ["LICENSE", "dist/twinspark.min.js"],
+  "main": "dist/twinspark.min.js",
+  "unpkg": "dist/twinspark.min.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/piranha/twinspark-js.git"
+  },
   "devDependencies": {
     "puppeteer-core": "^19.6.2"
   }
