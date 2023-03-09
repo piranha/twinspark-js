@@ -1,8 +1,23 @@
 id: progressbar
 title: Progress Bar
 tags: usecase
-desc: Smooth animated progress bar
+desc: Smooth progress bar with updates from a server
 ----
+<h5>{{ .Other.Desc }}</h5>
+
+<p>
+  If you look at source, there is a button targeting parent <code>div</code>.
+  When you click it, server responds with a new markup, which will make a
+  request to a server again in 500 ms thanks to <code>ts-trigger="load delay
+  500"</code>.
+</p>
+
+<p>
+  Interesting part of that response is <code>div id="pb1"</code>, which is
+  actually progress bar. Each new response from the server uses the same id, so
+  <a href="{{ $.Rel "/api/ts-swap"}}#settling">settling</a> kicks in, and makes
+  <code>.bar-item</code> transition work.
+</p>
 
 <div class="card example">
   <div class="card-header">

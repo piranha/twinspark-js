@@ -163,14 +163,18 @@
 {{ end }}
 
 {{ define "example" }}
-<h3 id="{{ .Other.Id }}">{{ .Title }} {{ if .Has "Tag" "advanced" }} <small class="text-muted">(advanced)</small>{{ end }} <a href="#{{ .Other.Id }}">#</a></h3>
-  {{ .Raw }}
+<h3 id="{{ .Other.Id }}" class="hover-group">
+  {{ .Title }}
+  {{ if .Has "Tag" "advanced" }} <small class="text-muted">(advanced)</small>{{ end -}}
+  <a class="hover-hide" href="#{{ .Other.Id }}">#</a>
+</h3>
+{{ .Content }}
 {{ end }}
 
 
 {{ define "examples" }}
 <h2>Examples</h2>
 {{ range .Site.Pages.WithTag .Title | abcsort }}
-  {{ template "example" . }}
+  {{ .Process.Content | cut "<main.*?>" "</main>" }}
 {{ end }}
 {{ end }}

@@ -34,6 +34,9 @@ pre { overflow-x: scroll; }
   color: #66758c;
 }
 
+.hover-hide { display: none; }
+.hover-group:hover .hover-hide { display: initial; }
+
 /* tests */
 #tinytest{font-family:sans-serif}
 #tinytest ul{margin:0 0 .5rem 1rem;padding-bottom:4px}

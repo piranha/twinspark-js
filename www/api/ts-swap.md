@@ -9,13 +9,13 @@ following keywords:
 <table class="table">
 <tr><th>Strategy</th> <th>Description</th></tr>
 
-<tr><td><code>replace</code></td>     <td>(default) replace <a href="../ts-target/">target</a> element with an incoming element</td></tr>
+<tr><td><code>replace</code></td>     <td>replace <a href="../ts-target/">target</a> element with an incoming element <small>(default)</small></td></tr>
 <tr><td><code>inner</code></td>       <td>replaces target's children with an incoming element</td></tr>
 <tr><td><code>prepend</code></td>     <td>inserts incoming element as a first child of the target</td></tr>
 <tr><td><code>append</code></td>      <td>inserts incoming element as a last child of the target</td></tr>
 <tr><td><code>beforebegin</code></td> <td>inserts incoming element before target</td></tr>
 <tr><td><code>afterend</code></td>    <td>inserts incoming element after target</td></tr>
-<tr><td><code>morph</code></td>       <td>morphs incoming element into target (see lower)</td></tr>
+<tr><td><code>morph</code></td>       <td>morphs incoming element into target (see <a href="#morph">lower</a>)</td></tr>
 <tr><td><code>morph-all</code></td>   <td>same as <code>morph</code>, but does not skip <code>document.activeElement</code> when changing elements</td></tr>
 <tr><td><code>skip</code></td>        <td>just skip that response, sometimes useful for operations with side-effects</td></tr>
 
@@ -31,7 +31,8 @@ removed. Existing elements will be inserted with an old values in `settle`
 attibutes (by default this is `class`, `style`, `width` and `height`), and then
 given new values shortly afterwards.
 
-This allows for some transitions to be applied.
+This makes transitions work: same element changes from old to new values, which
+triggers transitions.
 
 ## Morph
 

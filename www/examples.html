@@ -18,10 +18,5 @@ title: Examples
 <h2>Examples</h2>
 
 {{ range .Site.Pages.Children "examples/" | abcsort }}
-  <h3 id="{{ .Other.Id }}">
-    <a href="{{ $.Rel .Url }}">{{ .Title }}</a>
-    {{ if .Has "Tag" "advanced" }}<small class="text-muted">(advanced)</small>{{ end }}
-    <a href="#{{ .Other.Id }}">#</a>
-  </h3>
-  {{ .Raw }}
+  {{ .Process.Content | cut "<main.*?>" "</main>" }}
 {{ end }}

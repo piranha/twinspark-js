@@ -1,13 +1,14 @@
 id: autocomplete
 title: Autocomplete
 tags: ts-req-strategy, usecase
-desc: How to write simple autocomplete
+desc: Search input with autocomplete from backend
 ----
+
 <p>
   Autocomplete is interesting because it executes many things at once. Just look
   at the source, the interesting part is trigger modifiers - it does something
   only if user typed something (rather than just navigated field with cursor
-  keys) and then stopped for 200 ms.
+  keys) and then stopped for 100 ms.
 </p>
 
 <p>
@@ -42,7 +43,7 @@ desc: How to write simple autocomplete
               ts-req="/autocomplete"
               ts-req-strategy="last"
               ts-req-before="attr value, lessThan 2, prevent"
-              ts-trigger="keyup changed delay 50"
+              ts-trigger="keyup changed delay 100"
               ts-target="#search-results"
               ts-swap="inner"
               pattern=".*\S\S.*"
