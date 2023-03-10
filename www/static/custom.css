@@ -1,4 +1,5 @@
 body {color: #333; }
+.grid-70 {max-width: 70ch;}
 pre code {display: inline-block; } /* or else padding is broken for blocks */
 .card-body {overflow: auto; }
 .card-body > pre { margin-top: 0; }

@@ -27,7 +27,7 @@
   <script src="{{ version . "static/examples.js" }}"></script>
 </head>
 <body>
-  <header class="navbar my-2 container grid-md">
+  <header class="navbar my-2 container grid-70">
     <section class="navbar-section">
       <a href="{{ .Rel "/" }}"><img src="{{ version . "static/twinspark-logo.svg" }}" alt="TwinSpark" style="aspect-ratio: 238 / 56; height: 30px"></a>
     </section>
@@ -41,7 +41,7 @@
 
 
   {{ define "footer" }}
-  <footer class="footer container grid-md">
+  <footer class="footer container grid-70">
     <div class="columns">
       <p class="col-8 col-md-6">
         <a href="https://github.com/piranha/twinspark-js">GitHub</a>
@@ -59,7 +59,7 @@
 
 
 {{ define "page" }}{{ template "header" . }}
-  <main class="container grid-md">{{ .Content }}</main>
+  <main class="container grid-70">{{ .Content }}</main>
   {{ template "network" . }}
 {{ template "footer" . }}{{ end }}
 
