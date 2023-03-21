@@ -20,7 +20,7 @@ etc. There are some additional event types:
 <table class="table">
 <tr><th>Event</th> <th>Description</th></tr>
 
-<tr><td><code>load</code></td>           <td>Trigger on document load.</td></tr>
+<tr><td><code>load</code></td>           <td>Trigger on document load <i>or</i> when element appears on screen (if document is already loaded).</td></tr>
 <tr><td><code>scroll</code></td>         <td>Trigger when window is scrolled.</td></tr>
 <tr><td><code>windowScroll</code></td>   <td>Trigger when the <a href="../ts-target/">target</a> element is scrolled.</td></tr>
 <tr><td><code>outside</code></td>        <td>Trigger on click outside of the element.</td></tr>
