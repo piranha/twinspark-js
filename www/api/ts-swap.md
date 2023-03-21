@@ -3,8 +3,8 @@ title: ts-swap
 
 # `ts-swap` {.text-center}
 
-Controls how HTML is going to be inserted into your page. Can be one of the
-following keywords:
+Controls how HTML is going to be inserted into your page. Should be set on an
+origin element. Can be one of the following keywords:
 
 <table class="table">
 <tr><th>Strategy</th> <th>Description</th></tr>
