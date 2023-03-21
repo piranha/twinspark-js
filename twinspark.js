@@ -50,9 +50,12 @@
     },
 
     target: function(sel, o) {
-      var el = findTarget(o.el, sel);
-      if (!el) return false; // stop executing actions pipeline
-      o.el = el;
+      try {
+        o.el = findTarget(o.el, sel);
+        return o.el;
+      } catch(e) {
+        return false; // stop executing actions pipeline
+      }
     },
 
     remove: arity(
