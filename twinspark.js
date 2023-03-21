@@ -1324,8 +1324,9 @@
     return h1;
   }
 
+  /** @type {function(!Req): {method: !string, data: !FormData, headers: !Object}} */
   function makeOpts(req) {
-    var data = collectData(req.el, req.event.detail?.event ?? req.event);
+    var data = collectData(req.el, req.event?.detail?.event ?? req.event);
     return {
       method:  req.method,
       data:    data,
@@ -1416,10 +1417,11 @@
             if (!res.headers['ts-history']) {
               res.headers['ts-history'] = res.url;
             }
-            return swapResponse(res.url, [document.body], res.content, res);
+            res.swap = swapResponse(res.url, [document.body], res.content, res);
+          } else {
+            res.swap = swapResponse(url, origins, res.content, res);
           }
-
-          return swapResponse(url, origins, res.content, res);
+          return res;
         }
 
         ERR('Something wrong with response', res.content);
@@ -1428,6 +1430,7 @@
                                          url: fullurl,
                                          opts: opts});
         });
+        return res;
       })
       .catch(function(res) {
         onidle(() => origins.forEach(el => {
@@ -1442,12 +1445,14 @@
                                          url: fullurl,
                                          opts: opts});
         });
+        return res;
       });
   }
 
-  function doReqBatch(batch) {
+  function doReqBatch(reqs) {
+    reqs = Array.isArray(reqs) ? reqs : [reqs];
     return Promise
-      .all(batch.map(function(req) {
+      .all(reqs.map(function(req) {
         req.opts = makeOpts(req);
 
         var detail = {req: req};
@@ -1487,7 +1492,7 @@
   }
 
   // Batch Request Queue
-  /** @typedef {{el: !Element, url: string, method: string, batch: boolean}} */
+  /** @typedef {{el: !Element, event: Event, url: !string, method: !string, batch: boolean}} */
   var Req;
   /** @type {{reqs: Array<Req>, request: ?number}} */
   var queue = {
@@ -1511,7 +1516,7 @@
     }
   }
 
-  /** @type {function(!Element, Event, boolean): {el: !Element, event: Event, url: string, method: string, batch: boolean} } */
+  /** @type {function(!Element, Event, boolean): Req} */
   function makeReq(el, e, batch) {
     var url = ((batch ? getattr(el, 'ts-req-batch') : getattr(el, 'ts-req')) ||
                (el.tagName == 'FORM' ? getattr(el, 'action') : getattr(el, 'href')));
