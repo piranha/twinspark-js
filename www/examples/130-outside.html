@@ -18,9 +18,9 @@ tags: ts-trigger, ts-action
   </div>
 
   <div class="card-body">
-    <p ts-trigger="outside once"
-       ts-action="target 'child a', text 'Outside, but only once - see source.'">
-      <a href="#" ts-action="text 'This is inside job.'">No clicks yet.</a>
+    <p ts-trigger="outside"
+       ts-action="target 'child a', text 'That was click outside.'">
+      <a href="#" ts-action="text 'This is an inside job.'">No clicks yet.</a>
     </p>
     <p>
       <a href="#" ts-action="prevent, stop">Link to check that stopPropagation doesn't matter to <code>outside</code> clicks.</a>
@@ -28,19 +28,22 @@ tags: ts-trigger, ts-action
   </div>
 
   <script>
-    test(el => {
+    test(async (el, t) => {
       var a = el.$('a');
-      return tt.delay()
-        .then(_ => tt.assert('start: ' + a.innerText, a.innerText.startsWith('No clicks')))
-        .then(_ => a.click())
-        .then(_ => tt.delay())
-        .then(_ => tt.assert('click inside: ' + a.innerText, a.innerText.includes('inside')))
-        .then(_ => el.click())
-        .then(_ => tt.delay())
-        .then(_ => tt.assert('outside: ' + a.innerText, a.innerText.includes('Outside')))
-        .then(_ => a.click())
-        .then(_ => tt.delay())
-        .then(_ => tt.assert('inside: ' + a.innerText, a.innerText.includes('inside')))
+      t.assert('start: ' + a.innerText, a.innerText.startsWith('No clicks'));
+
+      await t.delay(50);
+      a.click();
+      await t.delay();
+      t.assert('click inside: ' + a.innerText, a.innerText.includes('inside'));
+
+      el.click();
+      await t.delay();
+      t.assert('click outside: ' + a.innerText, a.innerText.includes('outside'));
+
+      a.click();
+      await t.delay();
+      t.assert('click inside: ' + a.innerText, a.innerText.includes('inside'));
     });
   </script>
 </div>

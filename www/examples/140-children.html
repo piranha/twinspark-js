@@ -33,10 +33,10 @@ tags: ts-req-selector, ts-swap
   </script>
   <script>
     XHRMock.get("/children", {body: prev()});
-    test(el => {
+    test(async (el, t) => {
       click(el.$('button'));
-      return wait(() => {
-          tt.assert(el.$$('.list span').length == 4)});
-      });
+      await t.delay();
+      t.assert(el.$$('.list span').length == 4);
+    });
   </script>
 </div>

@@ -23,9 +23,10 @@ id: trigger
   </script>
   <script>
     XHRMock.get("/trigger", {body: prev()});
-    test(el => {
+    test(async (el, t) => {
       event('mouseenter', null, el.$('a'));
-      return wait(() => tt.assert(el.$('a').innerText == 'Zehr gut! :)'));
+      await t.delay(1);
+      t.assert(el.$('a').innerText == 'Zehr gut! :)');
     });
   </script>
 </div>

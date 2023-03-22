@@ -33,13 +33,12 @@ tags: ts-req-history
     XHRMock.get("/history", {body: prev()});
     XHRMock.get("/history2", {body: prev()});
     XHRMock.get("/history3", {body: prev()});
-    test(el => {
+    test(async (el, t) => {
       var prev = location.pathname;
       click(el.$('a'));
-      return wait(() => {
-        tt.assert(location.pathname == '/history');
-        history.replaceState(null, null, prev);
-      });
+      await t.delay(1);
+      t.assert(location.pathname == '/history');
+      history.replaceState(null, null, prev);
     });
   </script>
 </div>

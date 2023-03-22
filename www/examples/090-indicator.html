@@ -46,10 +46,12 @@ tags: ts-req
   </script>
   <script>
     XHRMock.get("/indicator", XHRMock.delay({body: prev()}, 1000));
-    test(async (el) => {
+    test(async (el, t) => {
       click(el.$('a'));
-      await wait(() => tt.assert('aria-busy is in place', el.$('a').hasAttribute('aria-busy')));
-      await wait(() => tt.assert('aria-busy was removed', !el.$('a').hasAttribute('aria-busy')), 1050);
+      await t.delay(1);
+      t.assert('aria-busy is in place', el.$('a').hasAttribute('aria-busy'));
+      await t.delay(1050);
+      t.assert('aria-busy was removed', !el.$('a').hasAttribute('aria-busy'));
     });
   </script>
 </div>

@@ -36,11 +36,10 @@ tags: ts-data, ts-req-batch, advanced
       });
     })(prev());
     // how do I emulate "visibility" from intersection observer
-    /*test*/(el => {
-      wait(() => {
-        var spans = el.$('span').children;
-        tt.assert(spans[0].innerText.slice(10) == spans[0].innerText.slice(10));
-      });
-    })
+    /*test*/(async (el, t) => {
+      await t.delay();
+      var spans = el.$('span').children;
+      t.assert(spans[0].innerText.slice(10) == spans[0].innerText.slice(10));
+    });
   </script>
 </div>

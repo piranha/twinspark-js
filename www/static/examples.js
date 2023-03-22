@@ -91,20 +91,26 @@ window.addEventListener('popstate', _ => setTimeout(enableExamples, 16));
 window.test = (function() {
   var TESTS = [];
 
-  function makeTest(testfn) {
+  function makeTest(name, testfn) {
     var parent = document.currentScript.closest('div');
     var example = parent.querySelector('.card-body');
-    var h = parent;
-    while(h && !((h = h.previousElementSibling).tagName == 'H3')) {
+
+    if (typeof name == 'function') {
+      testfn = name;
+
+      var h = parent;
+      while(h && !((h = h.previousElementSibling).tagName == 'H3')) {
+      }
+      name = h && h.innerText || 'test';
     }
 
     return {
-      name: h && h.innerText || 'test',
-      func: async () => {
+      name: name,
+      func: async (t) => {
         example.innerHTML = example.initial;
         twinspark.activate(example);
         try {
-          await testfn(example)
+          await testfn(example, t)
         } finally {
           example.innerHTML = example.initial;
           twinspark.activate(example);
@@ -114,8 +120,8 @@ window.test = (function() {
     };
   }
 
-  function test(testfn) {
-    TESTS.push(makeTest(testfn));
+  function test(name, testfn) {
+    TESTS.push(makeTest(name, testfn));
   }
 
   // use to limit tests to only single function, so less noise happens when you

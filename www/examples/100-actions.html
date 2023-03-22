@@ -19,9 +19,10 @@ tags: ts-action
   </div>
 
   <script>
-    test(el => {
+    test('Actions: test of remove', async (el, t) => {
       click(el.$('button'));
-      return wait(() => tt.assert('Removed', el.$('button') == null));
+      await t.delay();
+      t.assert('Removed', el.$('button') == null);
     });
   </script>
 </div>
@@ -42,10 +43,12 @@ tags: ts-action
   </div>
 
   <script>
-    test(async el => {
+    test('Actions: test of delay', async (el, t) => {
       click(el.$('button'));
-      await wait(() => tt.assert('Still in place', el.$('button')));
-      //await wait(() => tt.assert('Removed after timeout', el.$('button')), 1050);
+      await t.delay(1);
+      t.assert('Still in place', el.$('button'));
+      await t.delay(1050);
+      t.assert('Removed after timeout', el.$('button'));
     });
   </script>
 </div>
@@ -70,10 +73,12 @@ tags: ts-action
   </style>
 
   <script>
-    test(async (el) => {
+    test('Actions: test of wait', async (el, t) => {
       click(el.$('button'));
-      await wait(() => tt.assert('Not removed yet', el.$('button')));
-      await wait(() => tt.assert('Removed after transition', el.$('button')), 1050);
+      await t.delay(1);
+      t.assert('Not removed yet', el.$('button'));
+      await t.delay(1050);
+      t.assert('Removed after transition', el.$('button'));
     });
   </script>
 </div>
@@ -102,12 +107,11 @@ tags: ts-action
 
   <script>
     // i don't know if it's possible
-    /*test*/(el => {
+    /*test*/(async (el, t) => {
       click(el.$('button'));
-      return wait(() => {
-        console.log(getComputedStyle(el.$('button')).transform);
-        tt.assert(getComputedStyle(el.$('button')).transform != 'none')
-      }, 100);
+      await t.delay(100);
+      console.log(getComputedStyle(el.$('button')).transform);
+      t.assert(getComputedStyle(el.$('button')).transform != 'none');
     });
   </script>
 </div>

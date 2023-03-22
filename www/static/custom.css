@@ -49,9 +49,12 @@ pre { overflow-x: scroll; }
                     border-radius: 5px;
                     box-shadow: inset 0 1px 1px rgba(0,0,0,.2);}
 #tinytest .test {margin-left: 2rem;}
+#tinytest .total {margin-left: 4rem;}
 #tinytest summary{padding:4px}
 #tinytest .test.pass summary::before {
   content: '✓'; display: inline-block; margin-right: 5px; color: #00d6b2; }
 #tinytest .test.fail summary::before, #tinytest .test.error summary::before {
   content: '✖'; display: inline-block; margin-right: 5px; color: #c00; }
 #tinytest .test.error { background: #fcf2f2; }
+#tinytest li.pass { list-style-type: '✓ '; }
+#tinytest li.fail { list-style-type: '✖ '; }

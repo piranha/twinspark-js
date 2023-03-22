@@ -24,9 +24,10 @@ id: target
   </script>
   <script>
     XHRMock.get("/target", {body: prev()});
-    test(el => {
+    test(async (el, t) => {
       click(el.$('a'));
-      return wait(() => tt.assert(el.$('span').innerText = 'Good catch!'));
+      await t.delay(1);
+      t.eq(el.$('span').innerText, 'Good catch!');
     });
   </script>
 </div>

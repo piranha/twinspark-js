@@ -80,7 +80,7 @@ function print(elt) {
       }
     });
     cb();
-    SCHEDULED || (SCHEDULED = setTimeout(() => tt.test(TESTS), 100));
+    SCHEDULED || (SCHEDULED = setTimeout(() => tt.test(TESTS, {sync: true}), 100));
   }
 
   function beforeEach(cb) {

@@ -12,12 +12,15 @@
       border-radius: 5px;
       box-shadow: inset 0 1px 1px rgba(0,0,0,.2);}
     #tinytest .test {margin-left: 2rem;}
+    #tinytest .total {margin-left: 4rem;}
     #tinytest summary{padding:4px}
     #tinytest .test.pass summary::before {
       content: '✓'; display: inline-block; margin-right: 5px; color: #00d6b2; }
     #tinytest .test.fail summary::before, #tinytest .test.error summary::before {
       content: '✖'; display: inline-block; margin-right: 5px; color: #c00; }
     #tinytest .test.error { background: #fcf2f2; }
+    #tinytest li.pass { list-style-type: '✓ '; }
+    #tinytest li.fail { list-style-type: '✖ '; }
   </style>
  */
 
@@ -25,7 +28,10 @@ window.tt = (function() {
   var RESULTS = [], _EL;
 
   function EL() {
-    return _EL || (_EL = document.getElementById('tinytest'));
+    if (_EL) return _EL;
+    if (_EL = document.getElementById('tinytest')) return _EL;
+    document.body.insertAdjacentHTML('beforeend', '<div id="tinytest"></div>');
+    return EL();
   }
 
   function escape(s) {
@@ -40,7 +46,7 @@ window.tt = (function() {
   }
 
 
-  function doReport(name, results, duration, err) {
+  function doReport(prio, name, results, duration, err) {
     var tlen = results.length;
     var flen = results.filter(r => !r[1]).length;
     var details = results
@@ -58,11 +64,23 @@ window.tt = (function() {
     }
 
     var dt = `<span class=duration>${duration}ms</span>`;
-    var t = `<div class="test ${cls}"><details>
-               <summary>${escape(name)}: ${desc} ${dt}</summary>
+    var t = `<div class="test ${cls}" data-prio="${prio}"><details>
+               <summary>${name}: ${desc} ${dt}</summary>
                <ul>${details}</ul>
              </details></div>`;
-    EL().insertAdjacentHTML('beforeend', t);
+
+    var el;
+    for (var child of EL().children) {
+      if (parseInt(child.dataset.prio, 10) > prio) {
+        el = child;
+        break;
+      }
+    }
+    if (el) {
+      el.insertAdjacentHTML('beforebegin', t);
+    } else {
+      EL().insertAdjacentHTML('beforeend', t);
+    }
 
     if (err) {
       console.error(`✖ ${name}: Exception ${err}`);
@@ -79,39 +97,92 @@ window.tt = (function() {
             duration: duration}
   }
 
-  function assert(desc, result) {
-    if (arguments.length == 1) {
-      result = desc;
-      desc = 'assert';
-    }
-    RESULTS.push([desc, result]);
-    return result;
+  function delay(t) {
+    return new Promise(resolve => setTimeout(resolve, t || 0, true));
   }
 
-  async function test(tests) {
+  function prefix(defs, func) {
+    var flen = func.length;
+    return function() {
+      var len = arguments.length;
+      var args = len < flen ?
+          [...defs.slice(0, flen - len), ...arguments] :
+          arguments;
+      return func.apply(null, args);
+    }
+  }
+
+  function innerapi() {
+    var results = [];
+    return {
+      delay: delay,
+      assert: prefix(['assert'], (desc, result) => results.push([desc, result])),
+      eq: prefix(['eq'], (desc, left, right) => {
+        var res = left == right;
+        results.push([`${desc}: ${left} ${res ? '==' : '!='} ${right}`, res]);
+      }),
+      _results: results,
+    }
+  }
+
+  async function seqMap(arr, cb) {
+    var res = [];
+    for (var i = 0; i < arr.length; i++) {
+      res.push(await cb(arr[i], i));
+    }
+    return res;
+  }
+
+  var global = innerapi();
+
+  async function test(tests, opts) {
+    opts || (opts = {});
+    var globalStart = performance.now();
+
     tests = Array.isArray(tests) ? tests : [tests];
-    var report = [];
-    for (var test of tests) {
+
+    async function execute(test, idx) {
       var start = performance.now();
+      var t = innerapi();
+      var err;
       try {
         test.setup && test.setup();
-        await test.func();
-        report.push(doReport(test.name, RESULTS, performance.now() - start));
+        await test.func(t);
       } catch(e) {
-        report.push(doReport(test.name, RESULTS, performance.now() - start, e));
         console.error(e);
+        err = e;
       }
-      RESULTS = [];
+
+      var results = t._results;
+      if (global._results) {
+        // somebody used global tt.assert
+        results = results.concat(global._results);
+        global._results.length = 0;
+      }
+
+      return doReport(idx, test.name, results, performance.now() - start, err);
     }
+
+    var report;
+    if (opts.sync) {
+      report = await seqMap(tests, execute);
+    } else {
+      var promises = tests.map(execute);
+      report = await Promise.all(promises);
+    }
+
+    var duration = performance.now() - globalStart;
+    EL().insertAdjacentHTML(
+      'beforeend',
+      `<div class="total" data-prio="1000000">
+        <i>Total run time</i>: <span class=duration>${duration}ms</span>
+      </div>`);
+
     EL().dispatchEvent(new CustomEvent('tt-done', {
       detail: {success: report.filter(r => !r.success).length == 0,
                report: report}}));
     return report;
   }
 
-  function delay(t) {
-    return new Promise(resolve => setTimeout(resolve, t || 0, true));
-  }
-
-  return {test, assert, delay};
+  return Object.assign(global, {test});
 })();

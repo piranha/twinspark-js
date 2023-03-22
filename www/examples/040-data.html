@@ -28,9 +28,10 @@ tags: ts-data, ts-req-method
     XHRMock.post("/data", function(req, res) {
       return res.status(200).body('<span>' + new URLSearchParams(req.body()).toString() + '</span>');
     });
-   test(el => {
-     click(el.$('a'));
-     return wait(() => tt.assert(el.$('span').innerText == 'a=1&b=2&b=4&c=5'));
+   test(async (el, t) => {
+      click(el.$('a'));
+      await t.delay(1);
+      t.assert(el.$('span').innerText == 'a=1&b=2&b=4&c=5');
    });
   </script>
 </div>

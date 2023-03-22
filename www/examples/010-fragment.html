@@ -22,10 +22,10 @@ tags: ts-req
   </script>
   <script>
     XHRMock.get("/fragment", {body: prev()});
-    test(el => tt.delay(1)
-      .then(_ => click(el.$('a')))
-      .then(_ => tt.delay(1))
-      .then(_ => tt.assert('Element Updated!',
-                           el.$('a').innerText == 'Updated!')));
+    test(async (el, t) => {
+      click(el.$('a'));
+      await t.delay(1);
+      t.eq('Element Updated!', el.$('a').innerText, 'Updated!')
+    });
   </script>
 </div>
