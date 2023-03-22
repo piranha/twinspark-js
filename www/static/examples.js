@@ -111,43 +111,43 @@ window.test = (function() {
         }
         return 1;
       }
-      };
+    };
+  }
+
+  function test(testfn) {
+    TESTS.push(makeTest(testfn));
+  }
+
+  // use to limit tests to only single function, so less noise happens when you
+  // debug a test
+  function test1(testfn) {
+    var test = makeTest(testfn);
+    setTimeout(_ => { TESTS = [test] }, 100);
+  }
+
+  function runTests(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
 
-    function test(testfn) {
-      TESTS.push(makeTest(testfn));
+    Element.prototype.$ = Element.prototype.querySelector;
+    Element.prototype.$$ = Element.prototype.querySelectorAll;
+
+    window.event = (type, attrs, el) => {
+      var e = new Event(type);
+      if (attrs) Object.assign(e, attrs);
+      el.dispatchEvent(e);
+    }
+    window.click = (el) => event('click', {button: 0}, el);
+    window.wait = function(func, t) {
+      return new Promise(resolve => setTimeout(() => resolve(func()), t || 16))
     }
 
-    // use to limit tests to only single function, so less noise happens when you
-    // debug a test
-    function test1(testfn) {
-      var test = makeTest(testfn);
-      setTimeout(_ => { TESTS = [test] }, 100);
-    }
+    tt.test(TESTS);
+  }
 
-    function runTests(e) {
-      if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-
-      Element.prototype.$ = Element.prototype.querySelector;
-      Element.prototype.$$ = Element.prototype.querySelectorAll;
-
-      window.event = (type, attrs, el) => {
-        var e = new Event(type);
-        if (attrs) Object.assign(e, attrs);
-        el.dispatchEvent(e);
-      }
-      window.click = (el) => event('click', {button: 0}, el);
-      window.wait = function(func, t) {
-        return new Promise(resolve => setTimeout(() => resolve(func()), t || 16))
-      }
-
-      tt.test(TESTS);
-    }
-
-    window.addEventListener('run-tests', runTests);
+  window.addEventListener('run-tests', runTests);
 
   return test;
 })();

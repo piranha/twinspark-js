@@ -3,8 +3,8 @@ title: Indicator
 tags: ts-req
 ----
 <p>It's really irritating when you click a link and nothing happens for some
-  time. Luckily TwinSpark makes it really easy: it adds class
-  <code>ts-active</code> to a <code>ts-req</code> element.</p>
+  time. Luckily TwinSpark makes it really easy: it adds attribute
+  <code>aria-busy="true"</code> to an origin element.</p>
 
 <div class="card example">
   <div class="card-header">
@@ -46,11 +46,10 @@ tags: ts-req
   </script>
   <script>
     XHRMock.get("/indicator", XHRMock.delay({body: prev()}, 1000));
-    test(el => {
+    test(async (el) => {
       click(el.$('a'));
-      return wait(() => tt.assert(el.$('a').classList.contains('ts-active')));
-      // I'm too lazy to wait for so long
-      //wait(() => tt.assert(!el.$('a').classList.contains('ts-active')), 1050);
+      await wait(() => tt.assert('aria-busy is in place', el.$('a').hasAttribute('aria-busy')));
+      await wait(() => tt.assert('aria-busy was removed', !el.$('a').hasAttribute('aria-busy')), 1050);
     });
   </script>
 </div>

@@ -42,10 +42,10 @@ tags: ts-action
   </div>
 
   <script>
-    test(el => {
+    test(async el => {
       click(el.$('button'));
-      return wait(() => tt.assert('Removed with timeout', el.$('button')));
-      //wait(() => tt.assert(el.$('button')), 1050);
+      await wait(() => tt.assert('Still in place', el.$('button')));
+      //await wait(() => tt.assert('Removed after timeout', el.$('button')), 1050);
     });
   </script>
 </div>
@@ -70,10 +70,10 @@ tags: ts-action
   </style>
 
   <script>
-    test(el => {
+    test(async (el) => {
       click(el.$('button'));
-      return wait(() => tt.assert('Not removed yet', el.$('button')));
-      //wait(() => tt.assert(el.$('button')), 1050);
+      await wait(() => tt.assert('Not removed yet', el.$('button')));
+      await wait(() => tt.assert('Removed after transition', el.$('button')), 1050);
     });
   </script>
 </div>
