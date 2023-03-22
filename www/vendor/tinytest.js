@@ -160,7 +160,7 @@ window.tt = (function() {
         global._results.length = 0;
       }
 
-      return doReport(idx, test.name, results, performance.now() - start, err);
+      return doReport(idx, test.name, results, (performance.now() - start) | 0, err);
     }
 
     var report;
@@ -171,7 +171,7 @@ window.tt = (function() {
       report = await Promise.all(promises);
     }
 
-    var duration = performance.now() - globalStart;
+    var duration = (performance.now() - globalStart) | 0;
     EL().insertAdjacentHTML(
       'beforeend',
       `<div class="total" data-prio="1000000">
@@ -180,7 +180,8 @@ window.tt = (function() {
 
     EL().dispatchEvent(new CustomEvent('tt-done', {
       detail: {success: report.filter(r => !r.success).length == 0,
-               report: report}}));
+               report: report,
+               duration: duration}}));
     return report;
   }
 
