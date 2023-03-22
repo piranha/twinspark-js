@@ -150,7 +150,7 @@ window.test = (function() {
       return new Promise(resolve => setTimeout(() => resolve(func()), t || 16))
     }
 
-    tt.test(TESTS);
+    tt.test(TESTS, e.detail);
   }
 
   window.addEventListener('run-tests', runTests);

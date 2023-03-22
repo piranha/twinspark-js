@@ -57,7 +57,7 @@ async function runTests(browser, base, url, needsTrigger) {
       console.log('TIMEOUT WAITING FOR TESTS', url);
       await page.close();
       resolve(false);
-    }, 2000);
+    }, 10000);
 
     await page.exposeFunction('headlessRunnerDone', async (success) => {
       clearTimeout(timeout);
@@ -76,7 +76,7 @@ async function runTests(browser, base, url, needsTrigger) {
 
     if (needsTrigger) {
       await page.evaluate(() => {
-        window.dispatchEvent(new CustomEvent('run-tests'));
+        window.dispatchEvent(new CustomEvent('run-tests', {detail: {sync: true}}));
       });
     }
   });
