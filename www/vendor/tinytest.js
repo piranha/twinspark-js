@@ -48,9 +48,9 @@ window.tt = (function() {
 
   function doReport(prio, name, results, duration, err) {
     var tlen = results.length;
-    var flen = results.filter(r => !r[1]).length;
+    var flen = results.filter(r => !r.result).length;
     var details = results
-        .map(r => `<li class="${r[1] ? 'pass' : 'fail'}">${escape(r[0])}</li>`)
+        .map(r => `<li class="${r.result ? 'pass' : 'fail'}">${escape(r.desc)}</li>`)
         .join('');
 
     var cls, desc;
@@ -86,6 +86,7 @@ window.tt = (function() {
       console.error(`✖ ${name}: Exception ${err}`);
     } else if (flen) {
       console.error(`✖ ${name}: ${desc}`);
+      results.forEach(r => console.log(`  ${r.result ? '✓' : '✖'} ${r.desc}`));
     } else {
       console.log(`✓ ${name}: ${desc}`);
     }
@@ -116,10 +117,13 @@ window.tt = (function() {
     var results = [];
     return {
       delay: delay,
-      assert: prefix(['assert'], (desc, result) => results.push([desc, result])),
+      assert: prefix(['assert'], (desc, result) => results.push({result, desc})),
       eq: prefix(['eq'], (desc, left, right) => {
         var res = left == right;
-        results.push([`${desc}: ${left} ${res ? '==' : '!='} ${right}`, res]);
+        results.push({
+          result: res,
+          desc: `${desc}: ${left} ${res ? '==' : '!='} ${right}`
+        });
       }),
       _results: results,
     }
