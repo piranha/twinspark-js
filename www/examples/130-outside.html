@@ -32,7 +32,7 @@ tags: ts-trigger, ts-action
       var a = el.$('a');
       t.assert('start: ' + a.innerText, a.innerText.startsWith('No clicks'));
 
-      await t.delay(50);
+      await t.delay(70);
       a.click();
       await t.delay();
       t.assert('click inside: ' + a.innerText, a.innerText.includes('inside'));

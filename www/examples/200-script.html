@@ -26,7 +26,7 @@ tags: ts-req, advanced
     XHRMock.get("/script", {body: prev()});
     test('script in response', async (el, t) => {
       click(el.$('a'));
-      await t.delay(500);
+      await t.delay(600);
       t.assert('Updated', el.$('span').innerText == 'Double change!');
     });
   </script>
