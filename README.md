@@ -25,4 +25,4 @@ in less is more.
 
 It's a battle-tested technology used on websites with 100k+ daily active users.
 
-See more in [examples](https://piranha.github.io/twinspark-js/).
+Read more in [docs](https://piranha.github.io/twinspark-js/).
