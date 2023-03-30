@@ -69,6 +69,25 @@
       });
     },
 
+    on: function(eventname, o) {
+      var rest = o.line.split(o.src)[1].replace(/^[\s,]+/, '');
+      var action = parseActionSpec(rest)[0];
+      listen(o.el, eventname, (e) => {
+        _doAction(action, {el: o.el, event: e});
+      });
+      return false; // stop executing actions pipeline
+    },
+
+    req: arity(
+      function(url, o) { this.dispatcher(null, url, o); },
+      function(method, url, o) {
+        doReqBatch(makeReq(o.el, o.event, false,
+                           {method: method,
+                            url: url,
+                            data: o.input ? [['input', o.input]] : null}));
+      }
+    ),
+
     class:       function(cls, o) { o.el.classList.add(cls); },
     "class+":    function(cls, o) { o.el.classList.add(cls); },
     "class-":    function(cls, o) { o.el.classList.remove(cls); },
@@ -77,7 +96,9 @@
 
     text: arity(
       function(o) {
-        o.el.innerText = o.input;
+        if (!(o.input === null || o.input === undefined)) {
+          o.el.innerText = o.input;
+        }
         return o.input;
       },
       function(value, o) {
@@ -88,8 +109,10 @@
 
     html: arity(
       function(o) {
-        o.el.innerHTML = o.input;
-        return o.input;
+        if (!(o.input === null || o.input === undefined)) {
+          o.el.innerHTML = o.input;
+        }
+        return o.el.innerHTML;
       },
       function(value, o) {
         o.el.innerHTML = value;
@@ -138,7 +161,8 @@
       acc[func.length] = func;
       return acc;
     }, {});
-    return function() {
+
+    return function dispatcher() {
       var len = arguments.length;
       var func = funcs[len];
       if (!func) {
@@ -147,7 +171,7 @@
           "arguments": Array.from(arguments)
         });
       }
-      return func.apply(this, arguments);
+      return func.apply({dispatcher}, arguments);
     }
   }
 
@@ -1232,7 +1256,7 @@
   function swap(origins, replyParent, res) {
     var ctx = {response: res, tasks: []};
 
-    var swapped, viapush, viaheader;
+    var swapped = [], viapush, viaheader;
 
     if (res.headers['ts-swap'] != 'skip') {
       if (origins.length == 1) {
@@ -1294,7 +1318,8 @@
     var title = res.headers['ts-title'] || html.title;
     var replyParent = html.body;
 
-    if (replyParent.children.length < origins.length) {
+    if (replyParent.children.length < origins.length &&
+        res.headers['ts-swap'] != 'skip') {
       throw (`This request needs at least ${origins.length} elements, ` +
              `but ${replyParent.children.length} were returned`);
     }
@@ -1332,7 +1357,7 @@
     var data = collectData(req.el, req.event?.detail?.event ?? req.event);
     return {
       method:  req.method,
-      data:    data,
+      data:    mergeParams(data, req.opts.data),
       headers: {
         'Accept':       'text/html+partial',
         'TS-URL':       location.pathname + location.search,
@@ -1519,17 +1544,18 @@
     }
   }
 
-  /** @type {function(!Element, Event, boolean): Req} */
-  function makeReq(el, e, batch) {
-    var url = ((batch ? getattr(el, 'ts-req-batch') : getattr(el, 'ts-req')) ||
+  /** @type {function(!Element, Event, boolean, Object=): Req} */
+  function makeReq(el, e, batch, opts) {
+    var url = (opts?.url ||
+               (batch ? getattr(el, 'ts-req-batch') : getattr(el, 'ts-req')) ||
                (el.tagName == 'FORM' ? getattr(el, 'action') : getattr(el, 'href')));
-    var method = (getattr(el, 'ts-req-method') ||
-                  (el.tagName == 'FORM' ?
-                   (getattr(el, 'method') || 'POST') :
-                   'GET')).toUpperCase();
+    var method = (opts?.method ||
+                  getattr(el, 'ts-req-method') ||
+                  (el.tagName == 'FORM' ? (getattr(el, 'method') || 'POST') : 'GET'))
+        .toUpperCase();
 
     return {el:     el,
-            opts:   {},
+            opts:   {data: opts?.data},
             event:  e,
             url:    url,
             method: method,
@@ -1754,7 +1780,7 @@
   }
 
 
-  /** @type {function(ActionDef, {el: !Element, e: !Event}): !Promise} */
+  /** @type {function(ActionDef, {el: !Element, event: !Event}): !Promise} */
   function _doAction(action, payload) {
     console.debug('ACTION', action.src, payload);
 
@@ -1793,7 +1819,7 @@
     console.debug('ACTIONS', {spec: spec, event: e, payload: payload});
     var actions = parseActionSpec(spec);
     // parens indicate type cast rather than type declaration
-    var mypayload = /** @type {{el: !Element, e: !Event}}
+    var mypayload = /** @type {{el: !Element, event: !Event}}
                      */ (merge({el: target, event: e}, payload));
 
     var result;
