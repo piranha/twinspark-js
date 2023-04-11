@@ -424,7 +424,7 @@
   /** @type {function(!Element): void} */
   function activate(el) {
     var selector = DIRECTIVES.map(d => d.selector).join(',');
-    qse(document.body, selector).forEach(activateEl);
+    qse(el, selector).forEach(activateEl);
     sendEvent(el, 'ts-ready');
   }
 
