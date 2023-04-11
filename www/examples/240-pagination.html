@@ -78,7 +78,13 @@ desc: Pagination too can be beautiful
               </div>`;
     }
 
-    document.currentScript.parentElement.querySelector('.card-body').innerHTML = renderPagination(10);
+    (cardbody => {
+      cardbody.innerHTML = renderPagination(10);
+      window.addEventListener('hotreload', _ => {
+        cardbody.innerHTML = renderPagination(10);
+        twinspark.activate(cardbody);
+      });
+    })(document.currentScript.parentElement.querySelector('.card-body'));
     XHRMock.get(/^\/page/, XHRMock.delay((req, res) => {
       var n = parseInt(req.url().query.n, 10) || 1;
       return res.status(200).body(renderPagination(n));
