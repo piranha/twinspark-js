@@ -72,7 +72,7 @@
     on: function(eventname, o) {
       var rest = o.line.split(o.src)[1].replace(/^[\s,]+/, '');
       var action = parseActionSpec(rest)[0];
-      listen(o.el, eventname, (e) => {
+      addListener(o.el, eventname, (e) => {
         _doAction(action, {el: o.el, event: e});
       });
       return false; // stop executing actions pipeline
@@ -1975,52 +1975,55 @@
     listen(el, type, inner, opts);
   }
 
-  /** @type {function(!Element, !CommandDef): undefined} */
-  function registerTrigger(el, t) {
-    var type = t.name;
-    var tsTrigger = makeTriggerListener(t);
-
+  function addListener(el, type, handler) {
     switch (type) {
-    case 'load':         onidle(function() { tsTrigger(el, {type: 'load'}); });
+    case 'load':         onidle(function() { handler(el, {type: 'load'}); });
       break;
-    case 'windowScroll': addRemovableListener(window, 'scroll', function(e) { tsTrigger(el, e); }, {passive: true});
+    case 'windowScroll': addRemovableListener(window, 'scroll', function(e) { handler(el, e); }, {passive: true});
       break;
-    case 'scroll':       addRemovableListener(el, 'scroll', function(e) { tsTrigger(el, e); }, {passive: true});
+    case 'scroll':       addRemovableListener(el, 'scroll', function(e) { handler(el, e); }, {passive: true});
       break;
     case 'outside':      addRemovableListener(document, 'click', function(e) {
       if (!el.contains(e.target)) {
-        tsTrigger(el, e);
+        handler(el, e);
       }
     }, {capture: true});
       break;
 
     case 'remove':
       removedObs().observe(el.parentElement, {childList: true});
-      listen(el, type, function(e) { tsTrigger(el, e); });
+      listen(el, type, function(e) { handler(el, e); });
       break;
 
     case 'empty':
     case 'notempty':
     case 'childrenChange':
       childrenObs().observe(el, {childList: true});
-      listen(el, type, function(e) { tsTrigger(el, e); });
+      listen(el, type, function(e) { handler(el, e); });
       break;
 
     case 'visible':
     case 'invisible':
       visibleObs().observe(el);
-      listen(el, type, function(e) { tsTrigger(el, e); });
+      listen(el, type, function(e) { handler(el, e); });
       break;
 
     case 'closeby':
     case 'away':
       closebyObs().observe(el);
-      listen(el, type, function(e) { tsTrigger(el, e); });
+      listen(el, type, function(e) { handler(el, e); });
       break;
 
     default:
-      addRemovableListener(el, type, function(e) { tsTrigger(el, e); });
+      addRemovableListener(el, type, function(e) { handler(el, e); });
     }
+  }
+
+  /** @type {function(!Element, !CommandDef): undefined} */
+  function registerTrigger(el, t) {
+    var type = t.name;
+    var tsTrigger = makeTriggerListener(t);
+    addListener(el, type, tsTrigger);
   }
 
   register('[ts-trigger]', function(el) {
