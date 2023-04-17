@@ -21,7 +21,7 @@ you can customize requests being sent out. Whatever you need.
 **Lean**: source is a full 2000 lines of code and only [8KB .min.gz][min]. We believe
 in less is more.
 
-[min]: https://github.com/piranha/twinspark-js/raw/master/dist/twinspark.min.js
+[min]: https://github.com/piranha/twinspark-js/raw/main/dist/twinspark.min.js
 
 It's a battle-tested technology used on websites with 100k+ daily active users.
 
