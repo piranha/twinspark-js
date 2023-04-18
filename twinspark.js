@@ -577,7 +577,7 @@
       return null;
 
     // only clicked submit buttons should be handled. In ideal world we would
-    // look at e.submitter, but no support from Safari
+    // look at e.submitter, but no support from Safari < 15.4
     if (el.type == 'submit' && !hasattr(el, 'ts-clicked'))
       return null;
 
