@@ -11,7 +11,7 @@ jobs:
     - uses: actions/setup-java@v3
       with:
         distribution: 'zulu' # https://github.com/marketplace/actions/setup-java-jdk#supported-distributions
-        java-version: '19'
+        java-version: '20'
     - run: npm i -g google-closure-compiler
     - run: make adv
 
