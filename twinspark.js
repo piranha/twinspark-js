@@ -562,7 +562,6 @@
 
   /**
    * @type {function(!Element, string): FormData}
-   * @suppress {reportUnknownTypes}
    */
   function eldata(el, attr) {
     // reduceRight because deepest element is the first one
@@ -576,9 +575,8 @@
     if (!el.name)
       return null;
 
-    // only clicked submit buttons should be handled. In ideal world we would
-    // look at e.submitter, but no support from Safari < 15.4
-    if (el.type == 'submit' && !hasattr(el, 'ts-clicked'))
+    // we will look at e.submitter separately
+    if (el.type == 'submit')
       return null;
 
     if (((el.type == 'radio') || (el.type == 'checkbox')) &&
@@ -596,17 +594,11 @@
     var res;
 
     if (tag == 'FORM') {
-      data = mergeParams(data, new FormData(el));
-
-      var focused = document.activeElement;
-      if (focused.type == 'submit' && focused.name && focused.value && !data.has(focused.name)) {
-        data.append(focused.name, focused.value);
-      } else if (e?.type == 'submit') {
-        var submit = qsf(el, '[type=submit]');
-        if (submit && submit.name && submit.value && !data.has(submit.name)) {
-          data.append(submit.name, submit.value);
-        }
+      if (e && e.submitter && e.submitter.name && e.submitter.value) {
+        data.append(e.submitter.name, e.submitter.value);
       }
+
+      data = mergeParams(data, new FormData(el));
     } else if ((tag == 'INPUT') || (tag == 'SELECT') || (tag == 'TEXTAREA')) {
       if (res = formElementValue(el))
         data.append(el.name, /** @type {string} */ (res));
@@ -1563,17 +1555,6 @@
   }
   // End Batch Request Queue
 
-  function markSubmitter(el) {
-    listen(el, 'click', function(e) {
-      // focus here since macos won't focus submit buttons
-      e.target.focus();
-      // NOTE: DEPRECATED
-      setattr(el, 'ts-clicked', '1');
-      // form data should be handled synchronously
-      onidle(function() { delattr(el, 'ts-clicked'); });
-    });
-  }
-
   function onNative(el, func) {
     var tag = el.tagName;
     var event = 'click';
@@ -1582,8 +1563,15 @@
     else if ((tag == 'INPUT') || (tag == 'SELECT') || (tag == 'TEXTAREA'))
       event = 'change';
 
+    // this is a trick for macos safari < 15.4 and others < 2020
+    var lastbutton = null;
+
     if (tag == 'FORM' && event == 'submit') {
-      qse(el, 'button, input[type="submit"]').forEach(markSubmitter);
+      qse(el, 'button, input[type="submit"]').forEach(btn => {
+        listen(btn, 'click', e => {
+          lastbutton = e.target
+        })
+      });
     }
 
     return listen(el, event, function(/** @type {!Event} */ e) {
@@ -1592,7 +1580,12 @@
 
       e.preventDefault();
       e.stopPropagation();
+
+      if (!e.submitter && lastbutton && lastbutton.type == 'submit') {
+        e.submitter = lastbutton;
+      }
       func(e);
+      lastbutton = null;
     });
   }
 

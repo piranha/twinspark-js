@@ -1,0 +1,50 @@
+id: form-data
+title: Form With Data
+tags: ts-data, usecase
+----
+<p>
+  Form can be a bit tricky to collect data correctly, particularly weird thing
+  is when you have a few submit buttons. So the following form has two with
+  different data on them, plus hidden fields and <code>ts-data</code>, and all
+  is collected.
+</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body">
+    <form method="post" action="/form"
+          ts-data="more=data" ts-req ts-target="sibling .target">
+      <p>
+        <input type="hidden" name="hidden" value="canthide"/>
+        <input type="text" name="text" value="" placeholder="Just type in me"/>
+        <button name="command" value="accept">Accept</button>
+        <button name="command" value="decline">Decline</button>
+      </p>
+    </form>
+    <p class="target">Click a button to replace me with form data.</p>
+  </div>
+
+  <script>
+    XHRMock.post("/form", function(req, res) {
+      return res.status(200).body('<p class=target>' + new URLSearchParams(req.body()).toString() + '</p>');
+    });
+   test(async (el, t) => {
+      el.$('[value=accept]').click();
+      await t.delay(1);
+      t.eq('Accept button pressed',
+           el.$('.target').innerText,
+           'more=data&command=accept&hidden=canthide&text=');
+
+      el.$('[value=decline]').click();
+      await t.delay(1);
+      t.eq('Decline button pressed',
+           el.$('.target').innerText,
+           'more=data&command=decline&hidden=canthide&text=');
+   });
+  </script>
+</div>
