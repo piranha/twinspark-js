@@ -25,7 +25,7 @@ id: target
   <script>
     XHRMock.get("/target", {body: prev()});
     test(async (el, t) => {
-      click(el.$('a'));
+      el.$('a').click();
       await t.delay(1);
       t.eq(el.$('span').innerText, 'Good catch!');
     });

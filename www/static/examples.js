@@ -145,15 +145,12 @@ window.test = (function() {
       if (attrs) Object.assign(e, attrs);
       el.dispatchEvent(e);
     }
-    window.click = (el) => event('click', {button: 0}, el);
-    window.wait = function(func, t) {
-      return new Promise(resolve => setTimeout(() => resolve(func()), t || 16))
-    }
 
-    tt.test(TESTS, e.detail);
+    tt.test(TESTS, e && e.detail);
   }
 
   window.addEventListener('run-tests', runTests);
+  window.RUNTESTS = runTests;
 
   return test;
 })();

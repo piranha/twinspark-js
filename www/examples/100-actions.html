@@ -20,7 +20,7 @@ tags: ts-action
 
   <script>
     test('Actions: test of remove', async (el, t) => {
-      click(el.$('button'));
+      el.$('button').click();
       await t.delay();
       t.assert('Removed', el.$('button') == null);
     });
@@ -44,7 +44,7 @@ tags: ts-action
 
   <script>
     test('Actions: test of delay', async (el, t) => {
-      click(el.$('button'));
+      el.$('button').click();
       await t.delay(1);
       t.assert('Still in place', el.$('button'));
       await t.delay(1050);
@@ -74,7 +74,7 @@ tags: ts-action
 
   <script>
     test('Actions: test of wait', async (el, t) => {
-      click(el.$('button'));
+      el.$('button').click();
       await t.delay(1);
       t.assert('Not removed yet', el.$('button'));
       await t.delay(1050);
@@ -108,7 +108,7 @@ tags: ts-action
   <script>
     // i don't know if it's possible
     /*test*/(async (el, t) => {
-      click(el.$('button'));
+      el.$('button').click();
       await t.delay(100);
       console.log(getComputedStyle(el.$('button')).transform);
       t.assert(getComputedStyle(el.$('button')).transform != 'none');

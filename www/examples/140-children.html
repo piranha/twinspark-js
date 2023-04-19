@@ -34,7 +34,7 @@ tags: ts-req-selector, ts-swap
   <script>
     XHRMock.get("/children", {body: prev()});
     test(async (el, t) => {
-      click(el.$('button'));
+      el.$('button').click();
       await t.delay();
       t.assert(el.$$('.list span').length == 4);
     });

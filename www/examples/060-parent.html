@@ -26,7 +26,7 @@ id: parent
   <script>
     XHRMock.get("/parent", {body: prev()});
     test(async (el, t) => {
-      click(el.$('a'));
+      el.$('a').click();
       await t.delay(1);
       t.assert(el.$('p').innerText.startsWith('Did you know'));
     });

@@ -25,8 +25,8 @@ id: before
   <script>
     XHRMock.get("/before", {body: prev()});
     test(async (el, t) => {
-      click(el.$$('a')[0]);
-      click(el.$$('a')[1]);
+      el.$$('a')[0].click();
+      el.$$('a')[1].click();
       await t.delay(500);
       t.eq(el.$$('a')[0].innerText, 'Did you see it?');
       t.eq(el.$$('a')[1].innerText, 'This is prevented');

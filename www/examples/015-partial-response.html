@@ -29,7 +29,7 @@ tags: ts-req-selector
   <script>
     XHRMock.get("/partial-response", {body: prev()});
     test(async (el, t) => {
-      click(el.$('a'));
+      el.$('a').click();
       await t.delay(1);
       t.assert('Element Updated!', el.$('a').innerText.includes("network"))
     });

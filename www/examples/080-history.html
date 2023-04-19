@@ -35,7 +35,7 @@ tags: ts-req-history
     XHRMock.get("/history3", {body: prev()});
     test(async (el, t) => {
       var prev = location.pathname;
-      click(el.$('a'));
+      el.$('a').click();
       await t.delay(1);
       t.assert(location.pathname == '/history');
       history.replaceState(null, null, prev);

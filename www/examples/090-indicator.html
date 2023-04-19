@@ -47,7 +47,7 @@ tags: ts-req
   <script>
     XHRMock.get("/indicator", XHRMock.delay({body: prev()}, 1000));
     test(async (el, t) => {
-      click(el.$('a'));
+      el.$('a').click();
       await t.delay(1);
       t.assert('aria-busy is in place', el.$('a').hasAttribute('aria-busy'));
       await t.delay(1050);

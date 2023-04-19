@@ -23,7 +23,7 @@ tags: ts-req
   <script>
     XHRMock.get("/fragment", {body: prev()});
     test(async (el, t) => {
-      click(el.$('a'));
+      el.$('a').click();
       await t.delay(1);
       t.eq('Element Updated!', el.$('a').innerText, 'Updated!')
     });
