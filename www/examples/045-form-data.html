@@ -1,12 +1,24 @@
 id: form-data
 title: Form With Data
 tags: ts-data, usecase
+desc: Form with complex data collection
 ----
 <p>
   Form can be a bit tricky to collect data correctly, particularly weird thing
-  is when you have a few submit buttons. So the following form has two with
-  different data on them, plus hidden fields and <code>ts-data</code>, and all
-  is collected.
+  is when you have a few submit buttons. The following form has:
+</p>
+
+<ul>
+  <li>a text input</li>
+  <li>a hidden input</li>
+  <li>additional data in <a href="../../api/ts-data/"><code>ts-data</code></a> attribute</li>
+  <li>two submit buttons</li>
+</ul>
+
+<p>
+  When you click one of the buttons, you can observe that only that button was
+  included in the data &emdash; which is what you need to decide which action
+  to take.
 </p>
 
 <div class="card example">

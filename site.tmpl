@@ -75,6 +75,7 @@
     background-color: whitesmoke;
     border-top: 2px solid gray;
     transition: height .2s ease-in-out;
+    z-index: 10;
   }
   #debug-requests.show {
     height: 45vh;
@@ -84,9 +85,8 @@
   .show .show_show, .show_hide { display: none; }
   .show .show_hide { display: inline; }
 </style>
-<div id="debug-requests-wrap" style="display: none;">
-<div style="margin-top: 50vh"></div>
-<div id="debug-requests">
+
+<div id="debug-requests" style="display: none;">
   Server Requests
   <a class="show_show" href="#" ts-action="prevent, target #debug-requests, class+ show">↑ Show</a>
   <a class="show_hide" href="#" ts-action="prevent, target #debug-requests, class- show">↓ Hide</a>
@@ -125,7 +125,8 @@
       };
       XMLHttpRequest.prototype.open = function(method, url) {
         this.addEventListener('load', function() {
-          window['debug-requests-wrap'].style.display = '';
+          window['debug-requests'].style.display = '';
+          document.querySelector('footer').style.paddingBottom = '40vh';
 
           var id = `debug${i++}`;
           window['debug-timeline'].insertAdjacentHTML(
@@ -140,7 +141,7 @@
             headers += `<tr><td><code>${k}</code></td> <td><code>${this.res._headers[k]}</code></td></tr>`
           }
           headers && (headers = `<div><b>Headers:</b> <table class=table>${headers}</table></div>`);
-          var body = this.requestBody && `<div><b>Body:</b> <code>${this.requestBody}</code></div>`;
+          var body = this.requestBody && `<div><b>Body:</b> <pre><code>${escape(dedent(decode(this.requestBody)))}</code></pre></div>`;
           window['debug-details'].insertAdjacentHTML(
             'afterbegin',
             `<div id="${id}" class="d-hide">
@@ -158,7 +159,6 @@
       };
     })();
   </script>
-</div>
 </div>
 {{ end }}
 

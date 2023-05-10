@@ -1,13 +1,14 @@
-body {color: #333; }
-.grid-70 {max-width: 70ch;}
-pre code {display: inline-block; } /* or else padding is broken for blocks */
-.card-body {overflow: auto; }
+body { color: #333; }
+.grid-70 { max-width: 70ch;}
+pre code { display: inline-block; } /* or else padding is broken for blocks */
+.card-body { overflow: auto; }
 .card-body > pre { margin-top: 0; }
-.btn-sm {margin-bottom: .2rem; }
+.btn-sm { margin-bottom: .2rem; }
 
 .example + h3, table + h2 { margin-top: 1.2rem; }
 
-.mb-p {margin-bottom: 1.2rem; }
+.mb-p { margin-bottom: 1.2rem; }
+.gap-5 { gap: .5rem; }
 .back-logo {
   background-image:
     linear-gradient(to right top,
@@ -21,7 +22,7 @@ pre code {display: inline-block; } /* or else padding is broken for blocks */
 
 .table td, .table th { padding: .2rem .1rem; }
 .table tr td:first-child { white-space: nowrap; }
-pre { overflow-x: scroll; }
+pre { overflow-x: auto; }
 .nw { white-space: nowrap; }
 
 
@@ -29,7 +30,6 @@ pre { overflow-x: scroll; }
   color: #bcc3ce;
   padding: 1.8rem .75rem 1rem;
   position: relative;
-  z-index: 200;
 }
 
 .footer a {
@@ -40,7 +40,7 @@ pre { overflow-x: scroll; }
 .hover-group:hover .hover-hide { display: initial; }
 
 /* tests */
-#tinytest{font-family:sans-serif}
+#tinytest {font-family:sans-serif}
 #tinytest ul{margin:0 0 .5rem 1rem;padding-bottom:4px}
 #tinytest li{margin-top: .2rem;}
 #tinytest .duration{background: #c09853;

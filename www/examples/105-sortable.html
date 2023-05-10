@@ -1,6 +1,7 @@
 id: sortable
 title: Sortable
 tags: ts-action, usecase
+desc: Integration with <code>html5sortable</code>
 ----
 
 <p>An advanced example showing how to use actions (in particular <code>on</code>
@@ -13,6 +14,20 @@ tags: ts-action, usecase
   to store a new order.
 </p>
 
+<style>
+  [draggable=true] { cursor: grab; }
+  [aria-grabbed=true] { cursor: grabbing; }
+</style>
+
+<script>
+  twinspark.func({
+    targetel: (sel, o) => {
+      try { o.el = twinspark.query(o.el, sel); }
+      catch(e) { return false; }
+    }
+  });
+</script>
+
 <div class="card example">
   <div class="card-header">
     <h5 class="d-inline mr-2">Demo of <code>on</code> and <code>req</code></h5>
@@ -21,18 +36,23 @@ tags: ts-action, usecase
   </div>
 
   <div class="card-body">
-    <p class="d-flex" sortable ts-trigger="load" ts-action="on sortupdate, req post /order/">
-      <span class="chip"><span class="avatar avatar-sm text-center p-1">🙂</span> Smile</span>
-      <span class="chip"><span class="avatar avatar-sm text-center p-1">😇</span> Halo</span>
-      <span class="chip"><span class="avatar avatar-sm text-center p-1">😁</span> Beam</span>
-      <span class="chip"><span class="avatar avatar-sm text-center p-1">🤣</span> ROFL</span>
+    <p class="d-flex"
+       sortable
+       ts-trigger="load"
+       ts-action="on sortupdate, html, targetel 'sibling .target', req post /order/">
+      <span class="chip"><span class="avatar avatar-sm text-center p-1">🙂</span>Smile</span>
+      <span class="chip"><span class="avatar avatar-sm text-center p-1">😇</span>Halo</span>
+      <span class="chip"><span class="avatar avatar-sm text-center p-1">😁</span>Beam</span>
+      <span class="chip"><span class="avatar avatar-sm text-center p-1">🤣</span>ROFL</span>
     </p>
+    <p class="target">Here you'll see sorted names.</p>
   </div>
 
   <script>
     XHRMock.post("/order/", (req, res) => {
       var params = new URLSearchParams(req.body());
-      return res.status(204).header('ts-swap', 'skip');
+      var sorted = [...params.get('input').matchAll(/span>(\w+)</g)].map(m => m[1]).join(', ');
+      return res.status(200).body(`<p class="target">${sorted}</p>`)
     });
   </script>
 

@@ -1,8 +1,14 @@
-<p>Declarative enhancement for HTML: simple, composable, lean. It's main goal is to
-  eliminate most of the logic from JS, while allowing to make a good interactive
-  site.</p>
+<p>
+  Declarative enhancement for HTML: simple, composable, lean. TwinSpark
+  transfers lots of the common logic from JS into declarative HTML attributes.
+  This leads to a good interactive sites with little JS and more manageable
+  code.
+</p>
 
-<p class="toast toast-primary text-center">TwinSpark a battle-tested technology used on websites with 100k+ daily active users.</p>
+<p class="toast toast-primary text-center">
+  TwinSpark a battle-tested technology used for years on websites with 100k+
+  daily active users.
+</p>
 
 <div class="columns">
   <div class="column col-4 col-xs-12">
@@ -40,7 +46,7 @@
         <span class="card-title">Lean</span>
       </div>
       <div class="card-body">
-        Source is a full 2000 lines of code and only
+        Source is a just 2000 lines of code and only
         <a href="https://github.com/piranha/twinspark-js/raw/master/dist/twinspark.min.js">8KB .min.gz</a>.
         We believe in less is more.
       </div>

@@ -32,16 +32,19 @@ function escape(s) {
 }
 
 function dedent(s) {
-  var lines = s.split('\n');
-  var offsets = lines.slice(1).map(line => line.search(/\S|$/));
+  // first remove only-whitespace lines in front or back of a string
+  var lines = s.replace(/(^\s*\n)|(\n\s*$)/g, '').split('\n');
+  var offsets = lines.map(line => line.search(/\S|$/));
   var offset = Math.min.apply(Math, offsets);
-  var pat = new RegExp(`\n[\t ]{${offset}}`, 'g');
-  s = s.replace(pat, '\n');
-  return s;
+  return lines.map(line => line.slice(offset)).join('\n');
+}
+
+function decode(s) {
+  return decodeURIComponent(s.replace(/\+/g, ' '));
 }
 
 function codewrap(s) {
-  return '<pre><code>' + escape(s) +'</code></pre>';
+  return '<pre><code>' + escape(s) + '</code></pre>';
 }
 
 
