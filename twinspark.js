@@ -1133,7 +1133,7 @@
    * @param {!Element}  target   In-DOM element to be replaced
    * @param {!(Element|DocumentFragment)} reply Element to be put in place
    * @param {!SwapData} ctx      Context-carrying object
-   * @return !(Element|DocumentFragment)
+   * @return !Array<Element>
    */
   function executeSwap(strategy, target, reply, ctx) {
     strategy || (strategy = 'replace');
@@ -1145,6 +1145,11 @@
         transitionAttrs(el, target, ctx);
       });
     }
+
+    // this will work even in case of `morph`: since DocumentFragment is 100%
+    // unlike target and so morph will not deal with individual elements at all
+    /** @suppress {missingProperties} */
+    var ret = reply instanceof DocumentFragment && [...reply.children];
 
     switch (strategy) {
     case 'morph-all':   reply = morph(target, reply, {ignoreActive: false});       break;
@@ -1158,10 +1163,11 @@
     case 'skip':        break;
     default:            throw Error('Unknown swap strategy ' + strategy);
     }
-    return reply;
+
+    return ret || [reply];
   }
 
-  /** @type {function(!Element, !Element, !SwapData): (Element|DocumentFragment)} */
+  /** @type {function(!Element, !Element, !SwapData): Array<Element>} */
   function elementSwap(origin, replyParent, ctx) {
     var target = findTarget(origin);
     if (!target) {
@@ -1187,7 +1193,7 @@
     return executeSwap(strategy, target, reply, ctx);
   }
 
-  /** @type {function(!Element, !SwapData): (Element|DocumentFragment)} */
+  /** @type {function(!Element, !SwapData): Array<Element>} */
   function pushedSwap(reply, ctx) {
     var sel = getattr(reply, 'ts-swap-push');
     if (!sel && reply.id) {
@@ -1201,7 +1207,7 @@
     return executeSwap(strategy, target, reply, ctx);
   }
 
-  /** @type {function(!string, !Element, !SwapData): (Element|DocumentFragment)} */
+  /** @type {function(!string, !Element, !SwapData): Array<Element>} */
   function headerSwap(header, replyParent, ctx) {
     // `replace: selector to <= selector from`
     var m = header.match(/(\w+):(.+)<=(.+)/);
@@ -1252,7 +1258,7 @@
 
     if (res.headers['ts-swap'] != 'skip') {
       if (origins.length == 1) {
-        swapped = [elementSwap(/** @type {!Element} */ (origins[0]), replyParent, ctx)];
+        swapped = elementSwap(/** @type {!Element} */ (origins[0]), replyParent, ctx);
       } else {
         // batching, we need to collect references to parents before using them
         swapped = zip(origins, replyParent.children).map(([origin, thisParent]) => {
@@ -1279,8 +1285,11 @@
         }
       });
     }
-
-    swapped = swapped.concat(viapush).concat(viaheader).filter(x => x);
+    swapped = swapped.flat();
+    if (viapush)
+      swapped = swapped.concat(viapush.flat());
+    if (viaheader)
+      swapped = swapped.concat(viaheader.flat());
     swapped = distinct(swapped);
     swapped.forEach(function(el) {
       processScripts(el);

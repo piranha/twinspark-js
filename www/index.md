@@ -1,7 +1,7 @@
 <p>
   Declarative enhancement for HTML: simple, composable, lean. TwinSpark
-  transfers lots of the common logic from JS into declarative HTML attributes.
-  This leads to a good interactive sites with little JS and more manageable
+  transfers lots of the common logic from JS into a few declarative HTML
+  attributes. This leads to a good interactive sites with little JS and more manageable
   code.
 </p>
 

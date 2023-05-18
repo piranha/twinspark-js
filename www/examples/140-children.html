@@ -14,29 +14,47 @@ tags: ts-req-selector, ts-swap
     <button class="btn btn-link btn-sm source">View Source</button>
   </div>
 
-  <p class="card-body">
-    <span class="list">
-      <span class="chip">Element 1</span><br>
-      <span class="chip">Element 2</span><br>
+  <div class="card-body">
+    <p class="list">
+      <span class="chip">Element 1</span>
+      <span class="chip">Element 2</span>
       <button class="btn"
               ts-req="/children"
               ts-req-selector="children .list"
               ts-swap="beforebegin">Load more</button>
-    </span>
-  </p>
+    </p>
+
+    <p class="list2">
+      <span class="chip">Element 1</span>
+      <span class="chip">Element 2</span>
+      <button class="btn"
+              ts-req="/children"
+              ts-req-selector="children .list"
+              ts-target="sibling .chip:last-of-type"
+              ts-swap="morph">Morph last</button>
+    </p>
+  </div>
 
   <script type="text/html">
     <span class="list">
-      <span class="chip">Element 3</span><br>
-      <span class="chip">Element 4</span><br>
+      <span class="chip">Element 3</span>
+      <span class="chip">Element 4</span>
     </span>
   </script>
   <script>
     XHRMock.get("/children", {body: prev()});
     test(async (el, t) => {
-      el.$('button').click();
+      var count = 0;
+      el.addEventListener('ts-ready', e => count++)
+      el.$('.list button').click();
       await t.delay();
-      t.assert(el.$$('.list span').length == 4);
+      t.eq('Successfully appended 2 elements', el.$$('.list > span').length, 4);
+      t.eq('Elements successfully activated', count, 2)
+
+      el.$('.list2 button').click();
+      await t.delay();
+      t.eq('Successfully morphed into 2 elements', el.$$('.list2 > span').length, 3);
+      t.eq('Elements successfully activated', count, 4)
     });
   </script>
 </div>
