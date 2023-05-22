@@ -13,11 +13,15 @@ XHRMock.delay = function(mock, ms) {
   }
 }
 
-function prev(n) {
-  var el = document.currentScript.previousElementSibling;
-  if (n == 2)
-    el = el.previousElementSibling;
-  return el.innerHTML;
+function prev(n=1) {
+  var el = document.currentScript;
+  while (el = el.previousElementSibling) {
+    if (el.tagName == 'SCRIPT')
+      n--
+    if (n == 0)
+      break;
+  }
+  return el && el.innerHTML;
 }
 
 function escape(s) {

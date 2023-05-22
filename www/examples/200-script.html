@@ -19,15 +19,15 @@ tags: ts-req, advanced
   </p>
 
   <script type="text/html">
-    <span>Change!<script>(el => setTimeout(() => el.innerHTML = 'Double change!', 250))(document.currentScript.parentElement)</script></span>
+    <span>Change!<script>(el => setTimeout(() => el.innerHTML = 'Change from a &lt;script>!', 500))(document.currentScript.parentElement)</script></span>
   </script>
 
   <script>
     XHRMock.get("/script", {body: prev()});
     test('script in response', async (el, t) => {
       el.$('a').click();
-      await t.delay(600);
-      t.assert('Updated', el.$('span').innerText == 'Double change!');
+      await t.delay(700);
+      t.eq('Updated', el.$('span').innerText, 'Change from a <script>!');
     });
   </script>
 </div>
