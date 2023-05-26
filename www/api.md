@@ -3,7 +3,7 @@ title: API
 
 # TwinSpark API {.text-center}
 
-## HTML updates [#](#html-updates)
+## HTML updates
 
 <table class="table">
 <tr><th>Directive</th> <th>Description</th></tr>
