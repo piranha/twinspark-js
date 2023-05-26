@@ -46,7 +46,7 @@ desc: Faceting interface for humans and crawlers alike
         box.checked = !box.checked;
       },
       submit: function(o) {
-        twinspark.trigger(o.el.closest('form'), 'submit');
+        o.el.closest('form').requestSubmit(o.el);
       },
     });
     XHRMock.get(/^\/filters/, function(req, res) {

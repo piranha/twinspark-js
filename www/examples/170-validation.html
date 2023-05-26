@@ -1,15 +1,23 @@
 id: validation
 title: Dynamic Form Validation
-tags: ts-swap, ts-trigger, advanced
+tags: ts-swap, ts-trigger, advanced, usecase
+desc: Validate multi-input form with no state loss
 ----
 <p>Form validation is a common task, and TwinSpark allows to consolidate
   validation logic on the server. Surprisingly, it could be difficult, but
-  `ts-swap="morph"` strategy allows us to just return whole new form with errors
-  and not mess up with focus.</p>
-<p><mark>Important bits</mark>: input `id`s and that form submit appends
-  <code>&lt;input type="submit"&gt;</code>'s value - this way you can distinguish between
-  validation and submission. Notice how `keyup` updates form on every character
-  input and it feels natural.</p>
+  <code>ts-swap="morph"</code> strategy allows us to just return whole new form
+  with errors and not mess up with focus.</p>
+
+<p><mark>Important bits</mark></p>
+
+<ul>
+  <li>Inputs have an <code>id</code> attribute - so that morphing algorithm can find them reliably.</li>
+  <li>POST body contains <code>&lt;input type="submit"&gt;</code>'s value - this
+  way backend distinguish submission and validation.</li>
+  <li><code>keyup</code> updates form on every character input and it feels
+  natural - morph algorithm skips currently focused element so that state is
+  intact.</li>
+</ul>
 
 <div class="card example">
   <div class="card-header">

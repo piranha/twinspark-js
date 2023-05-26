@@ -15,12 +15,13 @@ XHRMock.delay = function(mock, ms) {
 
 function prev(n=1) {
   var el = document.currentScript;
-  while (el = el.previousElementSibling) {
-    if (el.tagName == 'SCRIPT')
-      n--
-    if (n == 0)
-      break;
-  }
+  while (n--) {
+    el = el.previousElementSibling;
+    // markdown introduces empty paragraphs sometimes
+    if (el.tagName == 'P' && el.innerHTML == '') {
+      el = el.previousElementSibling;
+    }
+  };
   return el && el.innerHTML;
 }
 

@@ -29,12 +29,16 @@ desc: Search input with autocomplete from backend
   <div class="card-body">
     <p>
       <label>
-        <input type="radio" name="slow" value="false" checked ts-trigger="change" ts-action="target 'parent div | [name=q]', attr 'ts-req' '/autocomplete'">
+        <input type="radio" name="speed" value="false"
+               checked ts-trigger="change"
+               ts-action="target 'parent div | [name=q]', attr 'ts-req' '/autocomplete'">
         Just normal fast autocomplete
       </label>
       <br>
       <label>
-        <input type="radio" name="slow" value="true" ts-trigger="change" ts-action="target 'parent div | [name=q]', attr 'ts-req' '/slowcomplete'">
+        <input type="radio" name="speed" value="true"
+               ts-trigger="change"
+               ts-action="target 'parent div | [name=q]', attr 'ts-req' '/slowcomplete'">
         Every other request is slow (<code>ts-req-strategy</code> demo)
       </label>
     </p>
@@ -64,7 +68,7 @@ desc: Search input with autocomplete from backend
   <script>
     var counter = 0;
     function randdelay() {
-      return 100 + (counter++ % 2) * 2000;
+      return 100 + (counter++ % 2) * 1000;
     }
     function nodelay() {
       counter++;
