@@ -61,7 +61,7 @@ TwinSpark could be mentally split in three parts:
 
 - [Page fragment updates](api/ts-req/) facilitated via HTML attributes
   (no JS needed). This is the core idea.
-- [Morphing](api/ts-swap/#morph) - a strategy to update HTML graduallly,
+- [Morphing](api/ts-swap/#morph) - a strategy to update HTML gradually,
   without breaking state and focus. Makes form validation and animations on HTML
   changes a breeze.
 - [Actions](api/ts-action/) - incredibly simple promise-enabled language for
