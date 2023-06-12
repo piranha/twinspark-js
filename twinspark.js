@@ -52,7 +52,7 @@
     target: function(sel, o) {
       try {
         o.el = findTarget(o.el, sel);
-        return o.el;
+        return undefined; // do not affect o.input
       } catch(e) {
         return false; // stop executing actions pipeline
       }
