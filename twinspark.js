@@ -714,6 +714,7 @@
     console.debug('onpopstate restore', data.url, data.html.length, data.time);
 
     if (data && data.html) {
+      deactivate(document);
       document.body.innerHTML = data.html;
 
       // If user came back from a real page change, we indicate this with an
