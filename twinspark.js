@@ -711,9 +711,9 @@
     let db = await idb();
     let store = idbStore(db);
     let data = await reqpromise(store.get(url));
-    console.debug('onpopstate restore', data.url, data.html.length, data.time);
 
     if (data && data.html) {
+      console.debug('onpopstate restore', data.url, data.html.length, data.time);
       deactivate(document);
       document.body.innerHTML = data.html;
 
@@ -1374,8 +1374,8 @@
       return opts;
     }
 
-    var issimple = (Array.from(body.entries)
-                    .every((x) => typeof x === "string"));
+    var issimple = (Array.from(body.entries())
+                    .every((x) => typeof x[1] === "string"));
     if (!issimple) {
       opts.body = body;
       return opts;
