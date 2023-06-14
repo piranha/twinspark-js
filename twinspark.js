@@ -594,11 +594,15 @@
     var res;
 
     if (tag == 'FORM') {
-      if (e && e.submitter && e.submitter.name && e.submitter.value) {
+      let currentElData = new FormData(el);
+
+      if (e && e.submitter && e.submitter.name && e.submitter.value
+          // old IOS Safari may add button's value to form data
+          && !currentElData.has(e.submitter.name)) {
         data.append(e.submitter.name, e.submitter.value);
       }
 
-      data = mergeParams(data, new FormData(el));
+      data = mergeParams(data, currentElData);
     } else if ((tag == 'INPUT') || (tag == 'SELECT') || (tag == 'TEXTAREA')) {
       if (res = formElementValue(el))
         data.append(el.name, /** @type {string} */ (res));
