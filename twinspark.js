@@ -51,7 +51,10 @@
 
     target: function(sel, o) {
       try {
-        o.el = findTarget(o.el, sel);
+        let el = findTarget(o.el, sel);
+        if (el === false)
+          return false;
+        o.el = el;
         return undefined; // do not affect o.input
       } catch(e) {
         return false; // stop executing actions pipeline
@@ -1766,35 +1769,39 @@
 
 
   /** @type {function(ActionDef, {el: !Element, event: !Event}): !Promise} */
-  function _doAction(action, payload) {
+  async function _doAction(action, payload) {
     console.debug('ACTION', action.src, payload);
 
     // make a copy, since we allow modification of payload in commands
     var opts = merge({line: action.src}, payload);
+    var rv = null;
 
-    return action.commands.reduce(function(p, command) {
-      return p.then(function(rv) {
-        console.debug(rv !== false ? '🔵' : '🚫', 'COMMAND',
-                      command.src, {input: rv, src: action.src});
-        // `false` indicates that action should stop
-        if (rv === false)
-          return rv;
-        if (rv !== undefined)
-          opts.input = rv;
+    for (var command of action.commands) {
+      console.debug(rv !== false ? '🔵' : '🚫', 'COMMAND',
+                    command.src, {prev: rv, src: action.src, el: opts.el});
 
-        opts.command = command.name;
-        opts.src = command.src;
-        opts = /** @type {!CommandPayload} */ (opts);
+      // `false` indicates that action should stop
+      if (rv === false)
+        return rv;
+      if (rv !== undefined)
+        opts.input = rv;
 
-        return executeCommand(command.name, command.args, opts);
-      }).catch(function(err) {
-        throw merge(err, {extra: {
+      opts.command = command.name;
+      opts.src = command.src;
+      opts = /** @type {!CommandPayload} */ (opts);
+
+      try {
+        rv = await executeCommand(command.name, command.args, opts);
+      } catch(e) {
+        throw merge(e, {extra: {
           command: command.src,
           action: action.src,
           element: el2str(opts.el)
         }});
-      });
-    }, Promise.resolve(null));
+      }
+    }
+
+    return rv;
   }
 
   /** @type {function((Element|undefined), Event, string=, Object=): (Promise|undefined)} */
