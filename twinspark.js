@@ -182,7 +182,7 @@
     }
 
     for (var k in src) {
-      if (src.hasOwnProperty(k)) {
+      if (Object.hasOwn(src, k)) {
         tgt[k] = src[k];
       }
     }
@@ -195,23 +195,6 @@
       (acc[key] || (acc[key] = [])).push(v);
       return acc;
     }, {});
-  }
-
-  function toObj(entries) {
-    var x, r = {};
-    while (x = entries.next().value) {
-      r[x[0]] = x[1];
-    }
-    return r;
-  }
-
-  /** @type {function(Array, Function): Array} */
-  function mapcat(arr, cb) {
-    var res = [];
-    for (var i = 0; i < arr.length; i++) {
-      res.push.apply(res, cb(arr[i], i));
-    }
-    return res;
   }
 
   function zip(arr1, arr2) {
@@ -289,7 +272,7 @@
   /** @type {function((Element|Node|Window), string, Object=, Object=): !Event} */
   function sendEvent(el, type, detail, opts) {
     // true if not supplied
-    var bubbles = opts && opts.hasOwnProperty('bubbles') ? opts.bubbles : true;
+    var bubbles = (opts && 'bubbles' in opts) ? opts.bubbles : true;
     var event = new CustomEvent(type, {bubbles: bubbles,
                                        cancelable: true,
                                        detail: detail});
@@ -376,7 +359,7 @@
     var data = el[k] || (el[k] = {});
     if (!attr)
       return data;
-    if (!data.hasOwnProperty(attr) && typeof def != 'undefined')
+    if (!(attr in data) && typeof def != 'undefined')
       data[attr] = def;
     return data[attr];
   }
@@ -398,12 +381,6 @@
     }
   }
 
-  /** @type {function(!Element): void} */
-  function deactivate(el) {
-    internalData(el, 'event-handlers', [])
-      .forEach(h => el.removeEventListener(h.type, h.func, h.opts));
-  }
-
   /** @type {function(!(Node|Window), !string, !Function, !AddEventListenerOptions=): !(Node|Window)} */
   function listen(el, type, func, opts) {
     el.addEventListener(type, func, opts);
@@ -416,8 +393,14 @@
   }
 
   /** @type {function(!Element): void} */
+  function deactivateEl(el) {
+    internalData(el, 'event-handlers', [])
+      .forEach(h => el.removeEventListener(h.type, h.func, h.opts));
+  }
+
+  /** @type {function(!Element): void} */
   function activateEl(el) {
-    deactivate(el);
+    deactivateEl(el);
     DIRECTIVES.forEach(d => el.matches(d.selector) && d.handler(el));
   }
 
@@ -617,7 +600,6 @@
       window.mozIndexedDB ||
       window.webkitIndexedDB ||
       window.msIndexedDB;
-  var _idb;
 
   function reqpromise(req) {
     return new Promise(function(resolve, reject) {
@@ -626,6 +608,7 @@
     });
   }
 
+  var _idb;
   function idb() {
     if (_idb)
       return _idb;
@@ -638,8 +621,7 @@
       store.createIndex('time', 'time');
     };
 
-    _idb = reqpromise(req);
-    return _idb;
+    return _idb = reqpromise(req);
   }
 
   /** @type {function(Object, Object=): Object} */
@@ -681,7 +663,7 @@
                 time: +new Date()};
     var db = await idb();
     var store = idbStore(db, {write: true});
-    var res = await reqpromise(store.put(data));
+    await reqpromise(store.put(data));
     await deleteOverLimit(db);
   }
 
@@ -718,7 +700,7 @@
 
     if (data && data.html) {
       console.debug('onpopstate restore', data.url, data.html.length, data.time);
-      deactivate(document);
+      deactivateEl(document);
       document.body.innerHTML = data.html;
 
       // If user came back from a real page change, we indicate this with an
@@ -964,12 +946,6 @@
       return _intersection;
     }
 
-    function idIntersection(el1, el2) {
-      var ids1 = new Set(qse(el1, '[id]').map(el => el.id));
-      var ids2 = new Set(qse(el2, '[id]').map(el => el.id));
-      return intersection(ids1, ids2);
-    }
-
     function isSimilar(node1, node2) {
       return (node1 &&
               node2 &&
@@ -1198,13 +1174,13 @@
     return executeSwap(strategy, target, reply, ctx);
   }
 
-  /** @type {function(!Element, !SwapData): Array<Element>} */
-  function pushedSwap(reply, ctx) {
+  /** @type {function(Element, !Element, !SwapData): Array<Element>} */
+  function pushedSwap(origin, reply, ctx) {
     var sel = getattr(reply, 'ts-swap-push');
     if (!sel && reply.id) {
       sel = '#' + reply.id;
     }
-    var target = qsf(document.body, sel);
+    var target = findTarget(findTarget(origin || document.body), sel);
     if (!target) {
       throw extraerr('cannot find target for server-pushed swap', {reply});
     }
@@ -1212,8 +1188,8 @@
     return executeSwap(strategy, target, reply, ctx);
   }
 
-  /** @type {function(!string, !Element, !SwapData): Array<Element>} */
-  function headerSwap(header, replyParent, ctx) {
+  /** @type {function(!string, origin, !Element, !SwapData): Array<Element>} */
+  function headerSwap(header, origin, replyParent, ctx) {
     // `replace: selector to <= selector from`
     var m = header.match(/(\w+):(.+)<=(.+)/);
     if (!m) {
@@ -1221,7 +1197,7 @@
     }
 
     var strategy = m[1];
-    var target = qsf(document.body, m[2]);
+    var target = findTarget(findTarget(origin || document.body), m[2]);
     if (!target)
         throw extraerr('cannot find target for header swap', {sel: m[2]});
     var reply = qsf(replyParent, m[3]);
@@ -1255,15 +1231,16 @@
     }
   }
 
-  /** @type {function(Array<Element>, !Element, !Response): Array<Element>} */
+  /** @type {function(Array<!Element>, !Element, !Response): Array<Element>} */
   function swap(origins, replyParent, res) {
     var ctx = {response: res, tasks: []};
 
     var swapped = [], viapush, viaheader;
+    var singleOrigin = origins.length == 1 ? origins[0] : null;
 
     if (res.headers['ts-swap'] != 'skip') {
-      if (origins.length == 1) {
-        swapped = elementSwap(/** @type {!Element} */ (origins[0]), replyParent, ctx);
+      if (singleOrigin) {
+        swapped = elementSwap(singleOrigin, replyParent, ctx);
       } else {
         // batching, we need to collect references to parents before using them
         swapped = zip(origins, replyParent.children).map(([origin, thisParent]) => {
@@ -1274,7 +1251,7 @@
 
     viapush = qse(replyParent, '[ts-swap-push]').map(reply => {
       try {
-        return pushedSwap(reply, ctx);
+        return pushedSwap(singleOrigin, reply, ctx);
       } catch(e) {
         console.error(e); // do not interrupt main line
       }
@@ -1528,6 +1505,7 @@
   // Batch Request Queue
   /** @typedef {{el: !Element, event: Event, url: !string, method: !string, batch: boolean}} */
   var Req;
+
   /** @type {{reqs: Array<Req>, request: ?number}} */
   var queue = {
     reqs: [],
