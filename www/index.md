@@ -54,6 +54,48 @@
   </div>
 </div>
 
+## Code example
+
+Explanation: click on an `a` element (which is enhanced with a
+[`ts-req`](api/ts-req/) attribute) issues an XHR request to a server. Then
+replaces the element with response from a server, and calls
+[`ts-req-after`](api/ts-req-after/), which is an [action](api/ts-action).
+
+```html
+<div>
+  <a href="/index"
+     ts-req
+     ts-req-after="target 'sibling div', remove">
+     Update me
+  </a>
+  <div>I'm just hanging out here</div>
+</div>
+```
+
+<div class="card example mb-p">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body mb-p">
+    <a href="/index"
+       ts-req
+       ts-req-after="target 'sibling div', remove">
+       Update me
+    </a>
+    <div>I'm just hanging out here</div>
+  </div>
+
+  <script type="text/html">
+    <a href="/index" ts-req>Updated!</a>
+  </script>
+  <script>
+    XHRMock.get("/index", {body: prev()});
+  </script>
+</div>
+
 
 ## What it is
 
@@ -79,6 +121,13 @@ Some reasons why TwinSpark exists despite [HTMx](https://htmx.org/) and
   [event triggers](api/ts-trigger), or morphing.
 - Extensibility - you can easily register new directives the same way those in
   core are registered.
+
+## Who is using this
+
+- [kasta.ua](https://kasta.ua) - leading Ukrainian online fashion marketplace
+- [Prophy](https://www.prophy.science) - Semantic Solutions for Research, Review, and Recruitment
+
+<small>Send pull request or shoot an email to add your site here.</small>
 
 
 ## Resources
