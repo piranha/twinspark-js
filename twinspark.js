@@ -983,7 +983,7 @@
         return null;
 
       var el = /** @type {!Element} */ (reply);
-      var replyIds = qse(el, '[id]').map(el => '#' + el.id).join(',');
+      var replyIds = qse(el, '[id]').map(el => '#' + CSS.escape(el.id)).join(',');
       if (!replyIds)
         return null;
 
