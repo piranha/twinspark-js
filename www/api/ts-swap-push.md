@@ -12,7 +12,15 @@ a little notification?
 
 `ts-swap-push="<selector>"` marks an element in a response to be pushed
 somewhere. This element should not be a first element in a response, since first
-is going to be used for regular flow. `ts-swap` is relevant here, with
-`ts-swap-push` having a role of `ts-target` here.
+is going to be used for regular flow.
+
+Discovery of an element is somewhat more involved. If you have more than one
+origin (which happens when using [`ts-req-batch`](../ts-req-batch/)), then your
+origin is going to be `document.body` (for the lack of better ideas).
+
+In case of regular [`ts-req`](../ts-req/) discovery starts with an origin. It
+first looks for [`ts-target`](../ts-target/) on origin element, so your selector
+can look around original target. And then of course it looks at
+[`ts-swap`](../ts-swap/) to determine what to do.
 
 {{ template "examples" . }}
