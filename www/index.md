@@ -117,8 +117,9 @@ Some reasons why TwinSpark exists despite [HTMx](https://htmx.org/) and
 - [Batching](api/ts-req-batch/) - very useful if you want to use HTTP
   caching effectively, while maintaining some personalisation for your
   users.
-- Bundled - a lot of practical stuff packed in, like actions, or non-traditional
-  [event triggers](api/ts-trigger), or morphing.
+- Bundled - a lot of practical stuff packed in, like [actions](api/ts-action/),
+  or non-native [event triggers](api/ts-trigger/), or
+  [morphing](api/ts-swap/#morph).
 - Extensibility - you can easily register new directives the same way those in
   core are registered.
 

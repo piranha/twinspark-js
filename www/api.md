@@ -87,7 +87,7 @@ title: API
 
 ## Config
 
-Attributes you can set on twinspark <code>script</code> tag, like so:
+Configuration attributes can be can set on twinspark <code>script</code> tag:
 
 ```
 <script src="/static/twinspark.js" timeout="5000">
