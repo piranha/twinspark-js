@@ -52,7 +52,7 @@
     target: function(sel, o) {
       try {
         let el = findTarget(o.el, sel);
-        if (el === false)
+        if (!el)
           return false;
         o.el = el;
         return undefined; // do not affect o.input
@@ -395,7 +395,7 @@
     return el;
   }
 
-  /** @type {function(!Element): void} */
+  /** @type {function(!(Element|HTMLDocument)): void} */
   function deactivateEl(el) {
     internalData(el, 'event-handlers', [])
       .forEach(h => el.removeEventListener(h.type, h.func, h.opts));
@@ -1194,7 +1194,7 @@
     return executeSwap(strategy, target, reply, ctx);
   }
 
-  /** @type {function(!string, origin, !Element, !SwapData): Array<Element>} */
+  /** @type {function(!string, Element, !Element, !SwapData): Array<Element>} */
   function headerSwap(header, origin, replyParent, ctx) {
     // `replace: selector to <= selector from`
     var m = header.match(/(\w+):(.+)<=(.+)/);
@@ -1267,7 +1267,7 @@
       // swap any header requests
       viaheader = res.headers['ts-swap-push'].split(',').map(header => {
         try {
-          return headerSwap(header, replyParent, ctx)
+          return headerSwap(header, singleOrigin, replyParent, ctx)
         } catch(e) {
           console.error(e); // do not interrupt main line
         }
@@ -1628,8 +1628,8 @@
   var CommandDef;
 
   /** @typedef {{
-   *   commands: Array<CommandDef>,
-   *   src: string,
+   *   commands: !Array<CommandDef>,
+   *   src: !string,
    * }}
    */
   var ActionDef;
