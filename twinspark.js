@@ -75,7 +75,7 @@
     on: function(eventname, o) {
       var rest = o.line.split(o.src)[1].replace(/^[\s,]+/, '');
       var action = parseActionSpec(rest)[0];
-      addListener(o.el, eventname, (e) => {
+      addListener(o.el, eventname, (_el, e) => {
         _doAction(action, {el: o.el, event: e});
       });
       return false; // stop executing actions pipeline
