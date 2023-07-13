@@ -157,7 +157,7 @@
       if (acc[func.length]) {
         throw extraerr('Arity dispatch: duplicate function with the same number of arguments', {
           length: func.length,
-          func: func.length,
+          func: func,
           duplicate: acc[func.length],
         });
       }
