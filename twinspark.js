@@ -461,6 +461,9 @@
         for (var k in opts.headers) {
           xhr.setRequestHeader(k, opts.headers[k]);
         }
+        for (var k in opts.xhr) {
+          xhr[k] = opts.xhr[k];
+        }
 
         xhr.onreadystatechange = function() {
           if (xhr.readyState != 4) return;
@@ -1344,6 +1347,7 @@
     return {
       method:  req.method,
       data:    mergeParams(data, req.opts.data),
+      xhr:     {},
       headers: {
         'Accept':       'text/html+partial',
         'TS-URL':       location.pathname + location.search,
@@ -1386,6 +1390,9 @@
 
     var opts = {
       method:  method,
+      xhr: batch.reduce(function(x, req) {
+        return req.opts.xhr;
+      }, {}),
       headers: batch.reduce(function(h, req) {
         return mergeHeaders(h, req.opts.headers);
       }, {})
