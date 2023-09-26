@@ -90,18 +90,18 @@ title: API
 Configuration attributes can be can set on twinspark <code>script</code> tag:
 
 ```
-<script src="/static/twinspark.js" timeout="5000">
+<script src="/static/twinspark.js" data-timeout="5000">
 ```
 
 <table class="table">
 <tr><th>Attribute</th> <th>Default</th> <th>Description</th></tr>
 
-<tr><td><code>timeout</code></td>      <td>3000</td>      <td>Timeout for <code>ts-req</code> requests</td></tr>
-<tr><td><code>history</code></td>      <td>20</td>        <td>Limit for IndexedDB page history storage</td></tr>
-<tr><td><code>settle</code></td>       <td>class,style,width,height</td>   <td>Attributes to settle during non-morph swap</td></tr>
-<tr><td><code>active-class</code></td> <td>ts-active</td> <td>Class for an element which made a request, until it ends</td></tr>
-<tr><td><code>insert-class</code></td> <td>ts-insert</td> <td>Class for a newly inserted elements with an id</td></tr>
-<tr><td><code>remove-class</code></td> <td>ts-remove</td> <td>Class for an element with an id being removed from DOM</td></tr>
+<tr><td><code>data-timeout</code></td>      <td>3000</td>      <td>Timeout for <code>ts-req</code> requests</td></tr>
+<tr><td><code>data-history</code></td>      <td>20</td>        <td>Limit for IndexedDB page history storage</td></tr>
+<tr><td><code>data-settle</code></td>       <td>class,style,width,height</td>   <td>Attributes to settle during non-morph swap</td></tr>
+<tr><td><code>data-active-class</code></td> <td>ts-active</td> <td>Class for an element which made a request, until it ends</td></tr>
+<tr><td><code>data-insert-class</code></td> <td>ts-insert</td> <td>Class for a newly inserted elements with an id</td></tr>
+<tr><td><code>data-remove-class</code></td> <td>ts-remove</td> <td>Class for an element with an id being removed from DOM</td></tr>
 
 </table>
 
