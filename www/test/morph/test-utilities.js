@@ -49,7 +49,7 @@ function print(elt) {
     return elt;
 }
 
-/* Emulate Mocha with WRU */
+/* Emulate Mocha with tinytest */
 
 (function(window) {
   var TESTS = [];
@@ -60,6 +60,7 @@ function print(elt) {
     desc = desc.replace('idiomorph', 'twinspark.morph');
     setup = null;
     TESTS.push({
+      group: true,
       name: `<h3 class=group>${desc}</h3>`,
       func: () => {
         // style group
@@ -88,18 +89,28 @@ function print(elt) {
   }
 
   function it(desc, cb) {
+    let func = cb;
     if (cb.length == 1) {
-      var test = function() {
+      func = function() {
         return new Promise(resolve => cb(resolve));
       }
-    } else {
-      var test = cb;
     }
-    TESTS.push({
+
+    let test = {
       name: desc,
       setup: setup,
-      func: test,
-    });
+      func: func,
+    }
+    TESTS.push(test);
+    return test;
+  }
+
+  function only(desc, cb) {
+    let group = TESTS.findLastIndex(item => item.group);
+    let test = it(desc, cb);
+    setTimeout(_ => {
+      TESTS = [TESTS[group], test];
+    }, 50);
   }
 
   function should(obj) {
@@ -135,5 +146,7 @@ function print(elt) {
   window.describe = describe;
   window.beforeEach = beforeEach;
   window.it = it;
+  it.only = only;
+  window.only = only;
   window.should = should;
 })(window);

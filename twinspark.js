@@ -811,12 +811,17 @@
 
   /** @type {function(!Element, !Element, !string, !boolean=): void} */
   function syncattr(target, source, attr, withProp) {
-    var value = getattr(source, attr);
-    if (value != getattr(target, attr)) {
-      if (withProp) {
-        target[attr] = source[attr] || '';
+    if (withProp) {
+      let value = source[attr];
+      if (value != target[attr]) {
+        target[attr] = value;
+        value !== null ? setattr(target, attr, value) : delattr(target, attr);
       }
-      value ? setattr(target, attr, value) : delattr(target, attr);
+    } else {
+      let value = getattr(source, attr);
+      if (value != getattr(target, attr)) {
+        value !== null ? setattr(target, attr, value) : delattr(target, attr);
+      }
     }
   }
 
@@ -920,13 +925,13 @@
       if (target.tagName == 'INPUT' && target.type != 'file') {
         // https://github.com/choojs/nanomorph/blob/master/lib/morph.js#L113
         // Changing the "value" attribute without changing the "value" property
-        // will have no effect since it is only used to set the initial
+        // will have no effect since attribute is only used to set the initial
         // value. Similar for the "checked" attribute, and "disabled".
         syncattr(target, reply, 'value', true);
         syncattr(target, reply, 'checked', true);
         syncattr(target, reply, 'disabled', true);
       } else if (target.tagName == 'OPTION') {
-        syncattr(target, reply, 'selected');
+        syncattr(target, reply, 'selected', true);
       } else if (target.tagName == 'TEXTAREA') {
         syncattr(target, reply, 'value');
         // NOTE what is this stuff, is it necessary? Can't find a test case, but
