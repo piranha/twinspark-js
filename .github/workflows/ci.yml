@@ -1,5 +1,5 @@
 name: TwinSpark CI
-on: [push]
+on: [push, pull_request]
 jobs:
 
   types:
@@ -24,28 +24,3 @@ jobs:
     - uses: browser-actions/setup-chrome@v1
     - run: npm i
     - run: CHROMIUM_BIN=$(which chrome) ./headless-tests.js public
-
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-    - name: render
-      run: make deps render
-    - uses: actions/upload-pages-artifact@v1
-      with:
-        path: public
-
-  deploy:
-    needs: build
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v1
