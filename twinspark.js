@@ -655,6 +655,8 @@
   }
 
   async function storeCurrentState() {
+    if (historyLimit == 0) // disable history management
+      return;
     var data = {url:  location.pathname + location.search,
                 html: document.body.innerHTML,
                 time: +new Date()};
@@ -682,6 +684,8 @@
   }
 
   async function onpopstate(e) {
+    if (historyLimit == 0) // disable history management
+      return;
     // hashchange triggers onpopstate and there is nothing we can do about it
     // https://stackoverflow.com/questions/25634422/stop-firing-popstate-on-hashchange
     //

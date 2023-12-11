@@ -97,7 +97,7 @@ Configuration attributes can be can set on twinspark <code>script</code> tag:
 <tr><th>Attribute</th> <th>Default</th> <th>Description</th></tr>
 
 <tr><td><code>data-timeout</code></td>      <td>3000</td>      <td>Timeout for <code>ts-req</code> requests</td></tr>
-<tr><td><code>data-history</code></td>      <td>20</td>        <td>Limit for IndexedDB page history storage</td></tr>
+<tr><td><code>data-history</code></td>      <td>20</td>        <td>Limit for IndexedDB page history storage (set to 0 to disable)</td></tr>
 <tr><td><code>data-settle</code></td>       <td>class,style,width,height</td>   <td>Attributes to settle during non-morph swap</td></tr>
 <tr><td><code>data-active-class</code></td> <td>ts-active</td> <td>Class for an element which made a request, until it ends</td></tr>
 <tr><td><code>data-insert-class</code></td> <td>ts-insert</td> <td>Class for a newly inserted elements with an id</td></tr>
