@@ -9,8 +9,8 @@
   function cget(name, def) { return script && script.dataset[name] || def; }
   function iget(name, def) { return parseInt(cget(name, def), 10); }
 
-  var xhrTimeout    = iget('timeout', 3000);
-  var historyLimit  = iget('history', 20);
+  var xhrTimeout    = iget('timeout', '3000');
+  var historyLimit  = iget('history', '20');
   var attrsToSettle = cget('settle', 'class,style,width,height').split(',');
   var insertClass   = cget('insert-class', 'ts-insert');
   var removeClass   = cget('remove-class', 'ts-remove');
@@ -62,8 +62,8 @@
     },
 
     remove: arity(
-      function(o) { o.el.remove(); },
-      function(sel, o) { findTarget(o.el, sel).remove(); }
+      (o) => { o.el.remove(); },
+      (sel, o) => { findTarget(o.el, sel).remove(); }
     ),
 
     wait: function(eventname, o) {
@@ -82,8 +82,8 @@
     },
 
     req: arity(
-      function(url, o) { this.dispatcher(null, url, o); },
-      function(method, url, o) {
+      (url, o) => { this.dispatcher(null, url, o); },
+      (method, url, o) => {
         doReqBatch(makeReq(o.el, o.event, false,
                            {method: method,
                             url: url,
@@ -98,49 +98,50 @@
     classtoggle: function(cls, o) { o.el.classList.toggle(cls); },
 
     text: arity(
-      function(o) {
+      (o) => {
         if (!(o.input === null || o.input === undefined)) {
-          o.el.innerText = o.input;
+          o.el.textContent = o.input;
         }
         return o.input;
       },
-      function(value, o) {
-        o.el.innerText = value;
+      (value, o) => {
+        o.el.textContent = value;
         return value;
       }
     ),
 
     html: arity(
-      function(o) {
+      (o) => {
         if (!(o.input === null || o.input === undefined)) {
           o.el.innerHTML = o.input;
         }
         return o.el.innerHTML;
       },
-      function(value, o) {
+      (value, o) => {
         o.el.innerHTML = value;
         return value;
       }
     ),
 
     attr: arity(
-      function(name, o) {
+      (name, o) => {
         let val = o.el[name];
         return typeof val != 'undefined' ? val : getattr(o.el, name);
       },
-      function(name, value, o) {
+      (name, value, o) => {
         o.el[name] = value;
         setattr(o.el, name, value);
         return value;
       }
     ),
 
-    log: function() {
-      var args = parseArgs(arguments);
-      if (args.o.input) {
-        args.rest.push(args.o.input);
+    log: function(...args) {
+      let o = args[args.length-1];
+      let rest = args.slice(args.length - 1);
+      if (o.input) {
+        rest.push(o.input);
       }
-      console.log.apply(console, args.rest);
+      console.log(...rest);
     }
   };
 
@@ -152,8 +153,8 @@
       console.log.bind(console, 'TwinSpark error:');
 
   /** @type{function(...Function): Function} */
-  function arity(/* funcs*/) {
-    var funcs = [].reduce.call(arguments, (acc, func) => {
+  function arity(...funcs) {
+    let funcmap = funcs.reduce((acc, func) => {
       if (acc[func.length]) {
         throw extraerr('Arity dispatch: duplicate function with the same number of arguments', {
           length: func.length,
@@ -167,10 +168,10 @@
 
     return function dispatcher() {
       var len = arguments.length;
-      var func = funcs[len];
+      var func = funcmap[len];
       if (!func) {
         throw extraerr("No function supplied accepting " + len + " arguments", {
-          "functions": funcs,
+          "functions": funcmap,
           "arguments": Array.from(arguments)
         });
       }
@@ -251,14 +252,6 @@
       setTimeout(resolve, parseTime(s), true);
     });
   }
-
-  /** @type {function(Arguments): {rest: Array<*>, o: {el: Element, e: Event}}} */
-  function parseArgs(args) {
-    var i = args.length;
-    return {rest: [].slice.call(args, 0, i - 1),
-            o:    args[i - 1]};
-  }
-
 
   /// Events
   /** @type {function(Function): void} */
@@ -487,14 +480,15 @@
 
         xhr.timeout = xhrTimeout;
         xhr.ontimeout = function() {
-          return reject({ok:     false,
-                         status: 0,
-                         url:    url,
-                         error:  "timeout"});
+          return reject({ok:      false,
+                         status:  0,
+                         url:     url,
+                         content: "timeout"});
         };
 
-        var body = /** @type {(ArrayBuffer|ArrayBufferView|Blob|Document|FormData|null|string|undefined)} */ (opts.body);
-        xhr.send(body);
+        xhr.send(
+          /** @type {(ArrayBuffer|ArrayBufferView|Blob|Document|FormData|null|string|undefined)} */
+          (opts.body));
       }),
       xhr: xhr
     };
@@ -602,10 +596,7 @@
 
   /// IndexedDB
 
-  var IDB = window.indexedDB ||
-      window.mozIndexedDB ||
-      window.webkitIndexedDB ||
-      window.msIndexedDB;
+  var IDB = window.indexedDB;
 
   function reqpromise(req) {
     return new Promise(function(resolve, reject) {
@@ -1136,7 +1127,7 @@
     // this will work even in case of `morph`: since DocumentFragment is 100%
     // unlike target and so morph will not deal with individual elements at all
     /** @suppress {missingProperties} */
-    var ret = reply instanceof DocumentFragment && [...reply.children];
+    var ret = reply instanceof DocumentFragment && Array.from(reply.children);
 
     switch (strategy) {
     case 'morph-all':   reply = morph(target, reply, {ignoreActive: false});       break;
@@ -1196,7 +1187,7 @@
 
   /** @type {function(!string, Element, !Element, !SwapData): Array<Element>} */
   function headerSwap(header, origin, replyParent, ctx) {
-    // `replace: selector to <= selector from`
+    // `replace: target selector <= reply selector`
     var m = header.match(/(\w+):(.+)<=(.+)/);
     if (!m) {
         throw extraerr('Cannot parse ts-swap-push header value', {header});
@@ -1249,13 +1240,13 @@
         swapped = elementSwap(singleOrigin, replyParent, ctx);
       } else {
         // batching, we need to collect references to parents before using them
-        swapped = zip(origins, replyParent.children).map(([origin, thisParent]) => {
+        swapped = zip(origins, replyParent.children).flatMap(([origin, thisParent]) => {
           return elementSwap(origin, thisParent, ctx);
         });
       }
     }
 
-    viapush = qse(replyParent, '[ts-swap-push]').map(reply => {
+    viapush = qse(replyParent, '[ts-swap-push]').flatMap(reply => {
       try {
         return pushedSwap(singleOrigin, reply, ctx);
       } catch(e) {
@@ -1265,7 +1256,7 @@
 
     if (res.headers['ts-swap-push']) {
       // swap any header requests
-      viaheader = res.headers['ts-swap-push'].split(',').map(header => {
+      viaheader = res.headers['ts-swap-push'].split(',').flatMap(header => {
         try {
           return headerSwap(header, singleOrigin, replyParent, ctx)
         } catch(e) {
@@ -1408,15 +1399,15 @@
 
     var origins = batch.map(function(req) { return req.el; });
 
-    var query = xhr(fullurl, opts);
+    var executed = xhr(fullurl, opts);
 
     origins.forEach(function (el) {
       el.setAttribute('aria-busy', 'true');
       el.classList.add(activeClass);
-      internalData(el)['active-xhr'] = query.xhr;
+      internalData(el)['active-xhr'] = executed.xhr;
     });
 
-    return query.promise
+    return executed.promise
       .then(function(res) {
 
         onidle(() => origins.forEach(el => {
@@ -1425,7 +1416,7 @@
           delete internalData(el)['active-xhr'];
         }));
 
-        if (query.xhr.isAborted) {
+        if (executed.xhr.status == 0 && executed.xhr.statusText == 'abort') {
           return false;
         }
 
