@@ -246,11 +246,11 @@ describe("Core morphing tests", function(){
 
         let finalSrc = make('<input type="checkbox" checked>');
         Idiomorph.morph(initial, finalSrc, {morphStyle:'outerHTML'});
-        if (initial.outerHTML !== '<input type="checkbox" checked="">') {
+        if (initial.outerHTML !== '<input type="checkbox" checked="true">') {
             console.log("HTML after morph: " + initial.outerHTML);
             console.log("Expected:         " + finalSrc.outerHTML);
         }
-        initial.outerHTML.should.equal('<input type="checkbox" checked="">');
+        initial.outerHTML.should.equal('<input type="checkbox" checked="true">');
         initial.checked.should.equal(true);
         document.body.removeChild(parent);
     });

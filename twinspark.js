@@ -815,12 +815,12 @@
       let value = source[attr];
       if (value != target[attr]) {
         target[attr] = value;
-        value !== null ? setattr(target, attr, value) : delattr(target, attr);
+        value ? setattr(target, attr, value) : delattr(target, attr);
       }
     } else {
       let value = getattr(source, attr);
       if (value != getattr(target, attr)) {
-        value !== null ? setattr(target, attr, value) : delattr(target, attr);
+        value ? setattr(target, attr, value) : delattr(target, attr);
       }
     }
   }
