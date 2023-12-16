@@ -917,8 +917,9 @@
       for (var attr of reply.attributes) {
         syncattr(target, reply, attr.name);
       }
-      for (var attr of target.attributes) {
-        syncattr(target, reply, attr.name);
+      // iterate backwards to avoid skipping over items when a delete occurs
+      for (let i = target.attributes.length - 1; i >= 0; i--) {
+        syncattr(target, reply, target.attributes[i].name);
       }
 
       // sync inputs

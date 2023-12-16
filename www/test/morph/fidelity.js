@@ -6,27 +6,27 @@ describe("Tests to ensure that idiomorph merges properly", function(){
         clearWorkArea();
     });
 
+    function compare(node, end) {
+        if (node.outerHTML !== end) {
+            console.log("HTML after morph: " + node.outerHTML);
+            console.log("Expected:         " + end);
+        }
+        node.outerHTML.should.equal(end);
+    }
+
     function testFidelity(start, end, done) {
         let initial = make(start);
         let final = make(end);
         Idiomorph.morph(initial, final);
 
-        function compare() {
-            if (initial.outerHTML !== end) {
-                console.log("HTML after morph: " + initial.outerHTML);
-                console.log("Expected:         " + end);
-            }
-            initial.outerHTML.should.equal(end);
-        }
-
         if (done) {
             setTimeout(() => {
-                compare();
+                compare(initial, end);
                 done();
             }, 2);
             return;
         } else {
-            compare();
+            compare(initial, end);
         }
     }
 
@@ -41,6 +41,21 @@ describe("Tests to ensure that idiomorph merges properly", function(){
     it('morphs attributes correctly', function()
     {
         testFidelity("<button class=\"foo\">Foo</button>", "<button class=\"bar\">Foo</button>")
+    });
+
+    it('morphs multiple attributes correctly twice', function ()
+    {
+        const a = `<section class="child">A</section>`;
+        const b = `<section class="thing" data-one="1" data-two="2" data-three="3" data-four="4" id="foo" fizz="buzz" foo="bar">B</section>`;
+        const expectedA = make(a);
+        const expectedB = make(b);
+        const initial = make(a);
+
+        Idiomorph.morph(initial, expectedB);
+        compare(initial, b);
+
+        Idiomorph.morph(initial, expectedA);
+        compare(initial, a);
     });
 
     it('morphs children', function()
