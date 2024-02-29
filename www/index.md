@@ -127,7 +127,8 @@ Some reasons why TwinSpark exists despite [HTMx](https://htmx.org/) and
 
 - [kasta.ua](https://kasta.ua) - leading Ukrainian online fashion marketplace
 - [Prophy](https://www.prophy.science) - Semantic Solutions for Research, Review, and Recruitment
-- [PMPRO](https://pmpro.com.ua/) - online shop "everything for tattoo"
+- [PMPRO](https://pmpro.com.ua/) - online shop "everything for permanent makeup"
+- [I.N.K.E.D](https://inked.com.ua/) - online shop "everything for tattoo"
 - [Green Owl](https://greenowl.fr/) - CBD online shop
 
 <small>Send pull request or shoot an email to add your site here.</small>
