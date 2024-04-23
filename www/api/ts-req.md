@@ -26,6 +26,7 @@ with help of [ts-swap-push]({{ $.Rel "/api/ts-swap-push/" }}).
 - [ts-req-strategy]({{ $.Rel "/api/ts-req-strategy/" }}) to deal with multiple requests from a single location.
 - [ts-req-history]({{ $.Rel "/api/ts-req-history/" }}) to change URL after request.
 - [ts-data]({{ $.Rel "/api/ts-data/" }}) to append data to a request.
+- [ts-json]({{ $.Rel "/api/ts-json/" }}) to append data as a JSON string.
 - [ts-req-batch]({{ $.Rel "/api/ts-req-batch/" }}) to combine multiple requests into a single one.
 
 
