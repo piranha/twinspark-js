@@ -17,7 +17,7 @@ serve:
 	darkhttpd . --port 3000 --addr 127.0.0.1
 
 w:
-	gostatic -w gostatic.conf
+	./gostatic -w gostatic.conf
 
 test:
 	CHROMIUM_BIN=$(which chrome) ./headless-tests.js public
@@ -25,7 +25,7 @@ test:
 # Deploy
 
 deps:
-	curl -Lso gostatic https://github.com/piranha/gostatic/releases/download/2.36/gostatic-64-linux
+	curl -Lso gostatic https://github.com/piranha/gostatic/releases/download/2.36/gostatic-64-mac
 	chmod +x gostatic
 
 render:
