@@ -465,7 +465,8 @@
           var headers = {'ts-title':     xhr.getResponseHeader('ts-title'),
                          'ts-history':   xhr.getResponseHeader('ts-history'),
                          'ts-swap':      xhr.getResponseHeader('ts-swap'),
-                         'ts-swap-push': xhr.getResponseHeader('ts-swap-push')};
+                         'ts-swap-push': xhr.getResponseHeader('ts-swap-push'),
+                         'ts-location':  xhr.getResponseHeader('ts-location')};
 
         return resolve({ok:      xhr.status >= 200 && xhr.status <= 299,
                         status:  xhr.status,
@@ -1328,6 +1329,13 @@
     return swap(origins, replyParent, res);
   }
 
+  // Handler redirect response, when response headers has params `ts-location`
+  // `targetUrl` - target url getting from server response headers `ts-location`
+  function redirectResponse(targetUrl, res) {
+    location.href = targetUrl;
+    return res;
+  }
+
 
   /// Making request for fragments
 
@@ -1432,6 +1440,11 @@
 
         if (res.ok) {
           res = /** @type !Response */ (res);
+
+          if(res.headers['ts-location']) {
+            return redirectResponse(res.headers['ts-location'], res);
+          }
+
           let redirected = (res.url &&
                             (res.url != new URL(fullurl, location.href).href));
 
