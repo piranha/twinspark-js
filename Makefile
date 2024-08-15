@@ -25,7 +25,7 @@ test:
 # Deploy
 
 deps:
-	curl -Lso gostatic https://github.com/piranha/gostatic/releases/download/2.36/gostatic-64-mac
+	curl -Lso gostatic https://github.com/piranha/gostatic/releases/download/2.36/gostatic-64-linux
 	chmod +x gostatic
 
 render:
