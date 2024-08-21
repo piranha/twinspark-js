@@ -14,23 +14,22 @@ tags: ts-json
   </div>
 
   <p class="card-body">
-      <a href="/data"
+      <a href="/json"
          ts-json="{&quot;user&quot;:{&quot;name&quot;:&quot;Sanya&quot;}}"
          ts-req
          ts-req-method="post">Send!</a>
   </p>
 
   <script>
-   XHRMock.post("/data", function(req, res) {
-     return res.status(200)
-               .body(
-       'received: <span>' + req.body() + '</span>');
-   });
-   test(async (el, t) => {
-     el.$('a').click();
-     await t.delay(1);
-     let res = decodeURIComponent(el.$('span').innerText);
-     t.assert(res == '{"user":{"name":"Sanya"}}=');
-   });
+    XHRMock.post("/json", function(req, res) {
+      return res.status(200)
+      .body('<span>' + JSON.parse(req.body()).user.name + '</span>');
+    });
+    test(async (el, t) => {
+      el.$('a').click();
+      await t.delay(1);
+      let res = decodeURIComponent(el.$('span').innerText);
+      t.assert(res + ' == Sanya', res == 'Sanya');
+    });
   </script>
 </div>

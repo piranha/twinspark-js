@@ -9,7 +9,7 @@ origin element. Can be one of the following keywords:
 <table class="table">
 <tr><th>Strategy</th> <th>Description</th></tr>
 
-<tr><td><code>replace</code></td>     <td>replace <a href="../ts-target/">target</a> element with an incoming element <small>(default)</small></td></tr>
+<tr><td><code>replace</code></td>     <td><small>(default)</small> replace <a href="../ts-target/">target</a> element with an incoming element</td></tr>
 <tr><td><code>inner</code></td>       <td>replaces target's children with an incoming element</td></tr>
 <tr><td><code>prepend</code></td>     <td>inserts incoming element as a first child of the target</td></tr>
 <tr><td><code>append</code></td>      <td>inserts incoming element as a last child of the target</td></tr>
