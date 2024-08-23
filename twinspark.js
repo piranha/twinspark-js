@@ -500,7 +500,7 @@
 
   /**
    * Merge two sets of parameters into one
-   * @param {FormData|URLSearchParams} p1 Collection of parameters to be updated.
+   * @param {FormData} p1 Collection of parameters to be updated.
    * @param {FormData|URLSearchParams|Iterable} p2 Collection of parameters to be merged in.
    * @param {boolean=} removeEmpty Indicate if empty ('' or null) parameters from p2 should be removed.
    * @return FormData|URLSearchParams
@@ -1371,9 +1371,8 @@
       return opts;
     }
 
-    var issimple = (Array.from(body.entries())
-                    .every((x) => typeof x[1] === "string"));
-    if (!issimple) {
+    if (typeof body === "string" ||
+        !Array.from(body.entries()).every((x) => typeof x[1] === "string")) {
       opts.body = body;
       return opts;
     }
@@ -1390,9 +1389,21 @@
 
     var url = batch[0].url;
     var method = batch[0].method;
-    var data = batch.reduce(function(acc, req) {
-      return mergeParams(acc, req.opts.data);
-    }, new FormData());
+    var data;
+
+    let json = getattr(batch[0].el, 'ts-json');
+
+    if (json) {
+      if (batch.length > 1) {
+        throw extraerr('Cannot batch json requests', {batch});
+      }
+      data = json;
+      batch[0].opts.headers['Content-Type'] = "application/json";
+    } else {
+      data = batch.reduce(function(acc, req) {
+        return mergeParams(acc, req.opts.data);
+      }, new FormData());
+    }
 
     var qs = method == 'GET' ? new URLSearchParams(data).toString() : null;
     var body = method != 'GET' ? data : null;

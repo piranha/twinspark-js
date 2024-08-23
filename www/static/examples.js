@@ -96,6 +96,7 @@ window.addEventListener('popstate', _ => setTimeout(enableExamples, 16));
 
 /// Tests
 
+// this function is to write tests, see `www/examples/*` for example usage
 window.test = (function() {
   var TESTS = [];
 

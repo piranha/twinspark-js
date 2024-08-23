@@ -89,14 +89,12 @@
 
 <div id="debug-requests" style="display: none;">
   Server Requests
-  <a class="show_show" href="#" ts-action="prevent, target #debug-requests, class+ show">↑ Show</a>
+  <a class="show_show" href="#" ts-action="prevent, target #debug-requests, class^ show">↑ Show</a>
   <a class="show_hide" href="#" ts-action="prevent, target #debug-requests, class- show">↓ Hide</a>
 
   <div class="columns">
-    <div class="column col-3">
-      <ol id="debug-timeline" reversed>
-      </ol>
-    </div>
+    <ol id="debug-timeline" class="column col-3" reversed>
+    </ol>
     <div id="debug-details" class="column col-9">
       <div class="d-hide">
       </div>
@@ -132,9 +130,11 @@
           var id = `debug${i++}`;
           window['debug-timeline'].insertAdjacentHTML(
             'afterbegin',
-            `<li><a style="cursor:pointer" rel="${id}" onclick="switchResponse('${id}')">
-                     <code><b>${method}</b> ${url}</code>
-               </a></li>`
+            // this uses concat instead of single string to avoid whitespace
+            // between tags - and this causes a spacing in the underline
+            `<li><a style="cursor:pointer" rel="${id}" onclick="switchResponse('${id}')">` +
+            `<code><b>${method}</b> ${url}</code>` +
+            `</a></li>`
           );
 
           var headers = '';

@@ -23,6 +23,7 @@ title: API
 <tr><td><a href="ts-req-strategy/">ts-req-strategy</a></td>  <td>How to deal with multiple requests being generated</td></tr>
 <tr><td><a href="ts-req-history/">ts-req-history</a></td>    <td>Change URL after request</td></tr>
 <tr><td><a href="ts-data/">ts-data</a></td>                  <td>Additional data for request</td></tr>
+<tr><td><a href="ts-json/">ts-json</a></td>                  <td>As <code>ts-data</code>, but for JSON requests</td></tr>
 <tr><td><a href="ts-req-batch/">ts-req-batch</a></td>        <td>Combine multiple requests into a single one</td></tr>
 
 </table>

@@ -1,0 +1,35 @@
+id: json
+title: Request JSON API
+tags: ts-json
+----
+<p>
+    Simple <code>POST</code> request with JSON body.
+</p>
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <p class="card-body">
+      <a href="/json"
+         ts-json="{&quot;user&quot;:{&quot;name&quot;:&quot;Sanya&quot;}}"
+         ts-req
+         ts-req-method="post">Send!</a>
+  </p>
+
+  <script>
+    XHRMock.post("/json", function(req, res) {
+      return res.status(200)
+      .body('<span>' + JSON.parse(req.body()).user.name + '</span>');
+    });
+    test(async (el, t) => {
+      el.$('a').click();
+      await t.delay(1);
+      let res = decodeURIComponent(el.$('span').innerText);
+      t.assert(res + ' == Sanya', res == 'Sanya');
+    });
+  </script>
+</div>
