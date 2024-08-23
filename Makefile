@@ -17,7 +17,7 @@ serve:
 	darkhttpd . --port 3000 --addr 127.0.0.1
 
 w:
-	./gostatic -w gostatic.conf
+	gostatic -w gostatic.conf
 
 test:
 	CHROMIUM_BIN=$(which chrome) ./headless-tests.js public
