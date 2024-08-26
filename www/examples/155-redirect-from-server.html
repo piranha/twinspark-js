@@ -1,0 +1,28 @@
+id: server-redirect
+title: Redirect from server
+tags: ts-location
+----
+<p>
+  Redirect to target url, pass to response headers <code>ts-location</code> parameter.
+</p>
+
+
+<div class="card example">
+  <div class="card-header">
+    <h5 class="d-inline mr-2">Demo</h5>
+    <button class="btn btn-link btn-sm reset">Reset</button>
+    <button class="btn btn-link btn-sm source">View Source</button>
+  </div>
+
+  <div class="card-body" style="margin-bottom: 1.2rem" id="redirect-example">
+    <button class="btn" ts-req="/redirect" >
+      Click to redirect
+    </button>
+  </div>
+
+  <script>
+    XHRMock.get("/redirect",
+                {body:    prev(),
+                 headers: {'ts-location': 'https://github.com/piranha/twinspark-js'}});
+  </script>
+</div>

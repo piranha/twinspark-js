@@ -82,6 +82,7 @@ title: API
 <tr><td><code>ts-swap-push</code></td> <td>"Push" some HTML, <code>replace: selector to <= selector from</code></td></tr>
 <tr><td><code>ts-history</code></td>   <td>New browser history URL</td></tr>
 <tr><td><code>ts-title</code></td>     <td>New page title in case of history push</td></tr>
+<tr><td><code>ts-location</code></td>     <td>Redirect to target URL</td></tr>
 
 </table>
 
