@@ -1282,6 +1282,7 @@
       swapped = swapped.concat(viaheader.flat());
     swapped = distinct(swapped);
     swapped.forEach(function(el) {
+      if (!el) return;
       processScripts(el);
       activate(el);
       autofocus(el);
@@ -1378,7 +1379,7 @@
     }
 
     // convert FormData to string so we can evade multipart form
-    var simplebody = new URLSearchParams(body);
+    var simplebody = new URLSearchParams(Array.from(body));
     opts.body = simplebody.toString();
     opts.headers['Content-Type'] = 'application/x-www-form-urlencoded';
     return opts;
@@ -1405,7 +1406,7 @@
       }, new FormData());
     }
 
-    var qs = method == 'GET' ? new URLSearchParams(data).toString() : null;
+    var qs = method == 'GET' ? new URLSearchParams(Array.from(data)).toString() : null;
     var body = method != 'GET' ? data : null;
 
     var opts = {
@@ -2069,6 +2070,9 @@
     window.addEventListener('popstate', onpopstate);
     // Store HTML before going to other page
     window.addEventListener('beforeunload', storeCurrentState);
+    // for iphone instead of beforeunload
+    window.addEventListener('pagehide', storeCurrentState);
+
     activate(document.body);
     READY = true;
     console.debug('init done', _e);
