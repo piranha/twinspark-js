@@ -97,6 +97,15 @@ replaces the element with response from a server, and calls
 </div>
 
 
+## How to use
+
+Just add file to your server's `static` folder or use CDN:
+
+```html
+<script src="https://cdn.jsdelivr.net/gh/piranha/twinspark-js@main/dist/twinspark.min.js"></script>
+```
+
+
 ## What it is
 
 TwinSpark could be mentally split in three parts:
