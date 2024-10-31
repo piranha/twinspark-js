@@ -816,12 +816,12 @@
       let value = source[attr];
       if (value != target[attr]) {
         target[attr] = value;
-        value ? setattr(target, attr, value) : delattr(target, attr);
+        (value === null || value === false) ? delattr(target, attr) : setattr(target, attr, value);
       }
     } else {
       let value = getattr(source, attr);
       if (value != getattr(target, attr)) {
-        value ? setattr(target, attr, value) : delattr(target, attr);
+        (value === null || value === false) ? delattr(target, attr) : setattr(target, attr, value);
       }
     }
   }
@@ -915,12 +915,13 @@
       target = /** @type !Element */ (target);
       reply = /** @type !Element */ (reply);
 
-      for (var attr of reply.attributes) {
-        syncattr(target, reply, attr.name);
-      }
       // iterate backwards to avoid skipping over items when a delete occurs
       for (let i = target.attributes.length - 1; i >= 0; i--) {
         syncattr(target, reply, target.attributes[i].name);
+      }
+
+      for (var attr of reply.attributes) {
+        syncattr(target, reply, attr.name);
       }
 
       // sync inputs
@@ -1057,6 +1058,12 @@
 
     /** @type {function(!Element, !Element, !Object): void} */
     function morphChildren(parentTarget, parentReply, ctx) {
+      if (parentTarget instanceof HTMLTemplateElement &&
+          parentReply instanceof HTMLTemplateElement) {
+        parentTarget = parentTarget.content;
+        parentReply = parentReply.content;
+      }
+
       var target = parentTarget.firstChild;
       var nextReply = parentReply.firstChild;
 

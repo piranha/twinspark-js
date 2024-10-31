@@ -199,6 +199,15 @@ describe("Core morphing tests", function(){
     //     i1.value.should.equal("asdf")
     // });
 
+    // https://github.com/bigskysoftware/idiomorph/pull/49
+    it('can morph a template tag properly', function()
+    {
+      let initial = make("<template data-old>Foo</template>");
+      let final = make("<template data-new>Bar</template>");
+      Idiomorph.morph(initial, final);
+      initial.outerHTML.should.equal(final.outerHTML);
+    });
+
     it('can morph a body tag properly', function()
     {
         let initial = parseHTML("<body>Foo</body>");
@@ -206,7 +215,6 @@ describe("Core morphing tests", function(){
         let final = parseHTML(finalSrc);
         Idiomorph.morph(initial.body, final.body);
         initial.body.outerHTML.should.equal(finalSrc);
-
     });
 
     it('can morph a full document properly', function()
@@ -246,11 +254,11 @@ describe("Core morphing tests", function(){
 
         let finalSrc = make('<input type="checkbox" checked>');
         Idiomorph.morph(initial, finalSrc, {morphStyle:'outerHTML'});
-        if (initial.outerHTML !== '<input type="checkbox" checked="true">') {
+        if (initial.outerHTML !== '<input type="checkbox" checked="">') {
             console.log("HTML after morph: " + initial.outerHTML);
             console.log("Expected:         " + finalSrc.outerHTML);
         }
-        initial.outerHTML.should.equal('<input type="checkbox" checked="true">');
+        initial.outerHTML.should.equal('<input type="checkbox" checked="">');
         initial.checked.should.equal(true);
         document.body.removeChild(parent);
     });
