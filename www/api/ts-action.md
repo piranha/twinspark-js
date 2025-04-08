@@ -27,7 +27,7 @@ quotes, like `target "parent p"`. Escaping works, i.e. `log '\' is a quote'`.
 <tr><td><code>stop</code></td>              <td>Calls <code>.stopPropagation()</code> on triggering event.</td></tr>
 <tr><td><code>prevent</code></td>           <td>Calls <code>.preventDefault()</code> on triggering event.</td></tr>
 <tr><td><code>delay N</code></td>           <td>Delays pipeline execution by <code>N</code> ms, or seconds with syntax <code>Ns</code>.</td></tr>
-<tr><td><code>target SEL</code></td>        <td>Selects another element, identified by <code>SEL</code>. Supports <a href="../ts-trigger/"><code>ts-trigger</code></a> modifiers.</td></tr>
+<tr><td><code>target SEL</code></td>        <td>Selects another element, identified by <code>SEL</code>. Supports <a href="../ts-target/"><code>ts-target</code></a> modifiers (parent, child, etc).</td></tr>
 <tr><td><code>remove [SEL]</code></td>      <td>Removes target element. With optional argument removes element identified by <code>SEL</code>.</td></tr>
 <tr><td><code>class+ CLS</code></td>        <td>Adds class <code>CLS</code> to a target element.</td></tr>
 <tr><td><code>class CLS</code></td>         <td>Alias for <code>class+</code>.</td></tr>
