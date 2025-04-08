@@ -87,7 +87,6 @@ async function runTests(browser, base, url, needsTrigger) {
   return success;
 }
 
-
 function staticHandler(root) {
   return function (req, res) {
     var path = url.parse(req.url).pathname;
@@ -107,10 +106,19 @@ function staticHandler(root) {
   }
 }
 
+function iff(path) {
+  try {
+    if (fs.statSync(path).isFile()) {
+      return path
+    }
+  } catch (e) {}
+}
 
 (async () => {
   var path = process.env.CHROMIUM_BIN ||
-      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+      iff('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome') ||
+      iff('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser');
+  console.log('Running tests with', path);
   let browser = await pup.launch({
     headless: true,
     executablePath: path,
