@@ -1508,7 +1508,9 @@
       .all(reqs.map(function(req) {
         req.opts = makeOpts(req);
 
-        var detail = {req: req};
+        var detail = {req: req,
+                      originalTarget: (req.event.detail.originalTarget ||
+                                       req.event.target)};
         var e = sendEvent(req.el, 'ts-req-before', detail);
         if (e.defaultPrevented)
           return null;
@@ -1960,7 +1962,7 @@
 
       function executeTrigger() {
         // trigger should not bubble, it should be local to a node
-        sendEvent(el, 'ts-trigger', {event: e}, {bubbles: false});
+        sendEvent(el, 'ts-trigger', {event: e, originalTarget: e.target}, {bubbles: false});
       }
 
       if (spec.once) {
