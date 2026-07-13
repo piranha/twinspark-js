@@ -120,7 +120,8 @@ function iff(path) {
       iff('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser');
   console.log('Running tests with', path);
   let browser = await pup.launch({
-    headless: true,
+    headless: "new",
+    args: ['--no-sandbox'],
     executablePath: path,
   });
 
