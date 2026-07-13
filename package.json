@@ -16,6 +16,6 @@
     "url": "git+https://github.com/piranha/twinspark-js.git"
   },
   "devDependencies": {
-    "puppeteer-core": "^19.6.2"
+    "puppeteer-core": "^25.3.0"
   }
 }

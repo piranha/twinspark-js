@@ -6,12 +6,12 @@ const fs = require('fs');
 const url = require('url');
 
 
-function describe(jsHandle) {
-  return jsHandle.executionContext().evaluate((obj) => {
-    return obj;
-    // serialize |obj| however you want
-    return `OBJ: ${typeof obj}, ${obj}`;
-  }, jsHandle);
+async function describe(jsHandle) {
+  try {
+    return await jsHandle.jsonValue();
+  } catch (_) {
+    return jsHandle.toString();
+  }
 }
 
 

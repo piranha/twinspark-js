@@ -1509,7 +1509,8 @@
         req.opts = makeOpts(req);
 
         var detail = {req: req,
-                      originalTarget: (req.event.detail.originalTarget ||
+                      originalTarget: ((req.event.detail &&
+                                        req.event.detail.originalTarget) ||
                                        req.event.target)};
         var e = sendEvent(req.el, 'ts-req-before', detail);
         if (e.defaultPrevented)

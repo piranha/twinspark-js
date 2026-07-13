@@ -19,7 +19,7 @@ serve:
 w:
 	gostatic -w gostatic.conf
 
-test:
+test: render
 	CHROMIUM_BIN=$(which chrome) ./headless-tests.js public
 
 # Deploy
