@@ -47,7 +47,7 @@
       </div>
       <div class="card-body">
         Source is a just 2000 lines of code and only
-        <a href="https://github.com/piranha/twinspark-js/raw/master/dist/twinspark.min.js">8KB .min.gz</a>.
+        <a href="https://github.com/piranha/twinspark-js/raw/main/dist/twinspark.min.js">8KB .min.gz</a>.
         We believe in less is more.
       </div>
     </div>
@@ -121,7 +121,7 @@ TwinSpark could be mentally split in three parts:
 Some reasons why TwinSpark exists despite [HTMx](https://htmx.org/) and
 [Unpoly](https://unpoly.com/) (those are similar in approach):
 
-- It's really small ([8KB `.min.gz`](https://github.com/piranha/twinspark-js/blob/master/dist/twinspark.min.js)).
+- It's really small ([8KB `.min.gz`](https://github.com/piranha/twinspark-js/blob/main/dist/twinspark.min.js)).
 - There is no attribute inheritance — keeps surprises away.
 - [Batching](api/ts-req-batch/) - very useful if you want to use HTTP
   caching effectively, while maintaining some personalisation for your
